@@ -1,5 +1,5 @@
-clear all
-load('solid_effect_microwave_power.mat');
+clear variables
+load('solid_effect_microwave_power_20.mat');
 
 time = linspace(0,length(iz3_avg)-1,length(iz3_avg));
 enhancement_max = abs(max_iz)/abs(max_iz(1));
