@@ -6,7 +6,8 @@ freq_elec = 265.2E9;                    % Electron Larmor frequency (Hz)
 gtensor_tempol = [253.6, 105.1, 123.8]; % Tempol g-tensors
 freq_rotor = 3E3;                       % Spinning frequency (Hz)
 period_rotor = 1 / freq_rotor;          % Rotor period (s)
-freq_microwave = (1:5:20);             % Microwave frequency array (GHz)
+%freq_microwave = (1:5:20);             % Microwave frequency array (GHz)
+freq_microwave = 16;
 
 final_time=40; % not sure what significance of this is
 data_points = round(final_time * freq_rotor); % *Number of data points? 
@@ -22,10 +23,14 @@ count=0;
 for jj=1:length(freq_microwave)
     for ii=1:length(gtensor_tempol(1)) % Powder averaging?
         
-        [pol_iz(ii,:), pol_sz(ii,:), ~, ~]= ... % *Why return density matrix?
+        tic
+        
+        [pol_iz(ii,:), pol_sz(ii,:), ~, ~, evalgham]= ... % *Why return density matrix?
             dynamics(gtensor_tempol(1), gtensor_tempol(2), gtensor_tempol(3), ...
             freq_rotor/1E3, final_time, freq_microwave(jj), ...
             freq_elec, t1_elec, t1_nuc);
+        
+        toc
         
         count=count+1;
         disp(['Simulation ', num2str(count), ' of ', num2str(length(freq_microwave))])

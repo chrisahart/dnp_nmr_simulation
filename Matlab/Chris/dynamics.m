@@ -1,4 +1,4 @@
-function[iznew,sznew,ps0,pi0]=dynamics(a,b,g,nr,final_time,mw_pwr,wme,t1e,t1n)
+function[iznew,sznew,ps0,pi0,evalgham]=dynamics(a,b,g,nr,final_time,mw_pwr,wme,t1e,t1n)
 
 %%% Spin matrices (easyspin libriary)
 spins = [1/2 1/2]; % S=1/2, I=1/2 system
@@ -41,8 +41,6 @@ t2e=1e-6; % T2 electron
 t2n=1e-3; % T2 nucleus
 pl=planck; % planck
 h_mw=w1*Sx; % Microwave Hamiltonian
-disp('h_mw')
-disp(h_mw)
 nrot=round(final_time/tr); % Number of data points?
 iznew=zeros(1,nrot); % polarisation Iz
 sznew=iznew; % polarisation Sz
@@ -60,8 +58,6 @@ gem=0.5*(1+p_e)*(1/(1*t1e));
 gx=we*(2.00614/2)+18.76e6;
 gy=we*(2.00194/2)+92.4e6;
 gz=we*(2.00988/2)+18.2e6;
-
-disp(gx)
 
 ca = cosd(alpha_g);
 cb = cosd(beta_g);
@@ -85,12 +81,6 @@ c2 = 2*sqrt(2)/3*(gx*r21*r31+gy*r22*r32+gz*r23*r33);
 c3 = 1/3*(gx*(r11^2-r21^2)+gy*(r12^2-r22^2)+gz*(r13^2-r23^2));
 c4 = 2/3*(gx*r11*r21+gy*r22*r12+gz*r13*r23);
 
-disp(c0)
-disp(c1)
-disp(c2)
-disp(c3)
-disp(c4)
-
 %%% Hamiltonian
 hamil=zeros(2^nsp,2^nsp,nsteps);
 
@@ -98,15 +88,16 @@ for ii = 0:10000-1 % nsteps = 10000, starting from zero
     hhyp_zz=hzz_max*(-0.5*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+...
         sqrt(2)*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en))*2*IzSz;
     
+%     hhyp_zz = hzz_max * (-0.5*(sind(beta_en)^2)) * IzSz;
+    
     hhyp_zx=hzz_max*(-0.5*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en)-...
         (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*(IpSz+ImSz);
     
+%     hhyp_zx = hzz_max * (IpSz+ImSz);
+    
     hhyp1=1*(hhyp_zz+hhyp_zx);
     ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+c2*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
-    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz;%+1*hhyp1;
-    %hamil(:,:,ii+1) = Sz;
-%     hamil(:,:,ii+1) = (ganisohamil-wme)*Sz;
-    %disp('hamil')
+    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp1;
 end
 
 % Density matrix
@@ -115,8 +106,8 @@ Zp=exp((we+wn)*planck/(kb*T)) + exp((-we+wn)*planck/(kb*T))+exp((we-wn)*planck/(
 rho_zeeman=(1/Zp)*expm(-(we*Sz+wn*Iz)*planck/(kb*T));
 rho0t=rho_zeeman;
 
-disp('rho0t')
-disp(rho0t)
+% disp('rho0t')
+% disp(rho0t)
 
 % Below obselete?
 ps0=trace(rho_zeeman*Sz);
@@ -126,36 +117,33 @@ p0=pi0+ps0;
 % Calculate and sort eigenvalues
 [evecham,evalgham]=eigenshuffle(hamil); % eigenvectors, eigenvalues
 
-disp('(ganisohamil-wme)')
-disp((ganisohamil))
-disp((wme))
-disp((ganisohamil-wme))
+% disp('hamil')
+% disp(size(hamil))
+% disp(hamil(:, :, 1))
 
-disp('hamil')
-disp(size(hamil))
-disp(hamil(:, :, 1))
-
-disp('evecham')
-disp(size(evecham))
-disp(evecham(:, :, 1))
-
-disp('evalgham')
-disp(size(evalgham))
-disp(evalgham(:,1))
+% disp('evecham')
+% disp(size(evecham))
+% disp(evecham(:, :, 1))
+% 
+% disp('evalgham')
+% disp(size(evalgham))
+% disp(evalgham(:,1))
 
 %%% Propogation
 prop=zeros(16,16,10000);
 
-for ii=1:2 % nsteps = 10000
-%for ii=1:10000 % nsteps = 10000
+for ii=1:10000 % nsteps = 10000
+%for ii=1:1 % nsteps = 10000
     D=squeeze(evecham(:,:,ii));
     Dinv=inv(D);
     hamil_mwt=Dinv*h_mw*D; % Transform the MW Hamiltonian to the same frame
-    disp('hamil_mwt')
-    disp(hamil_mwt)
+%     disp('hamil_mwt')
+%     disp(hamil_mwt)
     
     hamil_0=diag(evalgham(:,ii)); % Intrinsic Hamiltonian
     hamilt=hamil_0+hamil_mwt; % Total Hamiltonian (intrinsic + MW)
+%     disp('hamilt')
+%     disp(hamilt)
     
     % Tilt all the operators to the same frame
     Szt=Dinv*Sz*D;
@@ -168,13 +156,36 @@ for ii=1:2 % nsteps = 10000
     Smt=Dinv*Sm*D;
     Ipt=Dinv*Ip*D;
     Imt=Dinv*Im*D;
+%     
+%     disp('Szt')
+%     disp(Szt)
+%     
+%     disp('Im')
+%     disp(Im)
+%     
+%     disp('Imt')
+%     disp(Imt)
+%     
+%     disp('Sp')
+%     disp(Sp)
+%     
+%     disp('Spt')
+%     disp(Spt)
     
     % Liouvillian
     LSzt=kron(Szt,Szt.');
+    
+%     disp('LSzt')
+%     disp(LSzt)
+  
     RSzt=kron(eye(2^nsp),eye(2^nsp));
     LIzt=kron(Izt,Izt.');
     RIzt=kron(eye(2^nsp),eye(2^nsp)); % equal to RSzt
+    
     LIpt=1.0*kron(Ipt,Imt.')-.5*eye(4^nsp)+.5*(kron(Izt,eye(2^nsp))+kron(eye(2^nsp),Izt.'));
+%     disp('LIpt')
+%     disp(LIpt)
+    
     LImt=1.0*kron(Imt,Ipt.')-.5*eye(4^nsp)-.5*(kron(Izt,eye(2^nsp))+kron(eye(2^nsp),Izt.'));
     LSpt=1.0*kron(Spt,Smt.')-.5*eye(4^nsp)+.5*(kron(Szt,eye(2^nsp))+kron(eye(2^nsp),Szt.'));
     LSmt=1.0*kron(Smt,Spt.')-.5*eye(4^nsp)-.5*(kron(Szt,eye(2^nsp))+kron(eye(2^nsp),Szt.'));
@@ -185,8 +196,8 @@ for ii=1:2 % nsteps = 10000
     Rtot=1*Rt1mat+1*Rt2ematv3+1*Rt2nmatv3;
     
     Lhamilt=kron((hamilt),eye(4))-kron(eye(4),(hamilt).');
-    disp('Lhamilt')
-    disp(Lhamilt)
+%     disp('Lhamilt')
+%     disp(Lhamilt)
     
     LD=kron(D,D);
     LDinv=kron(Dinv,Dinv);
@@ -198,17 +209,17 @@ for ii=1:2 % nsteps = 10000
 %     disp(test)
 end
 
-% prop_accu=eye(16); % 16x16 identity matrix
-% for kk=1:nsteps % Why multiply identity matrix with prop?
-%     prop_accu=prop_accu*squeeze(prop(:,:,kk));
-% end
-% 
-% % Calculate polarisation? We have 10000 timesteps, so what is nrot?
-% for jj=1:1
-%     iznew(jj)=trace(rho0t*Iz);
-%     sznew(jj)=trace(rho0t*Sz);
-%     Lrho0t=reshape(rho0t,[16,1]);
-% 
+prop_accu=eye(16); % 16x16 identity matrix
+for kk=1:nsteps % Why multiply identity matrix with prop?
+    prop_accu=prop_accu*squeeze(prop(:,:,kk));
+end
+
+% Calculate polarisation? We have 10000 timesteps, so what is nrot?
+for jj=1:nrot
+    iznew(jj)=trace(real(rho0t)*Iz);
+    sznew(jj)=trace(real(rho0t)*Sz);
+    Lrho0t=reshape(rho0t,[16,1]);
+
 %     disp('sznew(jj)')
 %     disp(sznew(jj))
 %     
@@ -218,23 +229,23 @@ end
 %         disp('disp(Lrho0t)')
 %     disp(size(Lrho0t))
 %     disp(Lrho0t)
-%     
-%     rho0t=prop_accu*Lrho0t;
-%     
-% %     disp('prop_accu')
-% %     disp(size(prop_accu))
-% %     disp(prop_accu(1, 1))
-% %     disp(prop_accu)
-%     
-% %     disp('rho0t')
-% %     disp(size(rho0t))
-% %     disp(rho0t)
-%     
-%     rho0t=reshape(rho0t,[4,4]);
+    
+    rho0t=prop_accu*Lrho0t;
+    
+%     disp('prop_accu')
+%     disp(size(prop_accu))
+%     disp(prop_accu(1, 1))
+%     disp(prop_accu)
+    
 %     disp('rho0t')
 %     disp(size(rho0t))
 %     disp(rho0t)
-%     
-% end
+    
+    rho0t=reshape(rho0t,[4,4]);
+%     disp('rho0t')
+%     disp(size(rho0t))
+%     disp(rho0t)
+    
+end
 
 end
