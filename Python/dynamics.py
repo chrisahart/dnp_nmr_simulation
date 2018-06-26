@@ -5,13 +5,15 @@ import matplotlib.pyplot as plt
 
 # Pre-allocate arrays and calculate constants
 hamiltonian = np.zeros((int(param.time_step_num), 4, 4), dtype=np.complex)
-prop = np.zeros((int(param.time_step_num), 4, 4), dtype=np.complex)
+prop = np.zeros((int(param.time_step_num), 4**2, 4**2), dtype=np.complex)
 nsp = 2  # number of spins
 
 # G-anisotropy TODO move into function file
 gx = param.electron_frequency * (2.00614 / 2) + 18.76e6
 gy = param.electron_frequency * (2.00194 / 2) + 92.4e6
 gz = param.electron_frequency * (2.00988 / 2) + 18.2e6
+
+print(gx)
 
 ca = np.cos(param.orientation_tempol[0])
 cb = np.cos(param.orientation_tempol[1])
@@ -36,6 +38,12 @@ c2 = 2 * np.sqrt(2) / 3 * (gx * r21 * r31 + gy * r22 * r32 + gz * r23 * r33)
 c3 = 1 / 3 * (gx * (r11 ** 2 - r21 ** 2) + gy * (r12 ** 2 - r22 ** 2) + gz * (r13 ** 2 - r23 ** 2))
 c4 = 2 / 3 * (gx * r11 * r21 + gy * r22 * r12 + gz * r13 * r23)
 
+print(c0)
+print(c1)
+print(c2)
+print(c3)
+print(c4)
+
 # Construct intrinsic Hamiltonian (Hilbert space)
 for count in range(0, int(param.time_step_num)):
 
@@ -57,39 +65,72 @@ for count in range(0, int(param.time_step_num)):
         2 * np.pi * param.freq_rotor * count * param.time_step * 2) + c4 * np.sin(
         2 * np.pi * param.freq_rotor * count * param.time_step * 2)
 
-    hamiltonian[count, :] = (ganisohamil-param.electron_frequency)*param.spin2_s_z+\
-                            param.freq_nuclear_1*param.spin2_i_z+hyperfine_zz + hyperfine_zx;
+    # hamiltonian[count, :] = (ganisohamil-param.wme)*param.spin2_s_z
+
+    hamiltonian[count, :] = (ganisohamil - param.wme) * param.spin2_s_z + \
+                            param.freq_nuclear_1 * param.spin2_i_z #+ hyperfine_zz + hyperfine_zx
 
 # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
 eigvals, eigvectors = np.linalg.eig(hamiltonian)
 energies = np.real(eigvals)
 eigvectors_inv = np.linalg.inv(eigvectors)
 
-hamiltonian_ideal = 2 * np.pi * param.electron_frequency * param.spin2_s_z + \
-                    2 * np.pi * -param.freq_nuclear_1 * param.spin2_i_z
+print('(ganisohamil) \n', (ganisohamil))
+print('(param.wme) \n', (param.wme))
+print('(ganisohamil-param.electron_frequency) \n', (ganisohamil-param.wme))
+
+print('hamiltonian \n', hamiltonian.shape)
+print('hamiltonian[0,0] \n', hamiltonian[0, :, :])
+
+print('energies \n', energies.shape)
+print('energies[0,0] \n', energies[0,:])
+
+print('energies \n', eigvectors.shape)
+print('eigvectors[0,0] \n', eigvectors[0, :, :])
+
+# hamiltonian_ideal = param.electron_frequency * param.spin2_s_z + \
+#                     param.freq_nuclear_1 * param.spin2_i_z
 
 # Calculate initial Zeeman basis density matrix from Boltzmann factors
-boltzmann_factors = np.zeros(len(hamiltonian_ideal))
-eigvals_ideal = np.linalg.eigvals(hamiltonian_ideal)
-energies_ideal = np.real(np.copy(eigvals_ideal))
-for count3 in range(0, hamiltonian.shape[1]):
-    boltzmann_factors[count3] = np.exp((-param.hbar * energies_ideal[count3]) / (param.boltzmann * param.temperature))
-density_mat = (1 / np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
+# boltzmann_factors = np.zeros(len(hamiltonian_ideal))
+# eigvals_ideal = np.linalg.eigvals(hamiltonian_ideal)
+# energies_ideal = np.real(np.copy(eigvals_ideal))
+# for count3 in range(0, hamiltonian.shape[1]):
+#     boltzmann_factors[count3] = np.exp((-param.hbar * 2 * np.pi * energies_ideal[count3]) / (param.boltzmann * param.temperature))
+# density_mat = (1 / np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
+# print('np.sum(boltzmann_factors) \n', np.sum(boltzmann_factors))
+
+planck = 2 * np.pi * param.hbar
+
+Zp = np.exp(
+    (param.electron_frequency + param.freq_nuclear_1) * planck / (param.boltzmann * param.temperature)) + np.exp(
+    (-param.electron_frequency + param.freq_nuclear_1) * planck / (param.boltzmann * param.temperature)) + np.exp(
+    (param.electron_frequency - param.freq_nuclear_1) * planck / (param.boltzmann * param.temperature)) + np.exp(
+    -(param.electron_frequency + param.freq_nuclear_1) * planck / (param.boltzmann * param.temperature))
+rho_zeeman = (1 / Zp) * la.expm(
+    -(param.electron_frequency * param.spin2_s_z + param.freq_nuclear_1 * param.spin2_i_z) * planck / (
+        param.boltzmann * param.temperature))
+density_mat = rho_zeeman
+
+print('density_mat \n', density_mat)
 
 # Calculate microwave Hamiltonian
-microwave_hamiltonian_0 = 2 * np.pi * param.microwave_amplitude * param.spin2_s_x
+microwave_hamiltonian_0 = param.microwave_amplitude * param.spin2_s_x
+print('microwave_hamiltonian_0 \n', microwave_hamiltonian_0)
 
 # Propagation
-for count in range(0, int(param.time_step_num)):
+#for count in range(0, int(param.time_step_num)):
+for count in range(0, 1):
 
     # Express microwave Hamiltonian in initial Hamiltonian eigenbasis
     microwave_hamiltonian = np.matmul(eigvectors_inv[count], np.matmul(microwave_hamiltonian_0, eigvectors[count]))
+    print('microwave_hamiltonian \n', microwave_hamiltonian)
 
     # Calculate total Hamiltonian
     energies_square = np.diagflat(energies[count])
     total_hamiltonian = energies_square + microwave_hamiltonian
 
-    # Transform basis
+    # Transform basis TODO move into function file def(transform_spin_matrices)
     Sxt = np.matmul(eigvectors_inv[count], np.matmul(param.spin2_s_x, eigvectors[count]))
     Syt = np.matmul(eigvectors_inv[count], np.matmul(param.spin2_s_y, eigvectors[count]))
     Szt = np.matmul(eigvectors_inv[count], np.matmul(param.spin2_s_z, eigvectors[count]))
@@ -129,26 +170,53 @@ for count in range(0, int(param.time_step_num)):
 
     # Liouvillian?
     Lhamilt = np.kron(total_hamiltonian, np.eye(4)) - np.kron(np.eye(4), np.transpose(total_hamiltonian))
+    print('Lhamilt \n', Lhamilt.shape)
+    print('Lhamilt \n', Lhamilt)
+
     LD = np.kron(eigvectors[count], eigvectors[count])
     LDinv = np.kron(eigvectors_inv[count], eigvectors_inv[count])
     Ltot = Lhamilt + 1j * Rtot
+    test = LD * la.expm(-1j * Ltot * param.time_step) * LDinv
     prop[count, :] = LD * la.expm(-1j * Ltot * param.time_step) * LDinv
+    # print('test \n', test.shape)
+    # print('test \n', test)
 
-# ?
-prop_accu = np.eye(16)
-for count in range(0, param.time_step_num):
-    prop_accu = prop_accu * prop[count, :]
-
-nrot = np.round(40 * param.freq_rotor)
-iznew = np.zeros(nrot)
-sznew = np.zeros(nrot)
-rho0t = density_mat
-for count in range(0, nrot):
-    iznew[count] = np.trace(rho0t * param.spin2_i_z)
-    sznew[count] = np.trace(rho0t * param.spin2_s_z)
-    Lrho0t = np.reshape(rho0t, [16, 1])
-    rho0t = prop_accu * Lrho0t
-    rho0t = np.reshape(rho0t, [4, 4])
-
-plt.plot(iznew)
-plt.show()
+# # ?
+# prop_accu = np.eye(16)
+# for count in range(0, int(param.time_step_num)):
+#     prop_accu = prop_accu * prop[count, :]
+#     # print('prop[count, :] \n', prop[count, :])
+#     # print('prop_accu \n', prop_accu)
+#
+# nrot = int(np.round(40 * param.freq_rotor))
+# iznew = np.zeros(nrot)
+# sznew = np.zeros(nrot)
+# rho0t = density_mat
+#
+# for count in range(0, 1):
+#     iznew[count] = np.trace(rho0t * param.spin2_i_z)
+#     sznew[count] = np.trace(rho0t * param.spin2_s_z)
+#     Lrho0t = np.reshape(rho0t, [16, 1])
+#
+#     print('iznew \n', iznew[count])  # agrees with Matlab
+#     print('sznew \n', sznew[count])  # agrees with Matlab
+#
+#     print('Lrho0t \n', Lrho0t.shape)  # agrees with Matlab
+#     print('Lrho0t \n', Lrho0t)  # agrees with Matlab
+#
+#     rho0t = np.matmul(prop_accu, Lrho0t)
+#
+#     # print('prop_accu \n', prop_accu.shape)  # does not agree with matlab
+#     # print('prop_accu[0, 0] \n', prop_accu[0, 0])
+#     # print('prop_accu \n', prop_accu[1, 1])
+#     # print('prop_accu \n', prop_accu)
+#
+#     # print('rho0t after \n', rho0t.shape)
+#     # print('rho0t after \n', rho0t)
+#
+#     rho0t = np.reshape(rho0t, [4, 4])
+#     print('rho0t final \n', rho0t.shape)
+#     print('rho0t final \n', rho0t)
+#
+# plt.plot(iznew)
+# plt.show()
