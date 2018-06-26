@@ -5,7 +5,7 @@ import time
 
 # TODO Finish adding dynamics code into functions, add output to file and plotting code
 
-""" Main function calls dynamics function as required, saving output to working directory
+""" Powder averaging, call dynamics function as required, saving output to working directory
 """
 
 start = time.time()

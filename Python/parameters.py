@@ -1,9 +1,6 @@
 import numpy as np
 from scipy import constants as sc
-
-# System variables
-time_step_num = 1E4                                                 # Number of timesteps within rotor period
-num_spins = 2                                                       # Number of spins
+import spin_matrices as sp
 
 # Literature parameters
 b_field = 9.4                                                       # Magnetic field
@@ -21,6 +18,12 @@ t1_elec = 0.3E-3                                                    # Electron s
 t1_nuc = 10                                                         # Nuclear spin-lattice relaxation T1 (s)
 t2_elec = 1e-6                                                      # T2 electron
 t2_nuc = 1e-3                                                       # T2 nucleus
+
+# System variables
+time_step_num = 1E4                                                 # Number of timesteps within rotor period
+time_step = (1 / freq_rotor) / time_step_num            # Value of timesteps (overwrite with care)
+num_spins = 2                                                       # Number of spins
+microwave_hamiltonian = microwave_amplitude * sp.spin2_s_x          # Microwave Hamiltonian
 
 # TODO What are these, something to do with Liouvillian?
 t_corr = sc.hbar / (sc.Boltzmann * temperature)
