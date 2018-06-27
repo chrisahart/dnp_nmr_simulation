@@ -6,8 +6,8 @@ freq_elec = 265.2E9;                    % Electron Larmor frequency (Hz)
 gtensor_tempol = [253.6, 105.1, 123.8]; % Tempol g-tensors
 freq_rotor = 3E3;                       % Spinning frequency (Hz)
 period_rotor = 1 / freq_rotor;          % Rotor period (s)
-%freq_microwave = (1:5:20);             % Microwave frequency array (GHz)
-freq_microwave = 16;
+freq_microwave = (1:5:200);             % Microwave frequency array (GHz)
+%freq_microwave = 16;
 
 final_time=40; % not sure what significance of this is
 data_points = round(final_time * freq_rotor); % *Number of data points? 

@@ -6,62 +6,49 @@ import spin_matrices as sp
 import functions as fn
 
 
-def dynamics():
-    """ Construct Hamiltonian.
+def dynamics(microwave_amplitude):
+    """ Solid effect dynamics, needs generalizing and optimising.
     """
 
-    # Pre-allocate arrays
-    hamiltonian = np.zeros((int(param.time_step_num), 4, 4), dtype=np.complex)
+    # Pre-allocate arrays for Hamiltonian and propagator
+    hamiltonian = np.zeros((int(param.time_step_num), 4, 4), dtype=np.complex)  # TODO generalize
     prop = np.zeros((int(param.time_step_num), 4**2, 4**2), dtype=np.complex)
 
     # Calculate time independent electron g-anisotropy coefficients
-    c0, c1, c2, c3, c4 = fn.anisotropy_coefficients(param.orientation_tempol)
+    c0, c1, c2, c3, c4 = fn.anisotropy_coefficients(param.orientation_tempol)  # TODO generalize
 
     # Calculate thermal density matrix
-    density_mat = fn.density_mat_thermal()
+    density_mat = fn.density_mat_thermal()  # TODO generalize
 
     # Construct intrinsic Hamiltonian (Hilbert space)
     for count in range(0, int(param.time_step_num)):
 
-        hyperfine_zz, hyperfine_zx = fn.hyperfine(count * param.time_step)
+        hyperfine_zz, hyperfine_zx = fn.hyperfine(count * param.time_step)  # TODO generalize
 
-        ganisohamil = fn.anisotropy(c0, c1, c2, c3, c4, count * param.time_step)
+        ganisotropy = fn.anisotropy(c0, c1, c2, c3, c4, count * param.time_step)  # TODO generalize
 
-        hamiltonian[count, :] = (ganisohamil - param.microwave_frequency) * sp.spin2_s_z + \
-                                param.freq_nuclear_1 * sp.spin2_i_z + hyperfine_zz + hyperfine_zx
+        hamiltonian[count, :] = (ganisotropy - param.microwave_frequency) * sp.spin2_s_z + \
+                                param.freq_nuclear_1 * sp.spin2_i_z + hyperfine_zz + hyperfine_zx  # TODO generalize
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
     energies = np.real(eigvals)
     eigvectors_inv = np.linalg.inv(eigvectors)
 
-    # Propogate density matrix
+    # TODO generalize
+    microwave_hamiltonian_0 = microwave_amplitude * sp.spin2_s_x
+
+    # Propagate density matrix
     for count in range(0, int(param.time_step_num)):
 
-        # Express microwave Hamiltonian in initial Hamiltonian eigenbasis
-        microwave_hamiltonian = np.matmul(eigvectors_inv[count], np.matmul(param.microwave_hamiltonian, eigvectors[count]))
+        microwave_hamiltonian = np.matmul(eigvectors_inv[count],
+                                          np.matmul(microwave_hamiltonian_0, eigvectors[count]))
 
         # Calculate total Hamiltonian
-        energies_square = np.diagflat(energies[count])
-        total_hamiltonian = energies_square + microwave_hamiltonian
+        total_hamiltonian = np.diagflat(energies[count]) + microwave_hamiltonian
 
-        # Transform basis TODO move into function file def(transform_spin_matrices)
-        Sxt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_x, eigvectors[count]))
-        Syt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_y, eigvectors[count]))
-        Szt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_z, eigvectors[count]))
-
-        #print('Szt \n', Szt)
-
-        # Transform basis
-        Ixt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_x, eigvectors[count]))
-        Iyt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_y, eigvectors[count]))
-        Izt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_z, eigvectors[count]))
-
-        # Transform basis
-        Spt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_p, eigvectors[count]))
-        Smt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_m, eigvectors[count]))
-        Ipt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_p, eigvectors[count]))
-        Imt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_m, eigvectors[count]))
+        # Transform spin matrices into time dependent basis TODO generalize
+        Sxt, Syt, Szt, Ixt, Iyt, Izt, Spt, Smt, Ipt, Imt = fn.basis_transform(eigvectors, eigvectors_inv, count)
 
         # Liouvillian?
         LSzt = np.kron(Szt, np.transpose(Szt))
@@ -111,4 +98,4 @@ def dynamics():
         rho0t = np.matmul(prop_accu, Lrho0t)
         rho0t = np.reshape(rho0t, [4, 4])
 
-    return energies, iznew, sznew
+    return iznew, sznew #, energies

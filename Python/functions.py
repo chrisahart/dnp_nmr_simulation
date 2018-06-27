@@ -5,21 +5,47 @@ from scipy import constants as sc
 from scipy import linalg as la
 
 
-def density_mat_thermal():
-    """ Calculate initial thermal density matrix from Boltzmann factors.
+def basis_transform(eigvectors, eigvectors_inv, count):
+    """ Transform spin matrices basis.
     """
 
-    # hamiltonian_ideal = param.electron_frequency * sp.spin2_i_z + \
-    #                     param.freq_nuclear_1 * sp.spin2_i_z
+    Sxt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_x, eigvectors[count]))
+    Syt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_y, eigvectors[count]))
+    Szt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_z, eigvectors[count]))
 
-    # Calculate initial Zeeman basis density matrix from Boltzmann factors
+    Ixt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_x, eigvectors[count]))
+    Iyt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_y, eigvectors[count]))
+    Izt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_z, eigvectors[count]))
+
+    Spt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_p, eigvectors[count]))
+    Smt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_s_m, eigvectors[count]))
+    Ipt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_p, eigvectors[count]))
+    Imt = np.matmul(eigvectors_inv[count], np.matmul(sp.spin2_i_m, eigvectors[count]))
+
+    return Sxt, Syt, Szt, Ixt, Iyt, Izt, Spt, Smt, Ipt, Imt
+
+
+def density_mat_thermal():
+    """ Calculate initial thermal density matrix from Boltzmann factors.
+    Two methods don't agree due to issues with factor of 2 from Sz and Iz in Hamiltonian
+    """
+
+    # Populate density matrix from idealised Hamiltonian
+    # hamiltonian_ideal = param.electron_frequency * sp.spin2_s_z + \
+    #                     param.freq_nuclear_1 * sp.spin2_i_z
+    # energies_ideal = np.diag(hamiltonian_ideal)
+    #
+    # # Calculate initial Zeeman basis density matrix from Boltzmann factors
     # boltzmann_factors = np.zeros(len(hamiltonian_ideal))
-    # eigvals_ideal = np.linalg.eigvals(hamiltonian_ideal)
-    # energies_ideal = np.real(np.copy(eigvals_ideal))
-    # for count3 in range(0, hamiltonian.shape[1]):
-    #     boltzmann_factors[count3] = np.exp((-param.sc.hbar * 2 * np.pi * energies_ideal[count3]) / (sc.Boltzmann * param.temperature))
-    # density_mat = (1 / np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
-    # print('np.sum(boltzmann_factors) \n', np.sum(boltzmann_factors))
+    # for count in range(0, hamiltonian_ideal.shape[0]):
+    #     boltzmann_factors[count] = np.exp(-(sc.Planck * energies_ideal[count]) /
+    #                                        (sc.Boltzmann * param.temperature))
+    # density_mat = (1/np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
+
+    #
+
+    # print('sum(boltzmann_factors)', sum(boltzmann_factors))
+    # print('density_mat)', density_mat)
 
     Zp = np.exp(
         (param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
@@ -27,10 +53,11 @@ def density_mat_thermal():
         (param.electron_frequency - param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
         -(param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature))
 
-    rho_zeeman = (1 / Zp) * la.expm(
+    density_mat = (1 / Zp) * la.expm(
         -(param.electron_frequency * sp.spin2_s_z + param.freq_nuclear_1 * sp.spin2_i_z) * sc.Planck / (
                 sc.Boltzmann * param.temperature))
-    density_mat = rho_zeeman
+    # print('Zp', Zp)
+    # print('density_mat)', density_mat)
 
     return density_mat
 
@@ -91,6 +118,8 @@ def hyperfine(time):
         2 * np.pi * param.freq_rotor * time + param.hyperfine_angles_1[2])) * 2 * np.matmul(sp.spin2_i_z,
                                                                                             sp.spin2_s_z)
 
+    # checked IzSz against matlab, factor of 2 fixes issue with factor of 1/2
+
     hyperfine_zx = param.hyperfine_coupling * (
             -0.5 * np.sin(param.hyperfine_angles_1[1]) * np.cos(param.hyperfine_angles_1[1]) * np.cos(
         2 * np.pi * param.freq_rotor * time + param.hyperfine_angles_1[2]) - (np.sqrt(2) / 4) * (
@@ -98,5 +127,7 @@ def hyperfine(time):
         2 * (2 * np.pi * param.freq_rotor * time + param.hyperfine_angles_1[2])) + (
                     np.sqrt(2) / 4) * (3 * (np.cos(param.hyperfine_angles_1[1]) ** 2) - 1)) * \
                    (np.matmul(sp.spin2_i_p, sp.spin2_s_z) + np.matmul(sp.spin2_i_m, sp.spin2_s_z))
+
+    # checked IpSz + ImSz against matlab
 
     return hyperfine_zz, hyperfine_zx

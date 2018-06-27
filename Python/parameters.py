@@ -23,7 +23,7 @@ t2_nuc = 1e-3                                                       # T2 nucleus
 time_step_num = 1E4                                                 # Number of timesteps within rotor period
 time_step = (1 / freq_rotor) / time_step_num            # Value of timesteps (overwrite with care)
 num_spins = 2                                                       # Number of spins
-microwave_hamiltonian = microwave_amplitude * sp.spin2_s_x          # Microwave Hamiltonian
+# microwave_hamiltonian = microwave_amplitude * sp.spin2_s_x          # Microwave Hamiltonian
 
 # TODO What are these, something to do with Liouvillian?
 t_corr = sc.hbar / (sc.Boltzmann * temperature)
