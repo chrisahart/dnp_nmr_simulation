@@ -98,4 +98,4 @@ def dynamics(microwave_amplitude):
         rho0t = np.matmul(prop_accu, Lrho0t)
         rho0t = np.reshape(rho0t, [4, 4])
 
-    return iznew, sznew #, energies
+    return iznew, sznew

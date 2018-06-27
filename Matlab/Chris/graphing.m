@@ -12,33 +12,12 @@ xlabel('MW power')
 ylabel('Enhancement')
 
 fig2=figure();
-plot(abs(pol_iz(1, :)));
-
-fig3=figure();
-plot(evalgham(1, :), 'r')
 hold on;
-plot(evalgham(2, :), 'g')
-plot(evalgham(3, :), 'b')
-plot(evalgham(4, :), 'y')
+plot(time, enhancement(1, :)/enhancement(1, 1), 'k', 'DisplayName','1');
+plot(time, enhancement(5, :)/enhancement(5, 1), 'r', 'DisplayName','5');
+plot(time, enhancement(10, :)/enhancement(10, 1), 'g', 'DisplayName','10');
+plot(time, enhancement(20, :)/enhancement(20, 1), 'b', 'DisplayName','20');
 hold off;
-
-% fig2=figure();
-% hold on;
-% plot(time, enhancement(5, :)/enhancement(5, 1), 'r', 'DisplayName','5');
-% plot(time, enhancement(10, :)/enhancement(10, 1), 'g', 'DisplayName','10');
-% plot(time, enhancement(20, :)/enhancement(20, 1), 'b', 'DisplayName','20');
-% hold off;
-% legend()
-% xlabel('Time?')
-% ylabel('Nuclear enhancement')
-% 
-% elec_end = 10;
-% fig3=figure();
-% hold on;
-% plot(time(1:elec_end), elec(5, 1:elec_end)/elec(5, 1), 'r', 'DisplayName','5');
-% plot(time(1:elec_end), elec(10, 1:elec_end)/elec(10, 1), 'g', 'DisplayName','10');
-% plot(time(1:elec_end), elec(20, 1:elec_end)/elec(20, 1), 'b', 'DisplayName','20');
-% hold off;
-% legend()
-% xlabel('Time?')
-% ylabel('Electron polarisation')
+legend()
+xlabel('Time?')
+ylabel('Nuclear enhancement')
