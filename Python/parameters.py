@@ -9,7 +9,6 @@ freq_nuclear_1 = -400.9E6                                           # Nuclear fr
 electron_frequency = 28.025E9 * b_field                             # Electron frequency
 microwave_frequency = 265.2E9                                       # Microwave frequency
 freq_rotor = 3E3                                                    # Rotor frequency
-microwave_amplitude = 16E6                                          # Microwave field amplitude
 orientation_tempol = np.radians((253.6, 105.1, 123.8))              # G anisotropy angles for Tempol (SE)
 gtensor = np.array([(2.00614 / 2), (2.00194 / 2), (2.00988 / 2)])   # G tensor principal values
 hyperfine_coupling = 3E6                                            # Hyperfine coupling amplitude
@@ -18,11 +17,13 @@ t1_elec = 0.3E-3                                                    # Electron s
 t1_nuc = 10                                                         # Nuclear spin-lattice relaxation T1 (s)
 t2_elec = 1e-6                                                      # T2 electron
 t2_nuc = 1e-3                                                       # T2 nucleus
+microwave_amplitude = np.arange(1, 20, 5) * 1E6                    # Microwave field amplitude
 
 # System variables
 time_step_num = 1E4                                                 # Number of timesteps within rotor period
 time_step = (1 / freq_rotor) / time_step_num                        # Value of timesteps (overwrite with care)
 num_spins = 2                                                       # Number of spins
+nrot = int(np.round(40 * freq_rotor))                               # TODO Figure out what this does
 
 # TODO What are these, something to do with Liouvillian?
 t_corr = sc.hbar / (sc.Boltzmann * temperature)

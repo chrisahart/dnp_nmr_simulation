@@ -11,8 +11,8 @@ def dynamics(microwave_amplitude):
     """
 
     # Pre-allocate arrays for Hamiltonian and propagator
-    hamiltonian = np.zeros((int(param.time_step_num), 4, 4), dtype=np.complex)  # TODO generalize
-    prop = np.zeros((int(param.time_step_num), 4**2, 4**2), dtype=np.complex)
+    hamiltonian = np.zeros((int(param.time_step_num), param.num_spins ** 2, param.num_spins ** 2), dtype=np.complex)
+    prop = np.zeros((int(param.time_step_num), param.num_spins ** 4, param.num_spins ** 4), dtype=np.complex)
 
     # Calculate time independent electron g-anisotropy coefficients
     c0, c1, c2, c3, c4 = fn.anisotropy_coefficients(param.orientation_tempol)  # TODO generalize
@@ -35,7 +35,7 @@ def dynamics(microwave_amplitude):
     energies = np.real(eigvals)
     eigvectors_inv = np.linalg.inv(eigvectors)
 
-    # TODO generalize
+    # TODO generalize (add to function to sum to number of electrons)
     microwave_hamiltonian_0 = microwave_amplitude * sp.spin2_s_x
 
     # Propagate density matrix
@@ -85,12 +85,11 @@ def dynamics(microwave_amplitude):
     for count in range(0, int(param.time_step_num)):
         prop_accu = np.matmul(prop_accu, prop[count, :])
 
-    nrot = int(np.round(40 * param.freq_rotor))
-    iznew = np.zeros(nrot)
-    sznew = np.zeros(nrot)
+    iznew = np.zeros(param.nrot)
+    sznew = np.zeros(param.nrot)
     rho0t = density_mat
 
-    for count in range(0, nrot):
+    for count in range(0, param.nrot):
         iznew[count] = np.trace(np.real(rho0t) * sp.spin2_i_z)
         sznew[count] = np.trace(np.real(rho0t) * sp.spin2_s_z)
         Lrho0t = np.reshape(rho0t, [16, 1])
