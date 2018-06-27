@@ -27,37 +27,19 @@ def basis_transform(eigvectors, eigvectors_inv, count):
 
 def density_mat_thermal():
     """ Calculate initial thermal density matrix from Boltzmann factors.
-    Two methods don't agree due to issues with factor of 2 from Sz and Iz in Hamiltonian
+        Two methods don't agree due to issues with factor of 2 from Sz and Iz in Hamiltonian
     """
 
-    # Populate density matrix from idealised Hamiltonian
-    # hamiltonian_ideal = param.electron_frequency * sp.spin2_s_z + \
-    #                     param.freq_nuclear_1 * sp.spin2_i_z
-    # energies_ideal = np.diag(hamiltonian_ideal)
-    #
-    # # Calculate initial Zeeman basis density matrix from Boltzmann factors
-    # boltzmann_factors = np.zeros(len(hamiltonian_ideal))
-    # for count in range(0, hamiltonian_ideal.shape[0]):
-    #     boltzmann_factors[count] = np.exp(-(sc.Planck * energies_ideal[count]) /
-    #                                        (sc.Boltzmann * param.temperature))
-    # density_mat = (1/np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
+    # Calculate energies of an Hamiltonian
+    hamiltonian_ideal = param.electron_frequency * sp.spin2_s_z + \
+                        param.freq_nuclear_1 * sp.spin2_i_z
+    energies_ideal = np.diag(hamiltonian_ideal)
 
-    #
-
-    # print('sum(boltzmann_factors)', sum(boltzmann_factors))
-    # print('density_mat)', density_mat)
-
-    Zp = np.exp(
-        (param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
-        (-param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
-        (param.electron_frequency - param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
-        -(param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature))
-
-    density_mat = (1 / Zp) * la.expm(
-        -(param.electron_frequency * sp.spin2_s_z + param.freq_nuclear_1 * sp.spin2_i_z) * sc.Planck / (
-                sc.Boltzmann * param.temperature))
-    # print('Zp', Zp)
-    # print('density_mat)', density_mat)
+    # Calculate initial Zeeman basis density matrix from Boltzmann factors
+    boltzmann_factors = np.zeros(len(hamiltonian_ideal))
+    for count in range(0, hamiltonian_ideal.shape[0]):
+        boltzmann_factors[count] = np.exp(-(sc.Planck * energies_ideal[count])/ (sc.Boltzmann * param.temperature))
+    density_mat = (1/np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
 
     return density_mat
 
@@ -66,9 +48,9 @@ def anisotropy_coefficients(angles):
     """ Calculate time independent coefficients for electron g-anisotropy.
     """
 
-    gx = param.electron_frequency * (2.00614 / 2) + 18.76e6
-    gy = param.electron_frequency * (2.00194 / 2) + 92.4e6
-    gz = param.electron_frequency * (2.00988 / 2) + 18.2e6
+    gx = param.electron_frequency * param.gtensor[0] + 18.76e6
+    gy = param.electron_frequency * param.gtensor[1] + 92.4e6
+    gz = param.electron_frequency * param.gtensor[2] + 18.2e6
 
     ca = np.cos(angles[0])
     cb = np.cos(angles[1])
@@ -100,12 +82,12 @@ def anisotropy(c0, c1, c2, c3, c4, time):
     """ Calculate time dependent electron g-anisotropy.
     """
 
-    ganisohamil = c0 + c1 * np.cos(2 * np.pi * param.freq_rotor * time) + c2 * np.sin(
+    g_anisotropy = c0 + c1 * np.cos(2 * np.pi * param.freq_rotor * time) + c2 * np.sin(
         2 * np.pi * param.freq_rotor * time) + c3 * np.cos(
         2 * np.pi * param.freq_rotor * time * 2) + c4 * np.sin(
         2 * np.pi * param.freq_rotor * time * 2)
 
-    return ganisohamil
+    return g_anisotropy
 
 
 def hyperfine(time):
@@ -118,8 +100,6 @@ def hyperfine(time):
         2 * np.pi * param.freq_rotor * time + param.hyperfine_angles_1[2])) * 2 * np.matmul(sp.spin2_i_z,
                                                                                             sp.spin2_s_z)
 
-    # checked IzSz against matlab, factor of 2 fixes issue with factor of 1/2
-
     hyperfine_zx = param.hyperfine_coupling * (
             -0.5 * np.sin(param.hyperfine_angles_1[1]) * np.cos(param.hyperfine_angles_1[1]) * np.cos(
         2 * np.pi * param.freq_rotor * time + param.hyperfine_angles_1[2]) - (np.sqrt(2) / 4) * (
@@ -127,7 +107,5 @@ def hyperfine(time):
         2 * (2 * np.pi * param.freq_rotor * time + param.hyperfine_angles_1[2])) + (
                     np.sqrt(2) / 4) * (3 * (np.cos(param.hyperfine_angles_1[1]) ** 2) - 1)) * \
                    (np.matmul(sp.spin2_i_p, sp.spin2_s_z) + np.matmul(sp.spin2_i_m, sp.spin2_s_z))
-
-    # checked IpSz + ImSz against matlab
 
     return hyperfine_zz, hyperfine_zx

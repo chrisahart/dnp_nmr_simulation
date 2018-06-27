@@ -17,7 +17,7 @@ t1_elec = 0.3E-3                                                    # Electron s
 t1_nuc = 10                                                         # Nuclear spin-lattice relaxation T1 (s)
 t2_elec = 1e-6                                                      # T2 electron
 t2_nuc = 1e-3                                                       # T2 nucleus
-microwave_amplitude = np.arange(1, 20, 5) * 1E6                    # Microwave field amplitude
+microwave_amplitude = np.arange(1, 200, 5) * 1E6                    # Microwave field amplitude
 
 # System variables
 time_step_num = 1E4                                                 # Number of timesteps within rotor period

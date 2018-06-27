@@ -15,20 +15,20 @@ def dynamics(microwave_amplitude):
     prop = np.zeros((int(param.time_step_num), param.num_spins ** 4, param.num_spins ** 4), dtype=np.complex)
 
     # Calculate time independent electron g-anisotropy coefficients
-    c0, c1, c2, c3, c4 = fn.anisotropy_coefficients(param.orientation_tempol)  # TODO generalize
+    c0, c1, c2, c3, c4 = fn.anisotropy_coefficients(param.orientation_tempol)
 
     # Calculate thermal density matrix
-    density_mat = fn.density_mat_thermal()  # TODO generalize
+    density_mat = fn.density_mat_thermal()
 
     # Construct intrinsic Hamiltonian (Hilbert space)
     for count in range(0, int(param.time_step_num)):
 
-        hyperfine_zz, hyperfine_zx = fn.hyperfine(count * param.time_step)  # TODO generalize
+        hyperfine_zz, hyperfine_zx = fn.hyperfine(count * param.time_step)
 
-        ganisotropy = fn.anisotropy(c0, c1, c2, c3, c4, count * param.time_step)  # TODO generalize
+        ganisotropy = fn.anisotropy(c0, c1, c2, c3, c4, count * param.time_step)
 
         hamiltonian[count, :] = (ganisotropy - param.microwave_frequency) * sp.spin2_s_z + \
-                                param.freq_nuclear_1 * sp.spin2_i_z + hyperfine_zz + hyperfine_zx  # TODO generalize
+                                param.freq_nuclear_1 * sp.spin2_i_z + hyperfine_zz + hyperfine_zx
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
