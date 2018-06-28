@@ -13,11 +13,25 @@ ylabel('Enhancement')
 
 fig2=figure();
 hold on;
-plot(time, enhancement(1, :)/enhancement(1, 1), 'k', 'DisplayName','1');
-plot(time, enhancement(5, :)/enhancement(5, 1), 'r', 'DisplayName','5');
-plot(time, enhancement(10, :)/enhancement(10, 1), 'g', 'DisplayName','10');
-plot(time, enhancement(20, :)/enhancement(20, 1), 'b', 'DisplayName','20');
+% plot(time, enhancement(1, :)/abs(max_pol_iz(1)), 'k', 'DisplayName', ...
+%      num2str(freq_microwave(1)));
+% plot(time, enhancement(5, :)/abs(max_pol_iz(1)), 'r', 'DisplayName',...
+%      num2str(freq_microwave(5)));
+% plot(time, enhancement(10, :)/abs(max_pol_iz(1)), 'g', 'DisplayName',...
+%      num2str(freq_microwave(10)));
+% plot(time, enhancement(20, :)/abs(max_pol_iz(1)), 'b', 'DisplayName',...
+%      num2str(freq_microwave(20)));
+ 
+ plot(time, enhancement(1, :), 'k', 'DisplayName', ...
+     num2str(freq_microwave(1)));
+plot(time, enhancement(5, :), 'r', 'DisplayName',...
+     num2str(freq_microwave(5)));
+plot(time, enhancement(10, :), 'g', 'DisplayName',...
+     num2str(freq_microwave(10)));
+plot(time, enhancement(20, :), 'b', 'DisplayName',...
+     num2str(freq_microwave(20)));
 hold off;
-legend()
+lgd = legend();
+title(lgd,'Microwave amplitude')
 xlabel('Time?')
 ylabel('Nuclear enhancement')

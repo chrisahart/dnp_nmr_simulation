@@ -30,16 +30,26 @@ def density_mat_thermal():
         Two methods don't agree due to issues with factor of 2 from Sz and Iz in Hamiltonian
     """
 
-    # Calculate energies of an Hamiltonian
-    hamiltonian_ideal = param.electron_frequency * sp.spin2_s_z + \
-                        param.freq_nuclear_1 * sp.spin2_i_z
-    energies_ideal = np.diag(hamiltonian_ideal)
+    Zp = np.exp(
+        (param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
+        (-param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
+        (param.electron_frequency - param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature)) + np.exp(
+        -(param.electron_frequency + param.freq_nuclear_1) * sc.Planck / (sc.Boltzmann * param.temperature))
 
-    # Calculate initial Zeeman basis density matrix from Boltzmann factors
-    boltzmann_factors = np.zeros(len(hamiltonian_ideal))
-    for count in range(0, hamiltonian_ideal.shape[0]):
-        boltzmann_factors[count] = np.exp(-(sc.Planck * energies_ideal[count])/ (sc.Boltzmann * param.temperature))
-    density_mat = (1/np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
+    density_mat = (1 / Zp) * la.expm(
+        -(param.electron_frequency * sp.spin2_s_z + param.freq_nuclear_1 * sp.spin2_i_z) * sc.Planck / (
+                sc.Boltzmann * param.temperature))
+
+    # Calculate energies of an idealised Hamiltonian
+    # hamiltonian_ideal = param.electron_frequency * sp.spin2_s_z + \
+    #                     param.freq_nuclear_1 * sp.spin2_i_z
+    # energies_ideal = np.diag(hamiltonian_ideal)
+    #
+    # # Calculate initial Zeeman basis density matrix from Boltzmann factors
+    # boltzmann_factors = np.zeros(len(hamiltonian_ideal))
+    # for count in range(0, hamiltonian_ideal.shape[0]):
+    #     boltzmann_factors[count] = np.exp(-(sc.Planck * energies_ideal[count])/ (sc.Boltzmann * param.temperature))
+    # density_mat = (1/np.sum(boltzmann_factors)) * np.diagflat(boltzmann_factors)
 
     return density_mat
 
