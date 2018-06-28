@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import dynamics as dynamics
+import solid_effect as solid_effect
 import time
 import parameters as param
 import plotting
@@ -8,12 +8,12 @@ from shutil import copyfile
 import os
 
 """ Call dynamics function as required, saving output to disk.
-    Powder averaging, and effect of microwave amplitude can be simulated.
+    Effect of microwave amplitude on nuclear enhancement can be simulated.
 """
 
 # Pre-allocate arrays
-pol_nuc = np.zeros((param.microwave_amplitude.size, int(param.nrot)))
-pol_elec = np.zeros((param.microwave_amplitude.size, int(param.nrot)))
+pol_nuc = np.zeros((param.microwave_amplitude.size, int(param.num_timesteps_prop)))
+pol_elec = np.zeros((param.microwave_amplitude.size, int(param.num_timesteps_prop)))
 
 # Start timer
 start = time.time()
@@ -21,7 +21,7 @@ start = time.time()
 # Calculate system dynamics, looping over microwave amplitude array
 for count in range(0, param.microwave_amplitude.size):
 
-    pol_nuc[count], pol_elec[count] = dynamics.dynamics(param.microwave_amplitude[count])
+    pol_nuc[count], pol_elec[count] = solid_effect.dynamics(param.microwave_amplitude[count])
 
     print('{}{:d}{}{:d}{}{:.0f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
                                           ', total elapsed time ', np.round(time.time() - start), ' s.'))
