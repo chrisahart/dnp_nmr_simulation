@@ -21,10 +21,10 @@ start = time.time()
 # Calculate system dynamics, looping over microwave amplitude array
 for count in range(0, param.microwave_amplitude.size):
 
-    pol_nuc[count], pol_elec[count] = solid_effect.dynamics(param.microwave_amplitude[count])
+    pol_nuc[count], pol_elec[count], pol_i_z_rot, pol_s_z_rot, energies = solid_effect.dynamics(param.microwave_amplitude[count])
 
-    print('{}{:d}{}{:d}{}{:.0f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
-                                          ', total elapsed time ', np.round(time.time() - start), ' s.'))
+    print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
+                                          ', total elapsed time ', (time.time() - start), ' s.'))
 # End timer
 end = time.time()
 
@@ -36,6 +36,11 @@ if not os.path.exists(directory):
 # Save data and copy parameters file
 np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
 np.savetxt('{}{}'.format(directory, '/pol_elec.csv'), pol_elec, fmt='%.8f', newline='\n')
+
+np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.8f', newline='\n')
+np.savetxt('{}{}'.format(directory, '/pol_s_z_rot.csv'), pol_s_z_rot, fmt='%.8f', newline='\n')
+np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.8f', newline='\n')
+
 copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
 
 # Plot data using plotting function

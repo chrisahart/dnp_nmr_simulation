@@ -1,4 +1,4 @@
-function[iznew,sznew,ps0,pi0,evalgham]=dynamics(a,b,g,nr,final_time,mw_pwr,wme,t1e,t1n)
+function[iznew,sznew,iz_rot,sz_rot,evalgham]=dynamics(a,b,g,nr,final_time,mw_pwr,wme,t1e,t1n)
 
 %%% Spin matrices (easyspin libriary)
 spins = [1/2 1/2]; % S=1/2, I=1/2 system
@@ -219,33 +219,16 @@ for jj=1:nrot
     iznew(jj)=trace(real(rho0t)*Iz);
     sznew(jj)=trace(real(rho0t)*Sz);
     Lrho0t=reshape(rho0t,[16,1]);
-
-%     disp('sznew(jj)')
-%     disp(sznew(jj))
-%     
-%     disp('iznew(jj)')
-%     disp(iznew(jj))
-%     
-%         disp('disp(Lrho0t)')
-%     disp(size(Lrho0t))
-%     disp(Lrho0t)
-    
     rho0t=prop_accu*Lrho0t;
-    
-%     disp('prop_accu')
-%     disp(size(prop_accu))
-%     disp(prop_accu(1, 1))
-%     disp(prop_accu)
-    
-%     disp('rho0t')
-%     disp(size(rho0t))
-%     disp(rho0t)
-    
     rho0t=reshape(rho0t,[4,4]);
-%     disp('rho0t')
-%     disp(size(rho0t))
-%     disp(rho0t)
-    
+end
+
+for ii=1:nsteps
+        iz_rot(ii)=trace(rho0t*Iz); 
+        sz_rot(ii)=trace(rho0t*Sz);
+        Lrho0t=reshape(rho0t,[16,1]);
+        rho0t=squeeze(prop(:,:,ii))*Lrho0t;
+        rho0t=reshape(rho0t,[4,4]); 
 end
 
 end

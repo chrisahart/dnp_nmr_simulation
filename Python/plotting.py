@@ -69,6 +69,31 @@ def plot_all(directory):
         fig_pol_nuc.tight_layout()
         fig_pol_nuc.savefig('{}{}'.format(directory, '/fig_pol_nuc.png'), dpi=save_dpi, bbox_inches='tight')
 
+    # Test if sub rotor dynamics files present
+    pol_nuc_rotor = np.loadtxt('{}{}'.format(directory, '/pol_i_z_rot.csv'))
+    pol_elec_rotor = np.loadtxt('{}{}'.format(directory, '/pol_s_z_rot.csv'))
+    energy_rotor = np.loadtxt('{}{}'.format(directory, '/energies.csv'))
+
+    rotor_time_array = np.linspace(0, pol_nuc_rotor.shape[0] - 1, num=pol_nuc_rotor.shape[0])
+    nuclear_pol = abs(pol_nuc_rotor)/abs(pol_nuc_rotor[0])
+    electron_pol = abs(pol_elec_rotor) / abs(pol_elec_rotor[0])
+
+    # Plot sub rotor dynamics if files present
+    subfig_fig, (subfig_x1, subfig_x2, subfig_x3) = plt.subplots(3)
+    subfig_x1.plot(rotor_time_array, nuclear_pol, 'b')
+    subfig_x1.set_ylabel('Nuc. pol. / thermal')
+
+    subfig_x2.plot(rotor_time_array, electron_pol, 'r')
+    subfig_x2.set_ylabel('Elec. pol. / thermal')
+
+    subfig_x3.plot(rotor_time_array, energy_rotor[:, 0], 'k')
+    subfig_x3.plot(rotor_time_array, energy_rotor[:, 1], 'r')
+    subfig_x3.plot(rotor_time_array, energy_rotor[:, 2], 'g')
+    subfig_x3.plot(rotor_time_array, energy_rotor[:, 3], 'b')
+    subfig_x3.set_xlabel('Time (s)')
+    subfig_x3.set_xlabel('Energy')
+    subfig_fig.savefig('{}{}'.format(directory, '/rotor_dynamics.png'), dpi=save_dpi, bbox_inches='tight')
+
     print('Finished plotting.')
 
 

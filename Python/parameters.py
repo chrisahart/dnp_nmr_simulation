@@ -22,7 +22,7 @@ microwave_amplitude = np.arange(1, 10, 5) * 1E6                    # Microwave f
 
 # System variables
 num_spins = 2                                                       # Number of spins
-time_step_num = 1E4                                                 # Number of timesteps within rotor period
+time_step_num = int(1E4)                                            # Number of timesteps within rotor period
 time_step = (1 / freq_rotor) / time_step_num                        # Value of timestep within rotor period
 num_periods = 40                                                    # Number of rotor periods to propagate system
 num_timesteps_prop = int(np.round(num_periods * freq_rotor))        # Number of timesteps to propagate system
