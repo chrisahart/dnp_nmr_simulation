@@ -28,17 +28,17 @@ for count in range(0, param.microwave_amplitude.size):
 # End timer
 end = time.time()
 
-# # Dynamically assign and create output directory
-# directory = '{}{}'.format('out/solid_effect/microwave_', str(int(param.microwave_amplitude[-1]/1E6)))
-# if not os.path.exists(directory):
-#     os.makedirs(directory)
-#
-# # Save data and copy parameters file
-# np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
-# np.savetxt('{}{}'.format(directory, '/pol_elec.csv'), pol_elec, fmt='%.8f', newline='\n')
-# copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
-#
-# # Plot data using plotting function
-# if __name__ == "__main__":
-#     plotting.plot_all(directory)
-#     plt.show()
+# Dynamically assign and create output directory
+directory = '{}{}'.format('out/solid_effect/microwave_', str(int(param.microwave_amplitude[-1]/1E6)))
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+# Save data and copy parameters file
+np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
+np.savetxt('{}{}'.format(directory, '/pol_elec.csv'), pol_elec, fmt='%.8f', newline='\n')
+copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
+
+# Plot data using plotting function
+if __name__ == "__main__":
+    plotting.plot_all(directory)
+    plt.show()

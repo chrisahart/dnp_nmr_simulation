@@ -23,5 +23,5 @@ spin2_i_y = np.kron(np.identity(2), spin1_y)
 spin2_i_z = np.kron(np.identity(2), spin1_z)
 spin2_i_p = spin2_i_x + 1j * spin2_i_y
 spin2_i_m = spin2_i_x - 1j * spin2_i_y
-spin2_all = [spin2_s_x, spin2_s_y, spin2_s_z, spin2_s_p, spin2_s_m,
-             spin2_i_x, spin2_i_y, spin2_i_z, spin2_i_p, spin2_i_m]
+spin2_all = [spin2_s_z, spin2_s_p, spin2_s_m,
+             spin2_i_z, spin2_i_p, spin2_i_m]

@@ -30,8 +30,12 @@ def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamilto
         total_hamiltonian = np.diagflat(energies[count]) + microwave_hamiltonian
 
         # Transform Hilbert space Hamiltonian into Liouville space
+
         hamiltonian_liouville = np.kron(total_hamiltonian, np.eye(4)) - np.kron(np.eye(4),
                                                                                 np.transpose(total_hamiltonian))
+
+        # hamiltonian_liouville = kron_a_n(total_hamiltonian, 2 ** param.num_spins) - \
+        #                         kron_n_a(2 ** param.num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
         relax_mat = relaxation_mat(eigvectors[count], eigvectors_inv[count],
@@ -147,5 +151,14 @@ def kron_a_n(A, N):  # Simulates np.kron(A, np.eye(N))
     out = np.zeros((m,N,n,N),dtype=A.dtype)
     r = np.arange(N)
     out[:,r,:,r] = A
+    out.shape = (m*N,n*N)
+    return out
+
+
+def kron_n_a(N, A):  # Simulates np.kron(np.eye(N), A)
+    m,n = A.shape
+    out = np.zeros((N,m,N,n),dtype=A.dtype)
+    r = np.arange(N)
+    out[r,:,r,:] = A
     out.shape = (m*N,n*N)
     return out

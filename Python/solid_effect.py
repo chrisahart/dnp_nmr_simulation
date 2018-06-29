@@ -99,8 +99,7 @@ def relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
     """
 
     # Transform spin matrices into time dependent Hilbert space basis
-    spin2_s_x_t, spin2_s_y_t, spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, \
-        spin2_i_x_t, spin2_i_y_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t = \
+    spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t = \
             fn.basis_transform(eigvectors, eigvectors_inv, sp.spin2_all)
 
     # fn.kron_a_n(spin2_i_z_t, 2 ** param.num_spins)
@@ -128,3 +127,40 @@ def relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
     relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
 
     return relax_mat
+
+# def relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
+#     """ Calculate time dependent Liouville space relaxation matrix.
+#     """
+#
+#     identity_mat = 0.5 * np.eye(4 ** param.num_spins)
+#
+#     # Transform spin matrices into time dependent Hilbert space basis
+#     spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t = \
+#             fn.basis_transform(eigvectors, eigvectors_inv, sp.spin2_all)
+#
+#     # Transform spin matrices into time dependent Liouville space basis
+#     spin2_i_p_tl = np.kron(spin2_i_p_t, np.transpose(spin2_i_m_t)) - identity_mat + 0.5 * (
+#         fn.kron_a_n(spin2_i_z_t, 2 ** param.num_spins) +
+#         fn.kron_n_a(2 ** param.num_spins, np.transpose(spin2_i_z_t)))
+#
+#     spin2_i_m_tl = np.kron(spin2_i_m_t, np.transpose(spin2_i_p_t)) - identity_mat - 0.5 * (
+#         fn.kron_a_n(spin2_i_z_t, 2 ** param.num_spins) +
+#         fn.kron_n_a(2 ** param.num_spins, np.transpose(spin2_i_z_t)))
+#
+#     spin2_s_p_tl = np.kron(spin2_s_p_t, np.transpose(spin2_s_m_t)) - identity_mat + 0.5 * (
+#         fn.kron_a_n(spin2_s_z_t, 2 ** param.num_spins) +
+#         fn.kron_n_a(2 ** param.num_spins, np.transpose(spin2_s_z_t)))
+#
+#     spin2_s_m_tl = np.kron(spin2_s_m_t, np.transpose(spin2_s_p_t)) - identity_mat - 0.5 * (
+#         fn.kron_a_n(spin2_s_z_t, 2 ** param.num_spins) +
+#         fn.kron_n_a(2 ** param.num_spins, np.transpose(spin2_s_z_t)))
+#
+#     # Calculate relaxation matrices
+#     relax_t2_elec = (1 / param.t2_elec) * \
+#                     (np.kron(spin2_s_z_t, np.transpose(spin2_s_z_t)) - identity_mat)
+#     relax_t2_nuc = (1 / param.t2_nuc) * \
+#                    (np.kron(spin2_i_z_t, np.transpose(spin2_i_z_t)) - identity_mat)
+#     relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
+#     relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
+#
+#     return relax_mat
