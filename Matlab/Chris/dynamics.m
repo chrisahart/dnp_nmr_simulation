@@ -7,9 +7,9 @@ Sz=sop(spins,'ze');
 Iz=sop(spins,'ez');
 Ix=sop(spins,'ex');
 Iy=sop(spins,'ey');
+IxSz=sop(spins,'zx');
+IySz=sop(spins,'zy');
 IzSz=sop(spins,'zz');
-IpSz=sop(spins,'z+');
-ImSz=sop(spins,'z-');
 Sp=sop(spins,'+e');
 Sm=sop(spins,'-e');
 Ip=sop(spins,'e+');
@@ -28,11 +28,8 @@ nsteps = 10000; % Number of timesteps (absolute)
 trstep = tr/nsteps; % Value of timestep (changes with rotor period)
 tarray=0:trstep:tr; % Time array
 hzz_max=3e6; % Hyperfine coupling
-beta_en=b; % G-tensors
-gamma_en=g; % G-tensors
-alpha_g=a;  % G-tensors
-beta_g=b;  % G-tensors
-gamma_g=g;  % G-tensors
+beta_en=0;
+gamma_en=0;
 hbar=1.054e-34; % Reduced planck
 planck=hbar*2*pi; % planck
 kb=1.3806e-23; % Boltzmann
@@ -55,9 +52,13 @@ gep=0.5*(1-p_e)*(1/(1*t1e));
 gem=0.5*(1+p_e)*(1/(1*t1e));
 
 %%% G-anisotropy
-gx=we*(2.00614/2)+18.76e6;
-gy=we*(2.00194/2)+92.4e6;
-gz=we*(2.00988/2)+18.2e6;
+alpha_g=253.6;
+beta_g=105.1;
+gamma_g=123.8;
+
+gx=we*(2.00614/2);
+gy=we*(2.00194/2);
+gz=we*(2.00988/2);
 
 ca = cosd(alpha_g);
 cb = cosd(beta_g);
@@ -84,20 +85,16 @@ c4 = 2/3*(gx*r11*r21+gy*r22*r12+gz*r13*r23);
 %%% Hamiltonian
 hamil=zeros(2^nsp,2^nsp,nsteps);
 
-for ii = 0:10000-1 % nsteps = 10000, starting from zero
+for ii = 0:length(tarray)-2
     hhyp_zz=hzz_max*(-0.5*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+...
-        sqrt(2)*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en))*2*IzSz;
-    
-%     hhyp_zz = hzz_max * (-0.5*(sind(beta_en)^2)) * IzSz;
-    
+        sqrt(2)*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en))*IzSz;
     hhyp_zx=hzz_max*(-0.5*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en)-...
-        (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*(IpSz+ImSz);
-    
-%     hhyp_zx = hzz_max * (IpSz+ImSz);
-    
-    hhyp1=1*(hhyp_zz+hhyp_zx);
+        (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*IxSz;
+    hhyp_zy=hzz_max*((sqrt(6)/4)*(sind(beta_en)^2)*sind(2*(360*wr*ii*trstep+gamma_en))-...
+        (sqrt(3)/2)*sind(beta_en)*cosd(beta_en)*sind(1*(360*wr*ii*trstep+gamma_en)))*IySz;
+    hhyp=2*(hhyp_zz+hhyp_zx+0*hhyp_zy);
     ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+c2*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
-    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp1;
+    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp;
 end
 
 % Density matrix
@@ -222,6 +219,8 @@ for jj=1:nrot
     rho0t=prop_accu*Lrho0t;
     rho0t=reshape(rho0t,[4,4]);
 end
+
+rho0t=rho_zeeman;
 
 for ii=1:nsteps
         iz_rot(ii)=trace(rho0t*Iz); 

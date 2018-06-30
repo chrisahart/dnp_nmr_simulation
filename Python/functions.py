@@ -81,9 +81,9 @@ def anisotropy_coefficients(angles):
     """ Calculate time independent coefficients for electron g-anisotropy.
     """
 
-    gx = param.electron_frequency * param.gtensor[0] + param.nitrogen_coupling[0]
-    gy = param.electron_frequency * param.gtensor[1] + param.nitrogen_coupling[1]
-    gz = param.electron_frequency * param.gtensor[2] + param.nitrogen_coupling[2]
+    gx = param.electron_frequency * param.gtensor[0] #+ param.nitrogen_coupling[0]
+    gy = param.electron_frequency * param.gtensor[1] #+ param.nitrogen_coupling[1]
+    gz = param.electron_frequency * param.gtensor[2] #+ param.nitrogen_coupling[2]
 
     ca = np.cos(angles[0])
     cb = np.cos(angles[1])

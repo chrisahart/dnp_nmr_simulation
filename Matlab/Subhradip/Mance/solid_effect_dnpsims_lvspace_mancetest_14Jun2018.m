@@ -118,13 +118,6 @@ ps0=trace(rho_zeeman*Sz);
 pi0=trace(rho_zeeman*Iz);
 p0=pi0+ps0;  %%% Total polarisation for plotting !!!
 
-%  Rcorre=[sum((planck/(2*kb*T))*we*(kron(Szt,eye(4))-kron(eye(4),Szt.')),2) zeros(16,15)];
-%      Rcorrn=[sum((planck/(2*kb*T))*wn*(kron(Izt,eye(4))-kron(eye(4),Izt.')),2) zeros(16,15)];
-%      Rcorr=Rcorre-0*Rcorrn;
-%      Rcorr(:,2:end)=0;
-%      Rcorr(1,1:end)=0;
-% 
-
 [evecham,evalgham]=eigenshuffle_wmw(hamil); %%% Sort the eigenvalues
 iznew=zeros(1,length(tarray)); 
 sznew=iznew;
@@ -236,9 +229,9 @@ xrot=(0+trstep/2:trstep:tr-trstep/2).*1e6;
 
 figure;
 subplot(3,1,1)
-plot(xrot,real(iz_rot/pi0));ylabel('P_i/P_{i0}')
+plot(xrot,real(iz_rot/iz_rot(1)));ylabel('P_i/P_{i0}')
 subplot(3,1,2)
-plot(xrot,real(sz_rot/ps0));ylabel('P_s/P_{s0}')
+plot(xrot,real(sz_rot/sz_rot(1)));ylabel('P_s/P_{s0}')
 subplot(3,1,3)
 plot(xrot,evalgham.');ylabel('Energy')
 xlabel('Time(\mus)')

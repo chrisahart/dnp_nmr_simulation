@@ -38,14 +38,13 @@ def dynamics(microwave_amplitude):
     for count in range(0, int(param.time_step_num)):
         propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
 
-    # Propagate density matrix, calculating polarisations
-    pol_i_z, pol_s_z = calculate_polarisation(density_mat, propagator_strobe)
+    # Propagate density matrix stroboscopically, calculating polarisations
+    pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe)
 
     pol_i_z_rot = np.zeros(param.time_step_num)
     pol_s_z_rot = np.zeros(param.time_step_num)
 
     for count in range(0, param.time_step_num):
-
         # Calculate electronic and nuclear polarisation
         pol_i_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_i_z))
         pol_s_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_s_z))
@@ -58,6 +57,9 @@ def dynamics(microwave_amplitude):
 
         # Transform density matrix (4^N x 1 to 2^N x 2^N)
         density_mat = np.reshape(density_mat, [2 ** param.num_spins, 2 ** param.num_spins])
+
+    # Propagate density matrix for single rotor period, calculating polarisations
+    # pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator)
 
     return pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies
 
@@ -88,7 +90,7 @@ def calculate_hamiltonian():
     return hamiltonian
 
 
-def calculate_polarisation(density_mat, propagator_strobe):
+def calculate_polarisation_rotor(density_mat, propagator_strobe):
 
     pol_i_z = np.zeros(param.num_timesteps_prop)
     pol_s_z = np.zeros(param.num_timesteps_prop)
@@ -102,13 +104,33 @@ def calculate_polarisation(density_mat, propagator_strobe):
         # Transform density matrix (2^N x 2^N to 4^N x 1)
         density_mat_liouville = np.reshape(density_mat, [4 ** param.num_spins, 1])
 
-        # Propagate density matrix
-        density_mat = np.matmul(propagator_strobe, density_mat_liouville)
-
         # Transform density matrix (4^N x 1 to 2^N x 2^N)
         density_mat = np.reshape(density_mat, [2 ** param.num_spins, 2 ** param.num_spins])
 
     return pol_i_z, pol_s_z
+
+
+def calculate_polarisation_sub_rotor(density_mat, propagator):
+
+    pol_i_z_rot = np.zeros(param.time_step_num)
+    pol_s_z_rot = np.zeros(param.time_step_num)
+
+    for count in range(0, param.time_step_num):
+
+        # Calculate electronic and nuclear polarisation
+        pol_i_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_i_z))
+        pol_s_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_s_z))
+
+        # Transform density matrix (2^N x 2^N to 4^N x 1)
+        density_mat_liouville = np.reshape(density_mat, [4 ** param.num_spins, 1])
+
+        # Propagate density matrix
+        density_mat = np.matmul(propagator[count, :], density_mat_liouville)
+
+        # Transform density matrix (4^N x 1 to 2^N x 2^N)
+        density_mat = np.reshape(density_mat, [2 ** param.num_spins, 2 ** param.num_spins])
+
+    return pol_i_z_rot, pol_s_z_rot
 
 
 def relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
