@@ -5,10 +5,54 @@ from scipy import constants as sc
 import spin_matrices as sp
 import functions as fn
 import time
+import solid_effect_plotting
+from shutil import copyfile
+import os
+import matplotlib.pyplot as plt
+
+
+def main():
+    """ Loop over dynamics function as required, writing output to disk and calling plotting function.
+    """
+
+    # Pre-allocate arrays
+    pol_nuc = np.zeros((param.microwave_amplitude.size, int(param.num_timesteps_prop)))
+    pol_elec = np.zeros((param.microwave_amplitude.size, int(param.num_timesteps_prop)))
+
+    # Start timer
+    start = time.time()
+
+    # Calculate system dynamics, looping over microwave amplitude array
+    for count in range(0, param.microwave_amplitude.size):
+        pol_nuc[count], pol_elec[count], pol_i_z_rot, pol_s_z_rot, energies = \
+            dynamics(param.microwave_amplitude[count])
+
+        print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
+                                              ', total elapsed time ', (time.time() - start), ' s.'))
+
+    # Dynamically assign and create output directory
+    directory = '{}{:.2f}'.format('out/solid_effect/mw_', param.microwave_amplitude[-1] / 1E6)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # Save data and copy parameters file
+    np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_elec.csv'), pol_elec, fmt='%.8f', newline='\n')
+
+    # High precision required for sub rotor dynamics (negligible change in file size)
+    np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_s_z_rot.csv'), pol_s_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
+
+    # Create a copy of parameters file
+    copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
+
+    # Call plotting function
+    solid_effect_plotting.plot_all(directory)
 
 
 def dynamics(microwave_amplitude):
-    """ Solid effect dynamics for an e-n system.
+    """ Calculate dynamics of e-n system, calling required functions.
     """
 
     # Pre-allocate arrays
@@ -34,6 +78,9 @@ def dynamics(microwave_amplitude):
     propagator = fn.liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamiltonian_init,
                                          relaxation_mat)
 
+    # Propagate density matrix for single rotor period, calculating polarisations
+    pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator)
+
     # Calculate stroboscopic propagator (product of all operators within rotor period)
     for count in range(0, int(param.time_step_num)):
         propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
@@ -41,30 +88,12 @@ def dynamics(microwave_amplitude):
     # Propagate density matrix stroboscopically, calculating polarisations
     pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe)
 
-    pol_i_z_rot = np.zeros(param.time_step_num)
-    pol_s_z_rot = np.zeros(param.time_step_num)
-
-    for count in range(0, param.time_step_num):
-        # Calculate electronic and nuclear polarisation
-        pol_i_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_i_z))
-        pol_s_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_s_z))
-
-        # Transform density matrix (2^N x 2^N to 4^N x 1)
-        density_mat_liouville = np.reshape(density_mat, [4 ** param.num_spins, 1])
-
-        # Propagate density matrix
-        density_mat = np.matmul(propagator[count, :], density_mat_liouville)
-
-        # Transform density matrix (4^N x 1 to 2^N x 2^N)
-        density_mat = np.reshape(density_mat, [2 ** param.num_spins, 2 ** param.num_spins])
-
-    # Propagate density matrix for single rotor period, calculating polarisations
-    # pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator)
-
     return pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies
 
 
 def calculate_hamiltonian():
+    """ Calculate Hamiltonian of e-n system.
+    """
 
     # Pre-allocate hamiltonian
     hamiltonian = np.zeros((int(param.time_step_num), 2 ** param.num_spins, 2 ** param.num_spins,), dtype=np.complex)
@@ -91,6 +120,8 @@ def calculate_hamiltonian():
 
 
 def calculate_polarisation_rotor(density_mat, propagator_strobe):
+    """ Calculate polarisation across multiple rotor periods.
+    """
 
     pol_i_z = np.zeros(param.num_timesteps_prop)
     pol_s_z = np.zeros(param.num_timesteps_prop)
@@ -104,6 +135,8 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe):
         # Transform density matrix (2^N x 2^N to 4^N x 1)
         density_mat_liouville = np.reshape(density_mat, [4 ** param.num_spins, 1])
 
+        density_mat = np.matmul(propagator_strobe, density_mat_liouville)
+
         # Transform density matrix (4^N x 1 to 2^N x 2^N)
         density_mat = np.reshape(density_mat, [2 ** param.num_spins, 2 ** param.num_spins])
 
@@ -111,6 +144,8 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe):
 
 
 def calculate_polarisation_sub_rotor(density_mat, propagator):
+    """ Calculate polarisation across single rotor period.
+    """
 
     pol_i_z_rot = np.zeros(param.time_step_num)
     pol_s_z_rot = np.zeros(param.time_step_num)
@@ -133,7 +168,7 @@ def calculate_polarisation_sub_rotor(density_mat, propagator):
     return pol_i_z_rot, pol_s_z_rot
 
 
-def relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
+def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
     """ Calculate time dependent Liouville space relaxation matrix.
     """
 
@@ -167,3 +202,9 @@ def relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
     relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
 
     return relax_mat
+
+
+if __name__ == "__main__":
+    main()
+    print('End of program.')
+    plt.show()

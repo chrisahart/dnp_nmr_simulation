@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import solid_effect as solid_effect
+import solid_effect
 import time
 import parameters as param
-import plotting
+import solid_effect_plotting
 from shutil import copyfile
 import os
 
@@ -21,7 +21,8 @@ start = time.time()
 # Calculate system dynamics, looping over microwave amplitude array
 for count in range(0, param.microwave_amplitude.size):
 
-    pol_nuc[count], pol_elec[count], pol_i_z_rot, pol_s_z_rot, energies = solid_effect.dynamics(param.microwave_amplitude[count])
+    pol_nuc[count], pol_elec[count], pol_i_z_rot, pol_s_z_rot, energies = \
+        solid_effect.dynamics(param.microwave_amplitude[count])
 
     print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
                                           ', total elapsed time ', (time.time() - start), ' s.'))
@@ -29,7 +30,7 @@ for count in range(0, param.microwave_amplitude.size):
 end = time.time()
 
 # Dynamically assign and create output directory
-directory = '{}{}'.format('out/solid_effect/microwave_', str(int(param.microwave_amplitude[-1]/1E6)))
+directory = '{}{:.2f}'.format('out/solid_effect/mw_', param.microwave_amplitude[-1]/1E6)
 if not os.path.exists(directory):
     os.makedirs(directory)
 
@@ -37,13 +38,15 @@ if not os.path.exists(directory):
 np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
 np.savetxt('{}{}'.format(directory, '/pol_elec.csv'), pol_elec, fmt='%.8f', newline='\n')
 
-np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.8f', newline='\n')
-np.savetxt('{}{}'.format(directory, '/pol_s_z_rot.csv'), pol_s_z_rot, fmt='%.8f', newline='\n')
-np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.8f', newline='\n')
+# High precision required for sub rotor dynamics (negligible change in file size)
+np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
+np.savetxt('{}{}'.format(directory, '/pol_s_z_rot.csv'), pol_s_z_rot, fmt='%.12f', newline='\n')
+np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
 
 copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
 
 # Plot data using plotting function
 if __name__ == "__main__":
-    plotting.plot_all(directory)
+    solid_effect_plotting.plot_all(directory)
+    print('End of program.')
     plt.show()

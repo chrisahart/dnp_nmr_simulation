@@ -5,7 +5,7 @@ from scipy import constants as sc
 from scipy import linalg as la
 
 
-def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamiltonian_init, relaxation_mat):
+def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamiltonian_init, calculate_relaxation_mat):
     """ Calculate Liouville space propagator.
      """
 
@@ -26,8 +26,6 @@ def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamilto
         microwave_hamiltonian = np.matmul(eigvectors_inv[count], np.matmul(microwave_hamiltonian_init,
                                                                            eigvectors[count]))
 
-        # print('eigvectors[count]', eigvectors[count])
-
         # Calculate total Hamiltonian
         total_hamiltonian = np.diag(energies[count]) + microwave_hamiltonian
 
@@ -36,7 +34,7 @@ def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamilto
                                 kron_n_a(2 ** param.num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
-        relax_mat = relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem)
+        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem)
 
         # Calculate Liouville space eigenvectors
         eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
@@ -81,9 +79,9 @@ def anisotropy_coefficients(angles):
     """ Calculate time independent coefficients for electron g-anisotropy.
     """
 
-    gx = param.electron_frequency * param.gtensor[0] #+ param.nitrogen_coupling[0]
-    gy = param.electron_frequency * param.gtensor[1] #+ param.nitrogen_coupling[1]
-    gz = param.electron_frequency * param.gtensor[2] #+ param.nitrogen_coupling[2]
+    gx = param.electron_frequency * param.gtensor[0]
+    gy = param.electron_frequency * param.gtensor[1]
+    gz = param.electron_frequency * param.gtensor[2]
 
     ca = np.cos(angles[0])
     cb = np.cos(angles[1])

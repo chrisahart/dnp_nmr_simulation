@@ -7,9 +7,9 @@ Sz=sop(spins,'ze');
 Iz=sop(spins,'ez');
 Ix=sop(spins,'ex');
 Iy=sop(spins,'ey');
-IxSz=sop(spins,'zx');
-IySz=sop(spins,'zy');
 IzSz=sop(spins,'zz');
+IpSz=sop(spins,'z+');
+ImSz=sop(spins,'z-');
 Sp=sop(spins,'+e');
 Sm=sop(spins,'-e');
 Ip=sop(spins,'e+');
@@ -51,14 +51,59 @@ gnm=0.5*(1+p_n)*(1/(1*t1n));
 gep=0.5*(1-p_e)*(1/(1*t1e));
 gem=0.5*(1+p_e)*(1/(1*t1e));
 
+% %%% G-anisotropy
+% alpha_g=253.6;
+% beta_g=105.1;
+% gamma_g=123.8;
+% 
+% gx=we*(2.00614/2);
+% gy=we*(2.00194/2);
+% gz=we*(2.00988/2);
+% 
+% ca = cosd(alpha_g);
+% cb = cosd(beta_g);
+% cg = cosd(gamma_g);
+% sa = sind(alpha_g);
+% sb = sind(beta_g);
+% sg = sind(gamma_g);
+% 
+% r11 = ca*cb*cg-sa*sg;
+% r12 = sa*cb*cg+ca*sg;
+% r13 = -sb*cg;
+% r21 = -ca*cb*sg-sa*cg;
+% r22 = -sa*cb*sg+ca*cg;
+% r23 = sb*sg;
+% r31 = ca*sb;
+% r32 = sa*sb;
+% r33 = cb;
+% c0 = 1/3*(gx+gy+gz);
+% c1 = 2*sqrt(2)/3*(gx*r11*r31+gy*r12*r32+gz*r13*r33);
+% c2 = 2*sqrt(2)/3*(gx*r21*r31+gy*r22*r32+gz*r23*r33);
+% c3 = 1/3*(gx*(r11^2-r21^2)+gy*(r12^2-r22^2)+gz*(r13^2-r23^2));
+% c4 = 2/3*(gx*r11*r21+gy*r22*r12+gz*r13*r23);
+% 
+% %%% Hamiltonian
+% hamil=zeros(2^nsp,2^nsp,nsteps);
+% 
+% for ii = 0:length(tarray)-2
+%     hhyp_zz=hzz_max*(-0.5*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+...
+%         sqrt(2)*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en))*IzSz;
+%     hhyp_zx=hzz_max*(-0.5*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en)-...
+%         (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*IxSz;
+% %     hhyp_zy=hzz_max*((sqrt(6)/4)*(sind(beta_en)^2)*sind(2*(360*wr*ii*trstep+gamma_en))-...
+% %         (sqrt(3)/2)*sind(beta_en)*cosd(beta_en)*sind(1*(360*wr*ii*trstep+gamma_en)))*IySz;
+%     hhyp=2*(hhyp_zz+hhyp_zx+0*hhyp_zy);
+%     ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+c2*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
+%     hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp;
+% end
+
 %%% G-anisotropy
 alpha_g=253.6;
 beta_g=105.1;
 gamma_g=123.8;
-
-gx=we*(2.00614/2);
-gy=we*(2.00194/2);
-gz=we*(2.00988/2);
+gx=we*(2.00614/2);%+18.76e6;
+gy=we*(2.00194/2);%+92.4e6;
+gz=we*(2.00988/2);%+18.2e6;
 
 ca = cosd(alpha_g);
 cb = cosd(beta_g);
@@ -85,16 +130,20 @@ c4 = 2/3*(gx*r11*r21+gy*r22*r12+gz*r13*r23);
 %%% Hamiltonian
 hamil=zeros(2^nsp,2^nsp,nsteps);
 
-for ii = 0:length(tarray)-2
+for ii = 0:10000-1 % nsteps = 10000, starting from zero
     hhyp_zz=hzz_max*(-0.5*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+...
-        sqrt(2)*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en))*IzSz;
+        sqrt(2)*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en))*2*IzSz;
+    
+%     hhyp_zz = hzz_max * (-0.5*(sind(beta_en)^2)) * IzSz;
+    
     hhyp_zx=hzz_max*(-0.5*sind(beta_en)*cosd(beta_en)*cosd(360*wr*ii*trstep+gamma_en)-...
-        (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*IxSz;
-    hhyp_zy=hzz_max*((sqrt(6)/4)*(sind(beta_en)^2)*sind(2*(360*wr*ii*trstep+gamma_en))-...
-        (sqrt(3)/2)*sind(beta_en)*cosd(beta_en)*sind(1*(360*wr*ii*trstep+gamma_en)))*IySz;
-    hhyp=2*(hhyp_zz+hhyp_zx+0*hhyp_zy);
+        (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*(IpSz+ImSz);
+    
+%     hhyp_zx = hzz_max * (IpSz+ImSz);
+    
+    hhyp1=1*(hhyp_zz+hhyp_zx);
     ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+c2*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
-    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp;
+    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp1;
 end
 
 % Density matrix
