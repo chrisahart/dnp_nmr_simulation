@@ -31,7 +31,7 @@ def main():
                                               ', total elapsed time ', (time.time() - start), ' s.'))
 
     # Dynamically assign and create output directory
-    directory = '{}{:.2f}'.format('out/solid_effect/mw_', param.microwave_amplitude[-1] / 1E6)
+    directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -48,7 +48,7 @@ def main():
     copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
 
     # Call plotting function
-    solid_effect_plotting.plot_all(directory)
+    # solid_effect_plotting.plot_all(directory)
 
 
 def dynamics(microwave_amplitude):
@@ -58,27 +58,13 @@ def dynamics(microwave_amplitude):
     # Pre-allocate arrays
     propagator_strobe = np.eye(4 ** 2)
 
-    # Pre-compute spin matrices to avoid re-evaluation Kronecker products
-    spin2_s_x = sp.spin2_s_x
-    spin2_s_z = sp.spin2_s_z
-    spin2_s_p = sp.spin2_s_p
-    spin2_s_m = sp.spin2_s_m
-
-    # Pre-compute spin matrices to avoid re-evaluation Kronecker products
-    spin2_i_x = sp.spin2_i_x
-    spin2_i_z = sp.spin2_i_z
-    spin2_i_p = sp.spin2_i_p
-    spin2_i_m = sp.spin2_i_m
-    spin2_all = [spin2_s_z, spin2_s_p, spin2_s_m,
-                 spin2_i_z, spin2_i_p, spin2_i_m]
-
     # Calculate thermal density matrix from idealised Hamiltonian
-    hamiltonian_ideal = param.electron_frequency * spin2_s_z + \
-                        param.freq_nuclear_1 * spin2_i_z
+    hamiltonian_ideal = param.electron_frequency * sp.spin2_s_z + \
+                        param.freq_nuclear_1 * sp.spin2_i_z
     density_mat = fn.density_mat_thermal(hamiltonian_ideal)
 
     # Construct intrinsic Hilbert space Hamiltonian
-    hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    hamiltonian = calculate_hamiltonian()
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
@@ -86,26 +72,26 @@ def dynamics(microwave_amplitude):
     eigvectors_inv = np.linalg.inv(eigvectors)
 
     # Calculate microwave Hamiltonian
-    microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
+    microwave_hamiltonian_init = microwave_amplitude * sp.spin2_s_x
 
     # Calculate Liouville space propagator with relaxation
     propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
-                                         microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all)
+                                         microwave_hamiltonian_init, calculate_relaxation_mat)
 
     # Propagate density matrix for single rotor period, calculating polarisations
-    pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i_z)
+    pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator)
 
     # Calculate stroboscopic propagator (product of all operators within rotor period)
     for count in range(0, int(param.time_step_num)):
         propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
 
     # Propagate density matrix stroboscopically, calculating polarisations
-    pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin2_i_z)
+    pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe)
 
     return pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies
 
 
-def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
+def calculate_hamiltonian():
     """ Calculate Hamiltonian of e-n system.
     """
 
@@ -119,21 +105,21 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
 
         # Calculate time dependent hyperfine
         hyperfine_zz, hyperfine_zx = fn.hyperfine(param.hyperfine_angles_1, count * param.time_step)
-        hyperfine_total = hyperfine_zz * np.matmul(spin2_i_z, spin2_s_z) + \
-                          hyperfine_zx * np.matmul(spin2_i_x, spin2_s_z)
+        hyperfine_total = hyperfine_zz * np.matmul(sp.spin2_i_z, sp.spin2_s_z) + \
+                          hyperfine_zx * np.matmul(sp.spin2_i_x, sp.spin2_s_z)
 
         # Calculate time dependent electron g-anisotropy
         ganisotropy = fn.anisotropy(c0, c1, c2, c3, c4, count * param.time_step)
 
         # Calculate time dependent hamiltonian
-        hamiltonian[count, :] = (ganisotropy - param.microwave_frequency) * spin2_s_z + \
-                                param.freq_nuclear_1 * spin2_i_z + \
+        hamiltonian[count, :] = (ganisotropy - param.microwave_frequency) * sp.spin2_s_z + \
+                                param.freq_nuclear_1 * sp.spin2_i_z + \
                                 hyperfine_total
 
     return hamiltonian
 
 
-def calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin2_i_z):
+def calculate_polarisation_rotor(density_mat, propagator_strobe):
     """ Calculate polarisation across multiple rotor periods.
     """
 
@@ -143,8 +129,8 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin
     for count in range(0, param.num_timesteps_prop):
 
         # Calculate electronic and nuclear polarisation
-        pol_i_z[count] = np.trace(np.matmul(np.real(density_mat), spin2_i_z))
-        pol_s_z[count] = np.trace(np.matmul(np.real(density_mat), spin2_s_z))
+        pol_i_z[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_i_z))
+        pol_s_z[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_s_z))
 
         # Transform density matrix (2^N x 2^N to 4^N x 1)
         density_mat_liouville = np.reshape(density_mat, [4 ** 2, 1])
@@ -157,7 +143,7 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin
     return pol_i_z, pol_s_z
 
 
-def calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i_z):
+def calculate_polarisation_sub_rotor(density_mat, propagator):
     """ Calculate polarisation across single rotor period.
     """
 
@@ -167,8 +153,8 @@ def calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i
     for count in range(0, param.time_step_num):
 
         # Calculate electronic and nuclear polarisation
-        pol_i_z_rot[count] = np.trace(np.matmul(np.real(density_mat), spin2_i_z))
-        pol_s_z_rot[count] = np.trace(np.matmul(np.real(density_mat), spin2_s_z))
+        pol_i_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_i_z))
+        pol_s_z_rot[count] = np.trace(np.matmul(np.real(density_mat), sp.spin2_s_z))
 
         # Transform density matrix (2^N x 2^N to 4^N x 1)
         density_mat_liouville = np.reshape(density_mat, [4 ** 2, 1])
@@ -182,7 +168,7 @@ def calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i
     return pol_i_z_rot, pol_s_z_rot
 
 
-def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spin2_all):
+def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem):
     """ Calculate time dependent Liouville space relaxation matrix.
     """
 
@@ -190,7 +176,7 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
 
     # Transform spin matrices into time dependent Hilbert space basis
     spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t = \
-            fn.basis_transform(eigvectors, eigvectors_inv, spin2_all)
+            fn.basis_transform(eigvectors, eigvectors_inv, sp.spin2_all)
 
     # Transform spin matrices into time dependent Liouville space basis
     spin2_i_p_tl = np.kron(spin2_i_p_t, np.transpose(spin2_i_m_t)) - identity_mat + 0.5 * (

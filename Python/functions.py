@@ -5,12 +5,13 @@ from scipy import constants as sc
 from scipy import linalg as la
 
 
-def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamiltonian_init, calculate_relaxation_mat):
+def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
+                         microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all):
     """ Calculate Liouville space propagator.
      """
 
     # Pre-allocate propagator
-    propagator = np.zeros((int(param.time_step_num), 4 ** param.num_spins, 4 ** param.num_spins), dtype=np.complex)
+    propagator = np.zeros((int(param.time_step_num), 4 ** num_spins, 4 ** num_spins), dtype=np.complex)
 
     # Calculate variables for Liouville space relaxation
     p_e = np.tanh(0.5 * param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature)))
@@ -30,11 +31,11 @@ def liouville_propagator(energies, eigvectors, eigvectors_inv, microwave_hamilto
         total_hamiltonian = np.diag(energies[count]) + microwave_hamiltonian
 
         # Transform Hilbert space Hamiltonian into Liouville space
-        hamiltonian_liouville = kron_a_n(total_hamiltonian, 2 ** param.num_spins) - \
-                                kron_n_a(2 ** param.num_spins, np.transpose(total_hamiltonian))
+        hamiltonian_liouville = kron_a_n(total_hamiltonian, 2 ** num_spins) - \
+                                kron_n_a(2 ** num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
-        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem)
+        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin2_all)
 
         # Calculate Liouville space eigenvectors
         eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])

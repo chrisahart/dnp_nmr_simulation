@@ -26,3 +26,28 @@ spin2_i_p = spin2_i_x + 1j * spin2_i_y
 spin2_i_m = spin2_i_x - 1j * spin2_i_y
 spin2_all = [spin2_s_z, spin2_s_p, spin2_s_m,
              spin2_i_z, spin2_i_p, spin2_i_m]
+
+# 8x8 Matrix operators for S1 operator
+spin3_s1_x = np.kron(np.kron(spin1_x, np.identity(2)), np.identity(2))
+spin3_s1_y = np.kron(np.kron(spin1_y, np.identity(2)), np.identity(2))
+spin3_s1_z = np.kron(np.kron(spin1_z, np.identity(2)), np.identity(2))
+spin3_s1_p = spin3_s1_x + 1j * spin3_s1_y
+spin3_s1_m = spin3_s1_x - 1j * spin3_s1_y
+
+
+# 8x8 Matrix operators for S2 operator
+spin3_s2_x = np.kron(np.identity(2), np.kron(spin1_x, np.identity(2)))
+spin3_s2_y = np.kron(np.identity(2), np.kron(spin1_y, np.identity(2)))
+spin3_s2_z = np.kron(np.identity(2), np.kron(spin1_z, np.identity(2)))
+spin3_s2_p = spin3_s2_x + 1j * spin3_s2_y
+spin3_s2_m = spin3_s2_x - 1j * spin3_s2_y
+
+# 8x8 Matrix operators for I operator
+spin3_i_x = np.kron(np.identity(2), np.kron(np.identity(2), spin1_x))
+spin3_i_y = np.kron(np.identity(2), np.kron(np.identity(2), spin1_y))
+spin3_i_z = np.kron(np.identity(2), np.kron(np.identity(2), spin1_z))
+spin3_i_p = spin3_i_x + 1j * spin3_i_y
+spin3_i_m = spin3_i_x - 1j * spin3_i_y
+spin3_all = [spin3_s1_z, spin3_s1_p, spin3_s1_m,
+             spin3_s2_z, spin3_s2_p, spin3_s2_m,
+             spin3_i_z, spin3_i_p, spin3_i_m]
