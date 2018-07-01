@@ -6,7 +6,7 @@ from scipy import linalg as la
 
 
 def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
-                         microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all):
+                         microwave_hamiltonian_init, calculate_relaxation_mat, spin_all):
     """ Calculate Liouville space propagator.
      """
 
@@ -35,7 +35,7 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
                                 kron_n_a(2 ** num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
-        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin2_all)
+        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
 
         # Calculate Liouville space eigenvectors
         eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
@@ -130,7 +130,7 @@ def hyperfine(hyperfine_angles, time):
                                                np.cos(2 * (2 * np.pi * param.freq_rotor * time + hyperfine_angles[2])) +
                                                np.sqrt(2) * np.sin(hyperfine_angles[1]) *
                                                np.cos(hyperfine_angles[1]) *
-                                               np.cos(2 * np.pi * param.freq_rotor * time + hyperfine_angles[2])) * 2
+                                               np.cos(2 * np.pi * param.freq_rotor * time + hyperfine_angles[2]))
 
     hyperfine_zx = param.hyperfine_coupling * (-0.5 * np.sin(hyperfine_angles[1]) * np.cos(hyperfine_angles[1]) *
                                                np.cos(2 * np.pi * param.freq_rotor * time + hyperfine_angles[2]) -

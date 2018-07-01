@@ -61,16 +61,11 @@ def dynamics(microwave_amplitude):
     # Pre-compute spin matrices to avoid re-evaluation Kronecker products
     spin2_s_x = sp.spin2_s_x
     spin2_s_z = sp.spin2_s_z
-    spin2_s_p = sp.spin2_s_p
-    spin2_s_m = sp.spin2_s_m
 
     # Pre-compute spin matrices to avoid re-evaluation Kronecker products
     spin2_i_x = sp.spin2_i_x
     spin2_i_z = sp.spin2_i_z
-    spin2_i_p = sp.spin2_i_p
-    spin2_i_m = sp.spin2_i_m
-    spin2_all = [spin2_s_z, spin2_s_p, spin2_s_m,
-                 spin2_i_z, spin2_i_p, spin2_i_m]
+    spin2_all = sp.spin2_all
 
     # Calculate thermal density matrix from idealised Hamiltonian
     hamiltonian_ideal = param.electron_frequency * spin2_s_z + \
@@ -119,8 +114,8 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
 
         # Calculate time dependent hyperfine
         hyperfine_zz, hyperfine_zx = fn.hyperfine(param.hyperfine_angles_1, count * param.time_step)
-        hyperfine_total = hyperfine_zz * np.matmul(spin2_i_z, spin2_s_z) + \
-                          hyperfine_zx * np.matmul(spin2_i_x, spin2_s_z)
+        hyperfine_total = hyperfine_zz * 2 * np.matmul(spin2_i_z, spin2_s_z) + \
+                          hyperfine_zx * 2 * np.matmul(spin2_i_x, spin2_s_z)
 
         # Calculate time dependent electron g-anisotropy
         ganisotropy = fn.anisotropy(c0, c1, c2, c3, c4, count * param.time_step)

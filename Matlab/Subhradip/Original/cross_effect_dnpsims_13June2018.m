@@ -88,7 +88,7 @@ for ii = 0:nsteps-1
         +c42*sind(360*wr*ii*trstep*2);
     dipe=23e6*(+0.5*((sind(b_ee))^2)*cosd(2*360*wr*ii*trstep+g_ee)-...
         sqrt(2)*sind(b_ee)*cosd(b_ee)*cosd(360*wr*ii*trstep+g_ee))*S20;
-    hamil(:,:,ii+1) = (ganisohamil1-wme)*S1z+(ganisohamil2-wme)*S2z+wn*Iz+1*hhyp+1*dipe;
+    hamil(:,:,ii+1) = (ganisohamil1-wme)*S1z+(ganisohamil2-wme)*S2z+wn*Iz+1*hhyp+0*dipe;
 end
 
 
@@ -159,10 +159,13 @@ for ii=1:nsteps
     RS2zt=kron(eye(2^nsp),eye(2^nsp));
     LIzt=kron(Izt,Izt.');
     RIzt=kron(eye(2^nsp),eye(2^nsp));
+    
     LIpt=1.0*kron(Ipt,Imt.')-.5*eye(4^nsp)+.5*(kron(Izt,eye(2^nsp))+kron(eye(2^nsp),Izt.'));
     LImt=1.0*kron(Imt,Ipt.')-.5*eye(4^nsp)-.5*(kron(Izt,eye(2^nsp))+kron(eye(2^nsp),Izt.'));
+    
     LS1pt=1.0*kron(S1pt,S1mt.')-.5*eye(4^nsp)+.5*(kron(S1zt,eye(2^nsp))+kron(eye(2^nsp),S1zt.'));
     LS1mt=1.0*kron(S1mt,S1pt.')-.5*eye(4^nsp)-.5*(kron(S1zt,eye(2^nsp))+kron(eye(2^nsp),S1zt.'));
+    
     LS2pt=1.0*kron(S2pt,S2mt.')-.5*eye(4^nsp)+.5*(kron(S2zt,eye(2^nsp))+kron(eye(2^nsp),S2zt.'));
     LS2mt=1.0*kron(S2mt,S2pt.')-.5*eye(4^nsp)-.5*(kron(S2zt,eye(2^nsp))+kron(eye(2^nsp),S2zt.'));
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
