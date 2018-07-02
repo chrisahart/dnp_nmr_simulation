@@ -9,7 +9,6 @@ import cross_effect_plotting
 from shutil import copyfile
 import os
 import matplotlib.pyplot as plt
-import numba
 
 
 def main():
@@ -33,27 +32,27 @@ def main():
         print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
                                               ', total elapsed time ', (time.time() - start), ' s.'))
 
-    # Dynamically assign and create output directory
-    directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    # Save data and copy parameters file
-    np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
-    np.savetxt('{}{}'.format(directory, '/pol_elec1.csv'), pol_elec1, fmt='%.8f', newline='\n')
-    np.savetxt('{}{}'.format(directory, '/pol_elec2.csv'), pol_elec2, fmt='%.8f', newline='\n')
-
-    # High precision required for sub rotor dynamics (negligible change in file size)
-    np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
-    np.savetxt('{}{}'.format(directory, '/pol_s1_z_rot.csv'), pol_s1_z_rot, fmt='%.12f', newline='\n')
-    np.savetxt('{}{}'.format(directory, '/pol_s2_z_rot.csv'), pol_s2_z_rot, fmt='%.12f', newline='\n')
-    np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
-
-    # Create a copy of parameters file
-    copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
-
-    # Call plotting function
-    cross_effect_plotting.plot_all(directory)
+    # # Dynamically assign and create output directory
+    # directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
+    # if not os.path.exists(directory):
+    #     os.makedirs(directory)
+    #
+    # # Save data and copy parameters file
+    # np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
+    # np.savetxt('{}{}'.format(directory, '/pol_elec1.csv'), pol_elec1, fmt='%.8f', newline='\n')
+    # np.savetxt('{}{}'.format(directory, '/pol_elec2.csv'), pol_elec2, fmt='%.8f', newline='\n')
+    #
+    # # High precision required for sub rotor dynamics (negligible change in file size)
+    # np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
+    # np.savetxt('{}{}'.format(directory, '/pol_s1_z_rot.csv'), pol_s1_z_rot, fmt='%.12f', newline='\n')
+    # np.savetxt('{}{}'.format(directory, '/pol_s2_z_rot.csv'), pol_s2_z_rot, fmt='%.12f', newline='\n')
+    # np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
+    #
+    # # Create a copy of parameters file
+    # copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
+    #
+    # # Call plotting function
+    # cross_effect_plotting.plot_all(directory)
 
 
 def dynamics(microwave_amplitude):
