@@ -9,10 +9,13 @@ import solid_effect_plotting
 from shutil import copyfile
 import os
 import matplotlib.pyplot as plt
+import f2py_dynamics as fortran
 
 
 def main():
     """ Loop over dynamics function as required, writing output to disk and calling plotting function.
+        Can't use Numba or Pythran as not pure python, using Numpy instead.
+        Multiprocessing doesn't work due to overhead, and nature of numpy matrix products.
     """
 
     # Pre-allocate arrays
@@ -74,6 +77,7 @@ def dynamics(microwave_amplitude):
 
     # Construct intrinsic Hilbert space Hamiltonian
     hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    # hamiltonian = fortran.f2py_dynamics.spin2_electronuclear()
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)

@@ -1,4 +1,4 @@
 import f2py_dynamics as fortran
+import spin_matrices as sp
 
-fortran.f2py_dynamics.spin2_electronuclear()
-#print(test)
+print(fortran.__doc__)

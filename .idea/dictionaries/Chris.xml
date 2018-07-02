@@ -1,8 +1,16 @@
 <component name="ProjectDictionaryState">
   <dictionary name="Chris">
     <words>
+      <w>enthought</w>
+      <w>envs</w>
+      <w>fcompiler</w>
+      <w>fopenmp</w>
+      <w>lgomp</w>
       <w>liouville</w>
+      <w>llapack</w>
       <w>nrot</w>
+      <w>numba</w>
+      <w>pythran</w>
     </words>
   </dictionary>
 </component>
