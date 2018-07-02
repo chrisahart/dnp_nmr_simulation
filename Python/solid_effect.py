@@ -76,8 +76,12 @@ def dynamics(microwave_amplitude):
     density_mat = fn.density_mat_thermal(hamiltonian_ideal)
 
     # Construct intrinsic Hilbert space Hamiltonian
-    hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
-    # hamiltonian = fortran.f2py_dynamics.spin2_electronuclear()
+    # hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    hamiltonian = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num, param.time_step, param.freq_rotor,
+                                                             param.gtensor,
+                                                             param.hyperfine_coupling, param.hyperfine_angles_1,
+                                                             param.orientation_se, param.electron_frequency,
+                                                             param.microwave_frequency, param.freq_nuclear_1)
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
@@ -105,7 +109,7 @@ def dynamics(microwave_amplitude):
 
 
 def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
-    """ Calculate Hamiltonian of e-n system.
+    """ Calculate Hamiltonian of e-n system. Use of functions makes negligible difference to benchmark.
     """
 
     # Pre-allocate hamiltonian
@@ -128,6 +132,7 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
         hamiltonian[count, :] = (ganisotropy - param.microwave_frequency) * spin2_s_z + \
                                 param.freq_nuclear_1 * spin2_i_z + \
                                 hyperfine_total
+
 
     return hamiltonian
 
