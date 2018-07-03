@@ -9,7 +9,7 @@ import solid_effect_plotting
 from shutil import copyfile
 import os
 import matplotlib.pyplot as plt
-import f2py_dynamics as fortran
+#import f2py_dynamics as fortran
 
 
 def main():
@@ -76,12 +76,12 @@ def dynamics(microwave_amplitude):
     density_mat = fn.density_mat_thermal(hamiltonian_ideal)
 
     # Construct intrinsic Hilbert space Hamiltonian
-    # hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
-    hamiltonian = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num, param.time_step, param.freq_rotor,
-                                                             param.gtensor,
-                                                             param.hyperfine_coupling, param.hyperfine_angles_1,
-                                                             param.orientation_se, param.electron_frequency,
-                                                             param.microwave_frequency, param.freq_nuclear_1)
+    hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    # hamiltonian = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num, param.time_step, param.freq_rotor,
+    #                                                          param.gtensor,
+    #                                                          param.hyperfine_coupling, param.hyperfine_angles_1,
+    #                                                          param.orientation_se, param.electron_frequency,
+    #                                                          param.microwave_frequency, param.freq_nuclear_1)
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)

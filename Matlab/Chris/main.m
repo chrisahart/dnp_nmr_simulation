@@ -20,10 +20,9 @@ pol_sz_avg = zeros(length(freq_microwave), data_points); % *obselete?
 max_pol_iz = zeros(1, length(freq_microwave)); % Maximim nuclear polorisation
 
 count=0;
+tic
 for jj=1:length(freq_microwave)
     for ii=1:length(gtensor_tempol(1)) % Powder averaging?
-        
-        tic
         
         [pol_iz(ii,:), pol_sz(ii,:), iz_rot, sz_rot, evalgham]= ... % *Why return density matrix?
             dynamics(gtensor_tempol(1), gtensor_tempol(2), gtensor_tempol(3), ...
@@ -35,14 +34,16 @@ for jj=1:length(freq_microwave)
         count=count+1;
         disp(['Simulation ', num2str(count), ' of ', num2str(length(freq_microwave))])
     end
-    pol_iz_avg(jj,:)=mean(pol_iz,1);
-    pol_sz_avg(jj,:)=mean(pol_sz,1);
+    %pol_iz_avg(jj,:)=mean(pol_iz,1);
+    %pol_sz_avg(jj,:)=mean(pol_sz,1);
 end
 
-for pp=1:length(freq_microwave) % *Merge loops
-    max_pol_iz(pp)=pol_iz_avg(pp, data_points);
-end
+toc
 
-save(sprintf('%s_%s_%d.mat','solid_effect','microwave_power', ... 
-    freq_microwave(length(freq_microwave))));
-disp('End of Simulation and Data Saved')
+% for pp=1:length(freq_microwave) % *Merge loops
+%     max_pol_iz(pp)=pol_iz_avg(pp, data_points);
+% end
+% 
+% save(sprintf('%s_%s_%d.mat','solid_effect','microwave_power', ... 
+%     freq_microwave(length(freq_microwave))));
+% disp('End of Simulation and Data Saved')
