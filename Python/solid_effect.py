@@ -76,9 +76,9 @@ def dynamics(microwave_amplitude):
     density_mat = fn.density_mat_thermal(hamiltonian_ideal)
 
     # Construct intrinsic Hilbert space Hamiltonian
-    hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    # hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
     hamiltonian = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num, param.time_step, param.freq_rotor,
-                                                             param.gtensor, hamiltonian,
+                                                             param.gtensor,
                                                              param.hyperfine_coupling, param.hyperfine_angles_1,
                                                              param.orientation_se, param.electron_frequency,
                                                              param.microwave_frequency, param.freq_nuclear_1)
@@ -93,20 +93,17 @@ def dynamics(microwave_amplitude):
     microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
 
     # Calculate Liouville space propagator with relaxation
-    # start = time.time()
+    start = time.time()
     propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
                                          microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all)
-
-    # print(energies.shape)
-    # print(eigvectors.shape)
-    # print('param.time_step_num', param.time_step_num)
     # propagator = fortran.f2py_dynamics.liouville_propagator(param.time_step_num, param.time_step,
     #                                                         param.electron_frequency, param.freq_nuclear_1,
     #                                                         param.microwave_amplitude, param.t1_nuc,
-    #                                                         param.t1_elec, param.temperature, eigvectors,
+    #                                                         param.t1_elec, param.t2_nuc, param.t2_elec,
+    #                                                         param.temperature, eigvectors,
     #                                                         eigvectors_inv, energies)
-    # end = time.time() - start
-    # print('time taken', end)
+    end = time.time() - start
+    print('time taken', end)
 
     # Propagate density matrix for single rotor period, calculating polarisations
     pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i_z)
@@ -145,7 +142,6 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
         hamiltonian[count, :] = (ganisotropy - param.microwave_frequency) * spin2_s_z + \
                                 param.freq_nuclear_1 * spin2_i_z + \
                                 hyperfine_total
-
 
     return hamiltonian
 

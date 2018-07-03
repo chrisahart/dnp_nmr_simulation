@@ -43,8 +43,12 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
 
         # Calculate Liouville space propagator
         liouvillian = hamiltonian_liouville + 1j * relax_mat
-        propagator[count, :] = np.matmul(eigvectors_inv_liouville,
-                                         np.matmul(la.expm(-1j * liouvillian * param.time_step), eigvectors_liouville))
+
+        test2 = la.cosm(liouvillian * param.time_step) - 1j * la.sinm(liouvillian * param.time_step)
+        propagator[count, :] = np.matmul(eigvectors_inv_liouville, np.matmul(test2, eigvectors_liouville))
+
+        # propagator[count, :] = np.matmul(eigvectors_inv_liouville,
+        #                                  np.matmul(la.expm(-1j * liouvillian * param.time_step), eigvectors_liouville))
 
     return propagator
 
