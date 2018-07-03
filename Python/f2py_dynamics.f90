@@ -2,99 +2,8 @@ module f2py_dynamics
 
 contains
 
-        subroutine liouville_propagator(time_num, time_step, electron_frequency, freq_nuclear_1, microwave_amplitude, &
-            t1_nuc, t1_elec, temperature, energies, eigvectors, eigvectors_inv)
-
-        use iso_fortran_env
-        use omp_lib
-        implicit none
-
-        integer, parameter :: WP = REAL64
-        complex(kind=8), parameter :: i = (0, 1)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
-
-        integer, intent(in):: time_num
-        complex(kind=8), dimension(time_num, 4, 4), intent(in) :: eigvectors, eigvectors_inv
-        complex(kind=8), dimension(time_num, 4), intent(in) :: energies
-        real(kind=8), intent(in) :: electron_frequency, freq_nuclear_1, microwave_amplitude, time_step
-        real(kind=8), intent(in) :: t1_nuc, t1_elec, temperature
-
-        integer :: count
-        complex(kind=8), dimension(16, 16) :: identity_size16, hamiltonian_liouville, relax_mat
-        complex(kind=8), dimension(16, 16) :: eigvectors_liouville, eigvectors_inv_liouville, liouvillian
-        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, total_hamiltonian
-        complex(kind=8), dimension(4, 4) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
-        complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, identity_size4
-        complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_size2
-        real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem
-
-        ! Identity matrix
-        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
-        identity_size4 = kron(identity_size2, identity_size2)
-        identity_size16 = kron(kron(identity_size2, identity_size2), kron(identity_size2, identity_size2))
-
-        ! Pauli matrices
-        spin_x = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
-        spin_y = 0.5 * i * (reshape((/ 0.0_WP, -1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_y), order = (/2, 1/)))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
-
-        ! 4x4 matrices for S operator
-        spin2_s_x = kron(spin_x, identity_size2)
-        spin2_s_y = kron(spin_y, identity_size2)
-        spin2_s_z = kron(spin_z, identity_size2)
-
-        ! 4x4 matrices for I operator
-        spin2_i_x = kron(identity_size2, spin_x)
-        spin2_i_y = kron(identity_size2, spin_y)
-        spin2_i_z = kron(identity_size2, spin_z)
-
-        ! Calculate variables for Liouville space relaxation
-        p_e = tanh(0.5 * electron_frequency * (Planck / (Boltzmann * temperature)))
-        p_n = tanh(0.5 * freq_nuclear_1 * (Planck / (Boltzmann * temperature)))
-        gnp = 0.5 * (1 - p_n) * (1 / (1 * t1_nuc))
-        gnm = 0.5 * (1 + p_n) * (1 / (1 * t1_nuc))
-        gep = 0.5 * (1 - p_e) * (1 / (1 * t1_elec))
-        gem = 0.5 * (1 + p_e) * (1 / (1 * t1_elec))
-
-        ! Calculate initial microwave Hamiltonian
-        microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
-
-        do count = 1, time_num
-
-            ! Transform microwave Hamiltonian into time dependent basis
-            microwave_hamiltonian = matmul(eigvectors_inv(count, :, :), matmul(microwave_hamiltonian_init, &
-                    eigvectors(count, :, :)))
-
-            ! Calculate total Hamiltonian
-            energy_mat = identity_size4
-            energy_mat(1, 1) = energies(count, 1)
-            energy_mat(2, 2) = energies(count, 2)
-            energy_mat(3, 3) = energies(count, 3)
-            energy_mat(4, 4) = energies(count, 4)
-
-            ! Calculate total Hamiltonian
-            total_hamiltonian = energy_mat + microwave_hamiltonian
-
-            ! Transform Hilbert space Hamiltonian into Liouville space
-            hamiltonian_liouville = kron(total_hamiltonian, identity_size4) - &
-                    kron(identity_size4, transpose(total_hamiltonian))
-
-            ! Calculate time dependent Liouville space relaxation matrix
-            relax_mat = 0.5 * identity_size16
-
-            ! Calculate Liouville space eigenvectors
-            eigvectors_liouville = kron(eigvectors(count, :, :), eigvectors(count, :, :))
-            eigvectors_inv_liouville = kron(eigvectors_inv(count, :, :), eigvectors_inv(count, :, :))
-
-            ! Calculate Liouville space propagator
-            liouvillian = hamiltonian_liouville + i * relax_mat
-            !propagator(count, :, :) = matmul(eigvectors_inv_liouville, &
-            !                             matmul(expm(-i * liouvillian * time_step), eigvectors_liouville))
-        end do
-
-    end subroutine liouville_propagator
-
-    subroutine calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, &
+    subroutine calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, hamiltonian_ideal, &
+            hyperfine_coupling, hyperfine_angles, &
                                     orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
                                     hamiltonian)
 
@@ -107,6 +16,7 @@ contains
         real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0)
 
         integer, intent(in):: time_num
+        real(kind=8), dimension(:, :, :), intent(in) :: hamiltonian_ideal
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
         real(kind=8), intent(in) :: time_step, freq_rotor
@@ -119,6 +29,8 @@ contains
         complex(kind=8) :: hyperfine_zx, hyperfine_zz, ganisotropy
         real(kind=8) :: gx, gy, gz, ca, cb, cg, sa, sb, sg, r11, r12, r13, r21, r22, r23, r31, r32, r33
         real(kind=8) :: c0, c1, c2, c3, c4
+
+        write(6, *), shape(hamiltonian_ideal)
 
         ! Identity matrix
         identity_spin1 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_spin1)))
@@ -205,6 +117,111 @@ contains
         !$omp end parallel do
 
     end subroutine calculate_hamiltonian
+
+    subroutine liouville_propagator(time_num, time_step, electron_frequency, freq_nuclear_1, microwave_amplitude, &
+            t1_nuc, t1_elec, temperature, eigvectors, eigvectors_inv, energies, propagator)
+
+        use iso_fortran_env
+        use omp_lib
+        implicit none
+
+        integer, parameter :: WP = REAL64
+        complex(kind=8), parameter :: i = (0, 1)
+        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
+
+        integer, intent(in):: time_num
+        complex(kind=8), dimension(time_num, 4, 4), intent(in) :: eigvectors, eigvectors_inv
+        real(kind=8), dimension(time_num, 4), intent(in) :: energies
+        real(kind=8), intent(in) :: electron_frequency, freq_nuclear_1, microwave_amplitude, time_step
+        real(kind=8), intent(in) :: t1_nuc, t1_elec, temperature
+        complex(kind=8), intent(out) :: propagator(time_num, 16, 16)
+
+        integer :: count
+        complex(kind=8), dimension(16, 16) :: identity_size16, hamiltonian_liouville, relax_mat
+        complex(kind=8), dimension(16, 16) :: eigvectors_liouville, eigvectors_inv_liouville, liouvillian
+        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, total_hamiltonian
+        complex(kind=8), dimension(4, 4) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
+        complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, identity_size4
+        complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_size2
+        real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem
+
+        ! Identity matrix
+        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
+        identity_size4 = kron(identity_size2, identity_size2)
+        identity_size16 = kron(kron(identity_size2, identity_size2), kron(identity_size2, identity_size2))
+
+        ! Pauli matrices
+        spin_x = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
+        spin_y = 0.5 * i * (reshape((/ 0.0_WP, -1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_y), order = (/2, 1/)))
+        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+
+        ! 4x4 matrices for S operator
+        spin2_s_x = kron(spin_x, identity_size2)
+        spin2_s_y = kron(spin_y, identity_size2)
+        spin2_s_z = kron(spin_z, identity_size2)
+
+        ! 4x4 matrices for I operator
+        spin2_i_x = kron(identity_size2, spin_x)
+        spin2_i_y = kron(identity_size2, spin_y)
+        spin2_i_z = kron(identity_size2, spin_z)
+
+        ! Calculate variables for Liouville space relaxation
+        p_e = tanh(0.5 * electron_frequency * (Planck / (Boltzmann * temperature)))
+        p_n = tanh(0.5 * freq_nuclear_1 * (Planck / (Boltzmann * temperature)))
+        gnp = 0.5 * (1 - p_n) * (1 / (1 * t1_nuc))
+        gnm = 0.5 * (1 + p_n) * (1 / (1 * t1_nuc))
+        gep = 0.5 * (1 - p_e) * (1 / (1 * t1_elec))
+        gem = 0.5 * (1 + p_e) * (1 / (1 * t1_elec))
+
+        ! Calculate initial microwave Hamiltonian
+        microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
+
+        do count = 1, time_num
+
+            ! Transform microwave Hamiltonian into time dependent basis
+            microwave_hamiltonian = matmul(eigvectors_inv(count, :, :), matmul(microwave_hamiltonian_init, &
+                    eigvectors(count, :, :)))
+
+            ! Calculate total Hamiltonian
+            energy_mat = identity_size4
+            energy_mat(1, 1) = energies(count, 1)
+            energy_mat(2, 2) = energies(count, 2)
+            energy_mat(3, 3) = energies(count, 3)
+            energy_mat(4, 4) = energies(count, 4)
+
+            ! Calculate total Hamiltonian
+            total_hamiltonian = energy_mat + microwave_hamiltonian
+
+            ! Transform Hilbert space Hamiltonian into Liouville space
+            hamiltonian_liouville = kron(total_hamiltonian, identity_size4) - &
+                    kron(identity_size4, transpose(total_hamiltonian))
+
+            ! Calculate time dependent Liouville space relaxation matrix
+            relax_mat = 0.5 * identity_size16
+
+            ! Calculate Liouville space eigenvectors
+            eigvectors_liouville = kron(eigvectors(count, :, :), eigvectors(count, :, :))
+            eigvectors_inv_liouville = kron(eigvectors_inv(count, :, :), eigvectors_inv(count, :, :))
+
+            ! Calculate Liouville space propagator
+            liouvillian = hamiltonian_liouville + i * relax_mat
+            propagator(count, :, :) = expm(eigvectors_inv_liouville, eigvectors_liouville)
+!            propagator(count, :, :) = matmul(eigvectors_inv_liouville, &
+!                                         matmul(expm(-i * liouvillian * time_step), eigvectors_liouville))
+        end do
+
+    end subroutine liouville_propagator
+
+
+    function expm(A, B) result(C)
+
+        complex(kind=8), dimension (:, :), intent(in) :: A, B
+        complex(kind=8), dimension (:, :), allocatable :: C
+
+        allocate(C(size(A, 1), size(A, 2)))
+        C = matmul(A, B)
+
+    end function expm
 
     function kron(A, B) result(C)
 

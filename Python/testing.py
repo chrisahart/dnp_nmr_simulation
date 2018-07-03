@@ -20,13 +20,7 @@ C = int(1E6)
 #
 # Ix = np.kron(A, B)
 # Iy = np.kron(B, A)
-
-start = time.time()
-fortran.f2py_dynamics.calculate_hamiltonian()
-end = time.time() - start
-print('time taken', end)
-
-
+#
 # for count in range(C):
 #     temp = np.matmul(A, B)
 #     # temp = np.kron(A, B)
