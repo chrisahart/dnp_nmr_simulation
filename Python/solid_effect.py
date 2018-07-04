@@ -146,7 +146,6 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
                                 param.freq_nuclear_1 * spin2_i_z + \
                                 hyperfine_total
 
-
     return hamiltonian
 
 
