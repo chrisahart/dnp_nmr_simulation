@@ -28,20 +28,22 @@ C = int(1E6)
 # end = time.time() - start
 # print('time taken', end)
 
-matrix = sp.spin1_x + sp.spin1_y
+matrix = sp.spin2_s_x #sp.spin1_x + sp.spin1_y
 origonal = la.expm(-1j * matrix * int(1E4))
 
-test2 = la.cosm(matrix * int(1E4)) - 1j * la.sinm(matrix * int(1E4))
-
-eigvals = np.linalg.eigvals(-1j * matrix * int(1E4))
-test = np.diag(np.exp(eigvals))
+# test2 = la.cosm(matrix * int(1E4)) - 1j * la.sinm(matrix * int(1E4))
+#
+# eigvals = np.linalg.eigvals(-1j * matrix * int(1E4))
+# test = np.diag(np.exp(eigvals))
 
 print('la.expm \n', origonal)
-print('Euler \n', test2)
-print('eigenvalues exp \n', test)
+# print('Euler \n', test2)
+# print('eigenvalues exp \n', test)
 
 # cos_test = la.cosm(sp.spin1_x)
 # print('cos_test', cos_test)
 # print('matrix', sp.spin1_x)
 
+
+fortran.f2py_dynamics.testing()
 

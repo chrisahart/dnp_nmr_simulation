@@ -174,7 +174,7 @@ p0=pi0+ps0;
 % disp('evalgham')
 % disp(size(evalgham))
 % disp(evalgham(:,1))
-
+tic
 %%% Propogation
 prop=zeros(16,16,10000);
 
@@ -254,7 +254,7 @@ for ii=1:10000 % nsteps = 10000
 %     disp('test')
 %     disp(test)
 end
-
+toc
 prop_accu=eye(16); % 16x16 identity matrix
 for kk=1:nsteps % Why multiply identity matrix with prop?
     prop_accu=prop_accu*squeeze(prop(:,:,kk));

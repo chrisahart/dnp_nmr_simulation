@@ -82,7 +82,6 @@ def dynamics(microwave_amplitude):
                                                              param.hyperfine_coupling, param.hyperfine_angles_1,
                                                              param.orientation_se, param.electron_frequency,
                                                              param.microwave_frequency, param.freq_nuclear_1)
-    print('shape', hamiltonian.shape)
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
