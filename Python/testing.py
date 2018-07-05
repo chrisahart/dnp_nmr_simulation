@@ -4,9 +4,9 @@ import numpy as np
 from scipy import linalg as la
 import f2py_dynamics as fortran
 
-A = sp.spin3_i_x
-B = sp.spin3_i_y
-C = int(1E6)
+A = sp.spin1_x #sp.spin3_i_x
+B = sp.spin1_z #sp.spin3_i_y
+C = int(1E7)
 
 # A=([[1, 2, 3, 4],
 #     [5, 6, 7, 8],
@@ -21,29 +21,20 @@ C = int(1E6)
 # Ix = np.kron(A, B)
 # Iy = np.kron(B, A)
 #
+# start = time.time()
 # for count in range(C):
-#     temp = np.matmul(A, B)
-#     # temp = np.kron(A, B)
+#     # temp = np.matmul(A, B)
+#     #temp = np.kron(A, B)
 #     # temp = la.expm(-1j * sp.spin3_i_x * int(1E4))
+#     temp = np.matmul(A, B)
 # end = time.time() - start
 # print('time taken', end)
 
-matrix = sp.spin2_s_x #sp.spin1_x + sp.spin1_y
-origonal = la.expm(-1j * matrix * int(1E4))
+# matrix = sp.spin2_s_x #sp.spin1_x + sp.spin1_y
+# origonal = la.expm(-1j * matrix * int(1E4))
+# print('la.expm \n', origonal)
 
-# test2 = la.cosm(matrix * int(1E4)) - 1j * la.sinm(matrix * int(1E4))
-#
-# eigvals = np.linalg.eigvals(-1j * matrix * int(1E4))
-# test = np.diag(np.exp(eigvals))
-
-print('la.expm \n', origonal)
-# print('Euler \n', test2)
-# print('eigenvalues exp \n', test)
-
-# cos_test = la.cosm(sp.spin1_x)
-# print('cos_test', cos_test)
-# print('matrix', sp.spin1_x)
-
-
+start = time.time()
 fortran.f2py_dynamics.testing()
-
+end = time.time() - start
+print('time taken', end)

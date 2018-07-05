@@ -4,6 +4,10 @@ nsp = length(spins);
 Ix=sop(spins,'eex');
 Iy=sop(spins,'eey');
 
+spin1_x = 1/2 * [0, 1; 1, 0];
+spin1_y = 1/2 * [0, -1i; 1i, 0];
+spin1_z = 1/2 * [1, 0; 0, -1];
+
 % A=[1, 2, 3, 4;
 %     5, 6, 7, 8;
 %     9, 10, 11, 12;
@@ -18,10 +22,12 @@ Iy=sop(spins,'eey');
 % Iy = kron(B, A);
 
 tic
-for ii = 0:1E6
-    temp = Ix * Iy;
+for ii = 0:1E7
+    % temp = Ix * Iy;
     %temp = kron(Ix, Iy);
     % temp = expm(-1i * Ix * 1E4);
+     
+     temp = spin1_x * spin1_z;
 end
 toc
     

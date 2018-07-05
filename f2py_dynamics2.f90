@@ -2,7 +2,7 @@ module f2py_dynamics
 
 contains
 
-    subroutine calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
+    subroutine calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, hamiltonian_ideal, &
             hyperfine_coupling, hyperfine_angles, &
                                     orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
                                     hamiltonian)
@@ -16,6 +16,7 @@ contains
         real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0)
 
         integer, intent(in):: time_num
+        real(kind=8), dimension(:, :, :), intent(in) :: hamiltonian_ideal
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
         real(kind=8), intent(in) :: time_step, freq_rotor
@@ -28,6 +29,8 @@ contains
         complex(kind=8) :: hyperfine_zx, hyperfine_zz, ganisotropy
         real(kind=8) :: gx, gy, gz, ca, cb, cg, sa, sb, sg, r11, r12, r13, r21, r22, r23, r31, r32, r33
         real(kind=8) :: c0, c1, c2, c3, c4
+
+        write(6, *), shape(hamiltonian_ideal)
 
         ! Identity matrix
         identity_spin1 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_spin1)))
@@ -76,11 +79,10 @@ contains
                 gz * (r13 ** 2 - r23 ** 2))
         c4 = 2.0_WP / 3.0_WP * (gx * r11 * r21 + gy * r22 * r12 + gz * r13 * r23)
 
-        !call omp_set_num_threads(1)
-        !!$omp parallel do default(private) &
-        !!$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
-        !!$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
-        !!$omp& shared(spin2_i_x, spin2_i_y, spin2_i_z, spin2_s_z)
+        !$omp parallel do default(private) &
+        !$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
+        !$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
+        !$omp& shared(spin2_i_x, spin2_i_y, spin2_i_z, spin2_s_z)
         do count = 1, time_num
 
             ! Calculate time dependent hyperfine
@@ -112,12 +114,12 @@ contains
                     hyperfine_total
 
         end do
-        !!$omp end parallel do
+        !$omp end parallel do
 
     end subroutine calculate_hamiltonian
 
     subroutine liouville_propagator(time_num, time_step, electron_frequency, freq_nuclear_1, microwave_amplitude, &
-            t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eigvectors, eigvectors_inv, energies, propagator)
+            t1_nuc, t1_elec, temperature, eigvectors, eigvectors_inv, energies, propagator)
 
         use iso_fortran_env
         use omp_lib
@@ -128,25 +130,20 @@ contains
         real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
 
         integer, intent(in):: time_num
-        complex(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv
-        complex(kind=8), dimension(:, :), intent(in) :: energies
+        complex(kind=8), dimension(time_num, 4, 4), intent(in) :: eigvectors, eigvectors_inv
+        real(kind=8), dimension(time_num, 4), intent(in) :: energies
         real(kind=8), intent(in) :: electron_frequency, freq_nuclear_1, microwave_amplitude, time_step
-        real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
+        real(kind=8), intent(in) :: t1_nuc, t1_elec, temperature
         complex(kind=8), intent(out) :: propagator(time_num, 16, 16)
 
         integer :: count
-        complex(kind=8), dimension(16, 16) :: identity_size16, hamiltonian_liouville, relax_mat, mat_exp
-        complex(kind=8), dimension(16, 16) :: eigvectors_liouville, eigvectors_inv_liouville, liouvillian, exponent
-        complex(kind=8), dimension(16, 16) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
-        complex(kind=8), dimension(16, 16) :: relax_t2_elec, relax_t2_nuc, relax_t1
-        complex(kind=8), dimension(4, 4) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t
+        complex(kind=8), dimension(16, 16) :: identity_size16, hamiltonian_liouville, relax_mat
+        complex(kind=8), dimension(16, 16) :: eigvectors_liouville, eigvectors_inv_liouville, liouvillian
         complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, total_hamiltonian
-        complex(kind=8), dimension(4, 4) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m, test1
         complex(kind=8), dimension(4, 4) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
         complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, identity_size4
         complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_size2
         real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem
-        complex(kind=8) :: timescale
 
         ! Identity matrix
         identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
@@ -162,15 +159,11 @@ contains
         spin2_s_x = kron(spin_x, identity_size2)
         spin2_s_y = kron(spin_y, identity_size2)
         spin2_s_z = kron(spin_z, identity_size2)
-        spin2_s_p = spin2_s_x + i * spin2_s_y
-        spin2_s_m = spin2_s_x - i * spin2_s_y
 
         ! 4x4 matrices for I operator
         spin2_i_x = kron(identity_size2, spin_x)
         spin2_i_y = kron(identity_size2, spin_y)
         spin2_i_z = kron(identity_size2, spin_z)
-        spin2_i_p = spin2_i_x + i * spin2_i_y
-        spin2_i_m = spin2_i_x - i * spin2_i_y
 
         ! Calculate variables for Liouville space relaxation
         p_e = tanh(0.5 * electron_frequency * (Planck / (Boltzmann * temperature)))
@@ -183,14 +176,7 @@ contains
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
 
-!        call omp_set_num_threads(8)
-        !!$omp parallel do default(private) &
-        !!$omp& shared(microwave_hamiltonian_init, eigvectors, eigvectors_inv, energies, time_step)&
-        !!$omp& shared(t2_elec, t2_nuc, gnp, gnm, gep, gem, propagator) &
-        !!$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, identity_size4, identity_size16)
         do count = 1, time_num
-
-            test1 = kron(spin_x, identity_size2)
 
             ! Transform microwave Hamiltonian into time dependent basis
             microwave_hamiltonian = matmul(eigvectors_inv(count, :, :), matmul(microwave_hamiltonian_init, &
@@ -210,38 +196,8 @@ contains
             hamiltonian_liouville = kron(total_hamiltonian, identity_size4) - &
                     kron(identity_size4, transpose(total_hamiltonian))
 
-            ! Transform spin matrices into time dependent Hilbert space basis
-            spin2_s_z_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_s_z, eigvectors(count, :, :)))
-            spin2_s_p_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_s_p, eigvectors(count, :, :)))
-            spin2_s_m_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_s_m, eigvectors(count, :, :)))
-            spin2_i_z_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_i_z, eigvectors(count, :, :)))
-            spin2_i_p_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_i_p, eigvectors(count, :, :)))
-            spin2_i_m_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_i_m, eigvectors(count, :, :)))
-
-            ! Transform spin matrices into time dependent Liouville space basis
-            spin2_i_p_tl = kron(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5_WP * identity_size16 + 0.5_WP * ( &
-                           kron(spin2_i_z_t, identity_size4) + &
-                           kron(identity_size4, transpose(spin2_i_z_t)))
-
-            spin2_i_m_tl = kron(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5_WP * identity_size16 - 0.5_WP * ( &
-                            kron(spin2_i_z_t, identity_size4) + &
-                            kron(identity_size4, transpose(spin2_i_z_t)))
-
-            spin2_s_p_tl = kron(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5_WP * identity_size16 + 0.5_WP * ( &
-                           kron(spin2_s_z_t, identity_size4) + &
-                           kron(identity_size4, transpose(spin2_s_z_t)))
-
-            spin2_s_m_tl = kron(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5_WP * identity_size16 - 0.5_WP * ( &
-                           kron(spin2_s_z_t, identity_size4) + &
-                           kron(identity_size4, transpose(spin2_s_z_t)))
-
             ! Calculate time dependent Liouville space relaxation matrix
-            relax_t2_elec = (1.0_WP / t2_elec) * (kron(spin2_s_z_t, transpose(spin2_s_z_t)) - &
-                    0.5_WP * 0.5_WP * identity_size16)
-            relax_t2_nuc = (1.0_WP / t2_nuc) * (kron(spin2_i_z_t, transpose(spin2_i_z_t)) - &
-                    0.5_WP * 0.5_WP * identity_size16)
-            relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
-            relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
+            relax_mat = 0.5 * identity_size16
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron(eigvectors(count, :, :), eigvectors(count, :, :))
@@ -249,104 +205,20 @@ contains
 
             ! Calculate Liouville space propagator
             liouvillian = hamiltonian_liouville + i * relax_mat
-            exponent = -i * liouvillian * time_step
-            timescale = 1.0_WP
-            mat_exp = expm(timescale, exponent)
-            propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
-
+            propagator(count, :, :) = expm(eigvectors_inv_liouville, eigvectors_liouville)
+!            propagator(count, :, :) = matmul(eigvectors_inv_liouville, &
+!                                         matmul(expm(-i * liouvillian * time_step), eigvectors_liouville))
         end do
-        !!$omp end parallel do
 
     end subroutine liouville_propagator
 
+    function expm(A, B) result(C)
 
-    subroutine testing
+        complex(kind=8), dimension (:, :), intent(in) :: A, B
+        complex(kind=8), dimension (:, :), allocatable :: C
 
-        use iso_fortran_env
-        use omp_lib
-        implicit none
-
-        integer, parameter :: WP = REAL64
-        complex(kind=8), parameter :: i = (0, 1)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
-
-        integer :: count
-        complex(kind=8), dimension(8, 8) :: test_16
-        complex(kind=8), dimension(8, 8) :: spin3_i_x, spin3_i_y, spin3_i_z, test_8, matrix
-        complex(kind=8), dimension(8, 8) :: spin3_s_x, spin3_s_y, spin3_s_z
-        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, identity_size4, test, test_4
-        complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_size2, test_2
-        complex(kind=8) :: exponent
-        double precision wtime
-
-        ! Identity matrix
-        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
-
-        ! Pauli matrices
-        spin_x = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
-        spin_y = 0.5 * i * (reshape((/ 0.0_WP, -1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_y), order = (/2, 1/)))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
-
-        ! 4x4 matrices for S operator
-        spin2_s_x = kron(spin_x, identity_size2)
-        spin2_s_y = kron(spin_y, identity_size2)
-        spin2_s_z = kron(spin_z, identity_size2)
-
-        ! 8x8 matrices for S operator
-        spin3_s_x = kron(spin_x, kron(identity_size2, identity_size2))
-        spin3_s_y = kron(spin_y, kron(identity_size2, identity_size2))
-        spin3_s_z = kron(spin_z, kron(identity_size2, identity_size2))
-
-        ! 8x8 matrices for I operator
-        spin3_i_x = kron(identity_size2, kron(identity_size2, spin_x))
-        spin3_i_y = kron(identity_size2, kron(identity_size2, spin_y))
-        spin3_i_z = kron(identity_size2, kron(identity_size2, spin_z))
-
-
-        wtime = omp_get_wtime()
-
-        call omp_set_num_threads(8)
-        !$omp parallel do default(private) &
-        !$omp& shared(spin_x, identity_size2)
-        do count = 1, int(1E7)
-!            test_16 = kron(spin3_i_x, spin3_i_y)
-!            test_8 = matmul(spin3_i_x, spin3_i_y)
-            test_2 = matmul(spin_x, spin_z)
-
-!            exponent = 1
-!            matrix = -1E4 * i * spin3_i_x
-!            test_8 = expm(exponent, matrix)
-        end do
-        !$omp end parallel do
-        wtime = omp_get_wtime ( ) - wtime
-
-        write(6,*) sngl(wtime)
-
-    end subroutine testing
-
-    function expm(t, H) result(expH)
-
-        complex(kind = 8), intent(in) :: t
-        complex(kind = 8), dimension(:, :), intent(in) :: H
-        complex(kind = 8), dimension(size(H, 1), size(H, 2)) :: expH
-
-        integer, parameter :: ideg = 6
-        complex(kind = 8), dimension(4 * size(H, 1) * size(H, 2) + ideg + 1) :: wsp
-        integer, dimension(size(H, 1)) :: iwsp
-        integer :: iexp, ns, iflag, n
-
-        n = size(H,1)
-        call ZGPADM(ideg, n, t, H, n, wsp, size(wsp,1), iwsp, iexp, ns, iflag)
-        expH = reshape(wsp(iexp:iexp+n*n-1), shape(expH))
-
-        ! ideg, degre of the diagonal Pade to be used
-        ! n the order of H
-        ! t the timescale
-        ! H the argument matrix
-        ! wsp workspace variable
-        ! iexp output
-        ! ns number of scaling-squaring used
-        ! iflag exit flag
+        allocate(C(size(A, 1), size(A, 2)))
+        C = matmul(A, B)
 
     end function expm
 
@@ -360,10 +232,6 @@ contains
         allocate(C(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2)))
         C = 0
 
-        !below do loop requires OpenMP for use in multithreaded propagation, no idea why
-
-        !$omp parallel do default(private) &
-        !$omp& shared(A, B, C)
         do i = 1, size(A, 1)
             do j = 1, size(A, 2)
                 n = (i - 1) * size(B, 1) + 1
@@ -373,7 +241,6 @@ contains
                 C(n : m, p : q) = A(i, j) * B
             enddo
         enddo
-        !$omp end parallel do
 
     end function kron
 
