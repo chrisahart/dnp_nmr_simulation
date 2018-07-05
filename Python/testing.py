@@ -4,9 +4,9 @@ import numpy as np
 from scipy import linalg as la
 import f2py_dynamics as fortran
 
-A = sp.spin1_x #sp.spin3_i_x
-B = sp.spin1_z #sp.spin3_i_y
-C = int(1E7)
+A = sp.spin3_i_x
+B = sp.spin3_i_z
+C = int(1E6)
 
 # A=([[1, 2, 3, 4],
 #     [5, 6, 7, 8],
@@ -26,9 +26,10 @@ C = int(1E7)
 #     # temp = np.matmul(A, B)
 #     #temp = np.kron(A, B)
 #     # temp = la.expm(-1j * sp.spin3_i_x * int(1E4))
-#     temp = np.matmul(A, B)
+#     temp = np.dot(A, B)
 # end = time.time() - start
 # print('time taken', end)
+# print('temp', temp)
 
 # matrix = sp.spin2_s_x #sp.spin1_x + sp.spin1_y
 # origonal = la.expm(-1j * matrix * int(1E4))

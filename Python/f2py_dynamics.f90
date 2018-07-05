@@ -279,6 +279,10 @@ contains
         complex(kind=8) :: exponent
         double precision wtime
 
+        integer(kind=8)::n
+        real(kind=8), dimension(2, 2):: a, b, c
+        real(kind=8) :: alpha, beta
+
         ! Identity matrix
         identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
 
@@ -302,25 +306,37 @@ contains
         spin3_i_y = kron(identity_size2, kron(identity_size2, spin_y))
         spin3_i_z = kron(identity_size2, kron(identity_size2, spin_z))
 
+        b = real(spin_x) !real(spin_x)
+        a = real(spin_z) !real(spin_z)
+        c=0.0D0
+
+        alpha = 1.0_WP
+        beta = 0.0_WP
+        n = size(a, 1)
 
         wtime = omp_get_wtime()
 
-        call omp_set_num_threads(8)
-        !$omp parallel do default(private) &
-        !$omp& shared(spin_x, identity_size2)
+        !call omp_set_num_threads(8)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(spin_x, identity_size2)
         do count = 1, int(1E7)
 !            test_16 = kron(spin3_i_x, spin3_i_y)
-!            test_8 = matmul(spin3_i_x, spin3_i_y)
-            test_2 = matmul(spin_x, spin_z)
+!            test_2 = matmul(a, b)
+!            test_2 = matmul(spin_x, spin_z)
+
+            call dgemm("N","N",n,n,n,alpha,a,n,b,n,beta,c,n)
+            !C := alpha*op( A )*op( B ) + beta*C
 
 !            exponent = 1
 !            matrix = -1E4 * i * spin3_i_x
 !            test_8 = expm(exponent, matrix)
         end do
-        !$omp end parallel do
+        !!$omp end parallel do
         wtime = omp_get_wtime ( ) - wtime
-
         write(6,*) sngl(wtime)
+
+        write(6, *) test_8
+        write(6, *) c
 
     end subroutine testing
 
