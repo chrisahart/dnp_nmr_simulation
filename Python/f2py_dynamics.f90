@@ -5,10 +5,10 @@ contains
     subroutine calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
             hyperfine_coupling, hyperfine_angles, &
                                     orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
-                                    hamiltonian)
+            energies, eig_vector, eig_vector_inv)
 
         use iso_fortran_env
-        use omp_lib
+        !use omp_lib
         implicit none
 
         integer, parameter :: WP = REAL64
@@ -19,15 +19,28 @@ contains
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
         real(kind=8), intent(in) :: time_step, freq_rotor
-        complex(kind=8), intent(out) :: hamiltonian(time_num, 4, 4)
+        real(kind=8), intent(out) :: energies(time_num, 4)
+        complex(kind=8), intent(out) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
 
-        integer :: count
-        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, hyperfine_total
+
+        integer :: count, count2
+        complex(kind=8), dimension(4) :: test3
+        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, hyperfine_total, test1, test2
         complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, spin2_identity
         complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_spin1
         complex(kind=8) :: hyperfine_zx, hyperfine_zz, ganisotropy
         real(kind=8) :: gx, gy, gz, ca, cb, cg, sa, sb, sg, r11, r12, r13, r21, r22, r23, r31, r32, r33
         real(kind=8) :: c0, c1, c2, c3, c4
+
+        real(kind=8) :: Rwork!, energies(time_num, 4)
+        complex(kind=8) :: eigval(time_num, 4), dummy(1,1), work(8)
+        integer :: info
+        complex(kind=8), dimension(time_num, 4,4) :: hamiltonian
+        double precision wtime
+
+        complex(kind=8) :: N(6,6),VL(1,1),W(6),WORK2(12),VR(6,6),NN(6,6)
+        real(kind=8) :: RWORK2(12)
+        integer INFO2
 
         ! Identity matrix
         identity_spin1 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_spin1)))
@@ -111,8 +124,63 @@ contains
                     nuclear_frequency * spin2_i_z + &
                     hyperfine_total
 
+            !write(6,*) count
+
         end do
         !!$omp end parallel do
+
+!        write(6,*) hamiltonian(1, :, :)
+
+!        call CGEEV('N', 'N', 4, hamiltonian(1, :, :), 4, eigval(1, :), eig_vector(1, :, :), 4,  &
+!                dummy, 4, work, 8, Rwork, info)
+
+!        wtime = omp_get_wtime()
+        ! Calculate eigenvalues and eigenvectors using LAPACK
+        do count2 = 1, time_num
+
+!            write(6,*) count2
+
+            test1 = hamiltonian(count2, :, :)
+            !test1 = spin2_i_y
+            eig_vector(count2, :, :) = 0.0_WP
+
+            call ZGEEV('N', 'V', 4, test1, 4, eigval(count2, :), dummy, 1,  &
+                    eig_vector(count2, :, :), 4, work, 8, Rwork, info)
+
+            !energies(count2, :) = 1 !real(eigval(count2, :))
+
+
+
+        end do
+!        wtime = omp_get_wtime ( ) - wtime
+!        write(6,*) sngl(wtime)
+
+        eig_vector_inv = eig_vector
+        energies = real(eigval)
+
+!        write(6,*) hamiltonian(1, :, :)
+!        write(6,*) eigval(1, :)
+!        write(6,*) energies(1, :)
+!        write(6,*) eig_vector(1, :, :)
+
+!        N = 0
+        NN(1,3) = -1
+!        NN(1,4) = 11.2924753707945
+!        NN(2,5) = 11.2924753707945
+!        NN(3,1) = -0.868852459016394
+!        NN(3,6) = 2.77683820593307
+!        NN(4,1) = -8.826420060682277E-002
+!        NN(4,6) = -0.868852459016394
+!        NN(5,2) = -8.855454337197682E-002
+!        NN(6,4) = -1.0
+
+!        call ZGEEV('N','V',6,NN,6,W,VL,1,VR,6,WORK2,12,RWORK2,INFO2)
+!        write(*,*)'First eigenvalue of NN:',W(1)
+!        write(*,*)'First eigenvector of NN:',VR(1:6,1)
+
+!        energies = real(eigval)
+!        write(6,*) eigval(1, :)
+!        write(6,*) energies(1, :)
 
     end subroutine calculate_hamiltonian
 

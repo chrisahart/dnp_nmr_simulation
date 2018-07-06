@@ -9,7 +9,7 @@ import solid_effect_plotting
 from shutil import copyfile
 import os
 import matplotlib.pyplot as plt
-#import f2py_dynamics as fortran
+import f2py_dynamics as fortran
 
 
 def main():
@@ -76,17 +76,35 @@ def dynamics(microwave_amplitude):
     density_mat = fn.density_mat_thermal(hamiltonian_ideal)
 
     # Construct intrinsic Hilbert space Hamiltonian
-    hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
-    # hamiltonian = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num, param.time_step, param.freq_rotor,
-    #                                                          param.gtensor,
-    #                                                          param.hyperfine_coupling, param.hyperfine_angles_1,
-    #                                                          param.orientation_se, param.electron_frequency,
-    #                                                          param.microwave_frequency, param.freq_nuclear_1)
+    # hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    energy, eig_vector, eig_vector_inv = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num,
+                                                                                    param.time_step, param.freq_rotor,
+                                                             param.gtensor,
+                                                             param.hyperfine_coupling, param.hyperfine_angles_1,
+                                                             param.orientation_se, param.electron_frequency,
+                                                             param.microwave_frequency, param.freq_nuclear_1)
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
-    eigvals, eigvectors = np.linalg.eig(hamiltonian)
-    energies = np.real(eigvals)
+    # start = time.time()
+    # eigvals, eigvectors = np.linalg.eig(hamiltonian)
+    # end = time.time() - start
+    # print('python eig() time taken', end)
+    # energies = np.real(eigvals)
+    # print('hamiltonian[0, :] \n', hamiltonian[0, :])
+    # print('energies[0, :]', energies[0, :])
+    # print('eigvectors[0, :] \n', eigvectors[100])
+    # eigvectors_inv = np.linalg.inv(eigvectors)
+    #
+    # energies = energy
+    # print(eig_vector.shape)
+    # print(eig_vector[100])
+
+    energies = energy
+    eigvectors = eig_vector
     eigvectors_inv = np.linalg.inv(eigvectors)
+
+
+    # eigvectors_inv = np.linalg.inv(eigvectors)
 
     # Calculate microwave Hamiltonian
     microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
