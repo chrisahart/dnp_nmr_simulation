@@ -33,14 +33,15 @@ contains
         real(kind=8) :: c0, c1, c2, c3, c4
 
         real(kind=8) :: Rwork!, energies(time_num, 4)
-        complex(kind=8) :: eigval(time_num, 4), dummy(1,1), work(8)
-        integer :: info
+        complex(kind=8) :: eigval(time_num, 4), dummy(1,1), work(8), work_inv(8)
+        integer :: info, info_inv
         complex(kind=8), dimension(time_num, 4,4) :: hamiltonian
         double precision wtime
 
         complex(kind=8) :: N(6,6),VL(1,1),W(6),WORK2(12),VR(6,6),NN(6,6)
         real(kind=8) :: RWORK2(12)
-        integer INFO2
+        integer :: INFO2
+        integer :: ipiv(4)
 
         ! Identity matrix
         identity_spin1 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_spin1)))
@@ -135,28 +136,38 @@ contains
 !                dummy, 4, work, 8, Rwork, info)
 
 !        wtime = omp_get_wtime()
+
         ! Calculate eigenvalues and eigenvectors using LAPACK
         do count2 = 1, time_num
-
-!            write(6,*) count2
-
             test1 = hamiltonian(count2, :, :)
-            !test1 = spin2_i_y
-            eig_vector(count2, :, :) = 0.0_WP
-
             call ZGEEV('N', 'V', 4, test1, 4, eigval(count2, :), dummy, 1,  &
                     eig_vector(count2, :, :), 4, work, 8, Rwork, info)
 
-            !energies(count2, :) = 1 !real(eigval(count2, :))
+!            test2 = eig_vector(count2, :, :)
+!            eig_vector_inv(count2, :, :) = test2
 
 
+        end do
 
+        ! Calculate inverse eigenvectors
+        do count2 = 1, time_num
+            test2 = eig_vector(count2, :, :)
+            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
+            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
+            eig_vector_inv(count2, :, :) = test2
+
+!            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
+!            write(6,*) eig_vector_inv(count2, :, :)
         end do
 !        wtime = omp_get_wtime ( ) - wtime
 !        write(6,*) sngl(wtime)
 
-        eig_vector_inv = eig_vector
         energies = real(eigval)
+
+        test2 = spin2_s_y
+        call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
+        call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
+        write(6,*) test2
 
 !        write(6,*) hamiltonian(1, :, :)
 !        write(6,*) eigval(1, :)

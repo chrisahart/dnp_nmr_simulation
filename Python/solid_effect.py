@@ -88,20 +88,20 @@ def dynamics(microwave_amplitude):
     # start = time.time()
     # eigvals, eigvectors = np.linalg.eig(hamiltonian)
     # end = time.time() - start
-    # print('python eig() time taken', end)
+    # # print('python eig() time taken', end)
     # energies = np.real(eigvals)
-    # print('hamiltonian[0, :] \n', hamiltonian[0, :])
-    # print('energies[0, :]', energies[0, :])
-    # print('eigvectors[0, :] \n', eigvectors[100])
+    # # print('hamiltonian[0, :] \n', hamiltonian[0, :])
+    # # print('energies[0, :]', energies[0, :])
+    # print('eigvectors[0, :] \n', eigvectors[0])
     # eigvectors_inv = np.linalg.inv(eigvectors)
+    # print('eigvectors_inv[0, :] \n', eigvectors_inv[0])
     #
-    # energies = energy
-    # print(eig_vector.shape)
-    # print(eig_vector[100])
+    # print('eig_vector[0, :] \n', eig_vector[0])
+    # print('eig_vector_inv[0, :] \n', eig_vector_inv[0])
 
     energies = energy
     eigvectors = eig_vector
-    eigvectors_inv = np.linalg.inv(eigvectors)
+    eigvectors_inv = eig_vector_inv
 
 
     # eigvectors_inv = np.linalg.inv(eigvectors)

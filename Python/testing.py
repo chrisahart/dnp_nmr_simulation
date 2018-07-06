@@ -35,8 +35,12 @@ C = int(1E6)
 # origonal = la.expm(-1j * matrix * int(1E4))
 # print('la.expm \n', origonal)
 
-eigvals, eigvectors = np.linalg.eig(sp.spin2_i_z)
-print(eigvectors)
+# eigvals, eigvectors = np.linalg.eig(sp.spin2_i_z)
+# print(eigvectors)
+
+print('sp.spin2_s_y', sp.spin2_s_z)
+print('inv sp.spin2_s_y', np.linalg.inv(sp.spin2_s_z))
+
 
 # start = time.time()
 # fortran.f2py_dynamics.testing()
