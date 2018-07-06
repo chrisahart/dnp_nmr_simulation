@@ -2,26 +2,87 @@ module f2py_dynamics
 
 contains
 
+    subroutine main(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, &
+            orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, microwave_amplitude, &
+            t1_nuc,  t1_elec, t2_nuc, t2_elec, temperature, time_num_prop, pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot)
+
+        use iso_fortran_env
+        use omp_lib
+        implicit none
+
+        integer, intent(in):: time_num, time_num_prop
+        real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
+        real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
+        real(kind=8), intent(in) :: time_step, freq_rotor
+        real(kind=8), intent(in) :: microwave_amplitude
+        real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
+
+        complex(kind=8), dimension(time_num, 4, 4) :: eigvectors, eigvectors_inv
+        real(kind=8), dimension(time_num, 4) :: energies
+        complex(kind = 8), dimension(time_num, 16, 16)  :: propagator
+        complex(kind = 8), dimension(4, 4) :: density_mat
+        complex(kind=8) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
+
+        real(kind = 8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
+        real(kind = 8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
+
+        call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
+            hyperfine_coupling, hyperfine_angles, &
+                                    orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
+            energies, eig_vector, eig_vector_inv, density_mat)
+
+        call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
+            t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eigvectors, eigvectors_inv, energies, propagator)
+
+        call calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
+
+        call calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
+
+    end subroutine main
+
+!    subroutine testing(time_num, time_step, freq_rotor, gtensor, &
+!            hyperfine_coupling, hyperfine_angles, &
+!                                    orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
+!            energies, eig_vector, eig_vector_inv, density_mat)
+!
+!        use iso_fortran_env
+!        use omp_lib
+!        implicit none
+!
+!        integer, intent(in):: time_num
+!        real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
+!        real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
+!        real(kind=8), intent(in) :: time_step, freq_rotor
+!
+!        real(kind=8), intent(out) :: energies(time_num, 4)
+!        complex(kind=8), intent(out) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4), density_mat(4, 4)
+!
+!        call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
+!            hyperfine_coupling, hyperfine_angles, &
+!                                    orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
+!            energies, eig_vector, eig_vector_inv, density_mat)
+!
+!    end subroutine testing
+
     subroutine calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
             hyperfine_coupling, hyperfine_angles, &
                                     orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
-            energies, eig_vector, eig_vector_inv)
+            energies, eig_vector, eig_vector_inv, density_mat)
 
         use iso_fortran_env
-        !use omp_lib
+        use omp_lib
         implicit none
 
         integer, parameter :: WP = REAL64
         complex(kind=8), parameter :: i = (0, 1)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0)
+        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
 
         integer, intent(in):: time_num
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
         real(kind=8), intent(in) :: time_step, freq_rotor
         real(kind=8), intent(out) :: energies(time_num, 4)
-        complex(kind=8), intent(out) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
-
+        complex(kind=8), intent(out) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4), density_mat(4, 4)
 
         integer :: count, count2
         complex(kind=8), dimension(4) :: test3
@@ -42,6 +103,9 @@ contains
         real(kind=8) :: RWORK2(12)
         integer :: INFO2
         integer :: ipiv(4)
+
+        complex(kind=8), dimension(4, 4) :: hamiltonian_ideal, boltzmann_factors_mat
+        complex(kind=8), dimension(4) :: boltzmann_factors, energies_ideal
 
         ! Identity matrix
         identity_spin1 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_spin1)))
@@ -90,7 +154,7 @@ contains
                 gz * (r13 ** 2 - r23 ** 2))
         c4 = 2.0_WP / 3.0_WP * (gx * r11 * r21 + gy * r22 * r12 + gz * r13 * r23)
 
-        !call omp_set_num_threads(1)
+        !call omp_set_num_threads(8)
         !!$omp parallel do default(private) &
         !!$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
         !!$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
@@ -125,73 +189,42 @@ contains
                     nuclear_frequency * spin2_i_z + &
                     hyperfine_total
 
-            !write(6,*) count
-
         end do
         !!$omp end parallel do
 
-!        write(6,*) hamiltonian(1, :, :)
-
-!        call CGEEV('N', 'N', 4, hamiltonian(1, :, :), 4, eigval(1, :), eig_vector(1, :, :), 4,  &
-!                dummy, 4, work, 8, Rwork, info)
-
-!        wtime = omp_get_wtime()
-
-        ! Calculate eigenvalues and eigenvectors using LAPACK
+        ! Calculate eigenvalues and eigenvectors using LAPACK (OpenMP doesn't help here)
         do count2 = 1, time_num
             test1 = hamiltonian(count2, :, :)
             call ZGEEV('N', 'V', 4, test1, 4, eigval(count2, :), dummy, 1,  &
                     eig_vector(count2, :, :), 4, work, 8, Rwork, info)
-
-!            test2 = eig_vector(count2, :, :)
-!            eig_vector_inv(count2, :, :) = test2
-
-
         end do
+        energies = real(eigval)
 
-        ! Calculate inverse eigenvectors
+        ! Calculate inverse eigenvectors using LAPACK (OpenMP doesn't help here)
         do count2 = 1, time_num
             test2 = eig_vector(count2, :, :)
             call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
             call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
             eig_vector_inv(count2, :, :) = test2
-
-!            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-!            write(6,*) eig_vector_inv(count2, :, :)
         end do
-!        wtime = omp_get_wtime ( ) - wtime
-!        write(6,*) sngl(wtime)
 
-        energies = real(eigval)
+        ! Calculate thermal density matrix from idealised Hamiltonian
+        hamiltonian_ideal = electron_frequency * spin2_s_z + nuclear_frequency * spin2_i_z
+        energies_ideal(1) = hamiltonian_ideal(1, 1)
+        energies_ideal(2) = hamiltonian_ideal(2, 2)
+        energies_ideal(3) = hamiltonian_ideal(3, 3)
+        energies_ideal(4) = hamiltonian_ideal(4, 4)
 
-        test2 = spin2_s_y
-        call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
-        call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-        write(6,*) test2
-
-!        write(6,*) hamiltonian(1, :, :)
-!        write(6,*) eigval(1, :)
-!        write(6,*) energies(1, :)
-!        write(6,*) eig_vector(1, :, :)
-
-!        N = 0
-        NN(1,3) = -1
-!        NN(1,4) = 11.2924753707945
-!        NN(2,5) = 11.2924753707945
-!        NN(3,1) = -0.868852459016394
-!        NN(3,6) = 2.77683820593307
-!        NN(4,1) = -8.826420060682277E-002
-!        NN(4,6) = -0.868852459016394
-!        NN(5,2) = -8.855454337197682E-002
-!        NN(6,4) = -1.0
-
-!        call ZGEEV('N','V',6,NN,6,W,VL,1,VR,6,WORK2,12,RWORK2,INFO2)
-!        write(*,*)'First eigenvalue of NN:',W(1)
-!        write(*,*)'First eigenvector of NN:',VR(1:6,1)
-
-!        energies = real(eigval)
-!        write(6,*) eigval(1, :)
-!        write(6,*) energies(1, :)
+        ! Calculate initial Zeeman basis density matrix from Boltzmann factors
+        do count = 1, 4
+            boltzmann_factors(count) = exp(-(Planck * energies_ideal(count)) / (Boltzmann * 100))
+        end do
+        boltzmann_factors_mat(1, 1) = boltzmann_factors(1)
+        boltzmann_factors_mat(2, 2) = boltzmann_factors(2)
+        boltzmann_factors_mat(3, 3) = boltzmann_factors(3)
+        boltzmann_factors_mat(4, 4) = boltzmann_factors(4)
+        density_mat = 0
+        density_mat = (1/sum(boltzmann_factors)) * boltzmann_factors_mat
 
     end subroutine calculate_hamiltonian
 
@@ -208,7 +241,7 @@ contains
 
         integer, intent(in):: time_num
         complex(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv
-        complex(kind=8), dimension(:, :), intent(in) :: energies
+        real(kind=8), dimension(:, :), intent(in) :: energies
         real(kind=8), intent(in) :: electron_frequency, freq_nuclear_1, microwave_amplitude, time_step
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
         complex(kind=8), intent(out) :: propagator(time_num, 16, 16)
@@ -268,8 +301,6 @@ contains
         !!$omp& shared(t2_elec, t2_nuc, gnp, gnm, gep, gem, propagator) &
         !!$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, identity_size4, identity_size16)
         do count = 1, time_num
-
-            test1 = kron(spin_x, identity_size2)
 
             ! Transform microwave Hamiltonian into time dependent basis
             microwave_hamiltonian = matmul(eigvectors_inv(count, :, :), matmul(microwave_hamiltonian_init, &
@@ -337,6 +368,106 @@ contains
         !!$omp end parallel do
 
     end subroutine liouville_propagator
+
+
+    subroutine calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
+
+        use iso_fortran_env
+        use omp_lib
+        implicit none
+
+        integer, parameter :: WP = REAL64
+
+        integer, intent(in) :: time_num_prop, time_num
+        complex(kind = 8), dimension(:, :, :), intent(in) :: propagator
+        complex(kind = 8), dimension(:, :), intent(in) :: density_mat
+        real(kind = 8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
+
+        integer :: count
+        complex(kind = 8), dimension(16, 1) :: density_mat_liouville, temp
+        complex(kind = 8), dimension(16, 16) :: identity_size16, propagator_strobe
+        complex(kind = 8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
+        complex(kind = 8), dimension(2, 2) :: spin_z, identity_size2
+
+        ! Calculate matrices specific to polarisation calculation
+        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
+        identity_size16 = kron(kron(identity_size2, identity_size2), kron(identity_size2, identity_size2))
+        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+        spin2_s_z = kron(spin_z, identity_size2)
+        spin2_i_z = kron(identity_size2, spin_z)
+
+        density_mat_time = density_mat
+        propagator_strobe = identity_size16
+
+        ! Calculate stroboscopic propagator (product of all operators within rotor period)
+        do count = 1, time_num
+            propagator_strobe = matmul(propagator_strobe, propagator(count, :, :))
+        end do
+
+        ! Propogate density matrix using stroboscopic propagator
+        do count = 1, time_num_prop
+
+            ! Calculate electronic and nuclear polarisation
+            pol_i_z(count) = trace(matmul(density_mat_time, spin2_i_z))
+            pol_s_z(count) = trace(matmul(density_mat_time, spin2_s_z))
+
+            ! Transform density matrix (2^N x 2^N to 4^N x 1)
+            density_mat_liouville = reshape(density_mat_time, (/4 ** 2, 1/))
+
+            ! Propagate density matrix
+            temp = matmul(propagator_strobe, density_mat_liouville)
+
+            ! Transform density matrix (4^N x 1 to 2^N x 2^N)
+            density_mat_time = reshape(temp, (/2 ** 2, 2 ** 2/))
+
+        end do
+
+    end subroutine calculate_polarisation_rotor
+
+    subroutine calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
+
+        use iso_fortran_env
+        use omp_lib
+        implicit none
+
+        integer, parameter :: WP = REAL64
+
+        integer, intent(in) :: time_num
+        complex(kind = 8), dimension(:, :, :), intent(in) :: propagator
+        complex(kind = 8), dimension(:, :), intent(in) :: density_mat
+        real(kind = 8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
+
+        integer :: count
+        complex(kind = 8), dimension(16, 1) :: density_mat_liouville, temp
+        complex(kind = 8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
+        complex(kind = 8), dimension(2, 2) :: spin_z, identity_size2
+
+        ! Calculate matrices specific to polarisation calculation
+        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
+        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+        spin2_s_z = kron(spin_z, identity_size2)
+        spin2_i_z = kron(identity_size2, spin_z)
+
+        density_mat_time = density_mat
+
+        do count = 1, time_num
+
+            ! Calculate electronic and nuclear polarisation
+            pol_i_z_rot(count) = trace(matmul(density_mat_time, spin2_i_z))
+            pol_s_z_rot(count) = trace(matmul(density_mat_time, spin2_s_z))
+
+            ! Transform density matrix (2^N x 2^N to 4^N x 1)
+            density_mat_liouville = reshape(density_mat_time, (/4 ** 2, 1/))
+
+            ! Propagate density matrix
+            temp = matmul(propagator(count, :, :), density_mat_liouville)
+
+            ! Transform density matrix (4^N x 1 to 2^N x 2^N)
+            density_mat_time = reshape(temp, (/2 ** 2, 2 ** 2/))
+
+        end do
+
+    end subroutine calculate_polarisation_sub_rotor
 
 
     subroutine testing
@@ -445,6 +576,20 @@ contains
 
     end function expm
 
+    function trace(A) result(C)
+
+        complex(kind = 8), dimension (:, :), intent(in) :: A
+        complex(kind = 8) :: C
+        integer :: i
+
+        C = 0
+
+        do i = 1, size(A, 1)
+            C = C + A(i, i)
+        end do
+
+    end function trace
+
     function kron(A, B) result(C)
 
         complex(kind=8), dimension (:, :), intent(in) :: A, B
@@ -457,8 +602,8 @@ contains
 
         !below do loop requires OpenMP for use in multithreaded propagation, no idea why
 
-        !$omp parallel do default(private) &
-        !$omp& shared(A, B, C)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(A, B, C)
         do i = 1, size(A, 1)
             do j = 1, size(A, 2)
                 n = (i - 1) * size(B, 1) + 1
@@ -468,7 +613,7 @@ contains
                 C(n : m, p : q) = A(i, j) * B
             enddo
         enddo
-        !$omp end parallel do
+        !!$omp end parallel do
 
     end function kron
 
