@@ -109,7 +109,6 @@ for ii = 0:length(tarray)-2
     hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp;
 end
 
-
 Zp=exp((we+wn)*planck/(kb*T))+exp((-we+wn)*planck/(kb*T))+exp((we-wn)*planck/(kb*T))+exp(-(we+wn)*planck/(kb*T));
 rho_zeeman=(1/Zp)*expm((-squeeze(hamil(:,:,1))-wme*Sz)*planck/(kb*T)); %%% Define zeeman rho0
 %rho_zeeman=(1/Zp)*expm(-(we*Sz+wn*Iz)*planck/(kb*T)); %or define it this way
