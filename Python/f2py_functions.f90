@@ -17,8 +17,8 @@ contains
 
     function trace_complex(A) result(C)
 
-        complex(kind = 8), dimension (:, :), intent(in) :: A
-        complex(kind = 8) :: C
+        complex(kind=8), dimension (:, :), intent(in) :: A
+        complex(kind=8) :: C
         integer :: i
         C = 0
 
@@ -54,8 +54,8 @@ contains
 
     function kron_complex(A, B) result(C)
 
-        complex(kind = 8), dimension (:, :), intent(in) :: A, B
-        complex(kind = 8), dimension (:, :), allocatable :: C
+        complex(kind=8), dimension (:, :), intent(in) :: A, B
+        complex(kind=8), dimension (:, :), allocatable :: C
         integer :: i = 0, j = 0, k = 0, l = 0
         integer :: m = 0, n = 0, p = 0, q = 0
         allocate(C(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2)))
@@ -104,12 +104,12 @@ contains
 
     function expm_complex(t, H) result(expH)
 
-        complex(kind = 8), intent(in) :: t
-        complex(kind = 8), dimension(:, :), intent(in) :: H
-        complex(kind = 8), dimension(size(H, 1), size(H, 2)) :: expH
+        complex(kind=8), intent(in) :: t
+        complex(kind=8), dimension(:, :), intent(in) :: H
+        complex(kind=8), dimension(size(H, 1), size(H, 2)) :: expH
 
         integer, parameter :: ideg = 6
-        complex(kind = 8), dimension(4 * size(H, 1) * size(H, 2) + ideg + 1) :: wsp
+        complex(kind=8), dimension(4 * size(H, 1) * size(H, 2) + ideg + 1) :: wsp
         integer, dimension(size(H, 1)) :: iwsp
         integer :: iexp, ns, iflag, n
 
@@ -132,8 +132,8 @@ contains
 
         integer :: count
         complex(kind=8), dimension(10000, 4, 4), intent(in) :: eig_vector
-        complex(kind = 8), dimension(10000, 4, 4) :: eig_vector_inv
-        complex(kind = 8), dimension(4, 4) :: temp
+        complex(kind=8), dimension(10000, 4, 4) :: eig_vector_inv
+        complex(kind=8), dimension(4, 4) :: temp
 
         !integer :: sz1 = 1000, sz2 = 4, sz3 = 8
         integer :: ipiv(4), info_inv
@@ -152,7 +152,7 @@ contains
             eig_vector_inv(count, :, :) = temp
         end do
 
-        write(6, *) eig_vector_inv(1, 1, 1)
+!        write(6, *) eig_vector_inv(1, 1, 1)
 
     end function inverse_complex
 

@@ -7,7 +7,6 @@ contains
             t1_nuc,  t1_elec, t2_nuc, t2_elec, temperature, time_num_prop, &
             pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies)
 
-        use iso_fortran_env
         use omp_lib
         use f2py_functions
         implicit none
@@ -19,13 +18,13 @@ contains
         real(kind=8), intent(in) :: microwave_amplitude
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
 
-        complex(kind = 8), dimension(time_num, 16, 16)  :: propagator
-        complex(kind = 8), dimension(4, 4) :: density_mat
+        complex(kind=8), dimension(time_num, 16, 16)  :: propagator
+        complex(kind=8), dimension(4, 4) :: density_mat
         complex(kind=8) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
 
-        real(kind = 8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
-        real(kind = 8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
-        real(kind = 8), dimension(time_num, 4), intent(out) :: energies
+        real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
+        real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
+        real(kind=8), dimension(time_num, 4), intent(out) :: energies
 
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
             hyperfine_coupling, hyperfine_angles, &
@@ -46,14 +45,12 @@ contains
                                     orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
             energies, eig_vector, eig_vector_inv, density_mat)
 
-        use iso_fortran_env
         use omp_lib
         use f2py_functions
         implicit none
 
-        integer, parameter :: WP = REAL64
-        complex(kind=8), parameter :: i = (0, 1)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
+        complex(kind=8), parameter :: i = (0, 1.D0)
+        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
 
         integer, intent(in):: time_num
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
@@ -64,7 +61,6 @@ contains
         complex(kind=8) :: temp(time_num, 4,4)
 
         integer :: count, count2
-        complex(kind=8), dimension(4) :: test3
         complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, hyperfine_total, test1, test2
         complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, spin2_identity
         complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_spin1
@@ -87,12 +83,12 @@ contains
         complex(kind=8), dimension(4) :: boltzmann_factors, energies_ideal
 
         ! Identity matrix
-        identity_spin1 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_spin1)))
+        identity_spin1 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_spin1)))
 
         ! Pauli matrices
-        spin_x = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
-        spin_y = 0.5 * i * (reshape((/ 0.0_WP, -1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_y), order = (/2, 1/)))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+        spin_x = 0.5 * (reshape((/ 0.D0, 1.D0, 1.D0, 0.D0/), shape(spin_x), order = (/2, 1/)))
+        spin_y = 0.5 * i * (reshape((/ 0.D0, -1.D0, 1.D0, 0.D0/), shape(spin_y), order = (/2, 1/)))
+        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
 
         ! 4x4 matrices for S operator
         spin2_s_x = kron_complex(spin_x, identity_spin1)
@@ -126,12 +122,12 @@ contains
         r32 = sa * sb
         r33 = cb
 
-        c0 = 1.0_WP / 3.0_WP * (gx + gy + gz)
-        c1 = 2.0_WP * 2.0_WP ** (1.0_WP/2.0_WP) / 3.0_WP * (gx * r11 * r31 + gy * r12 * r32 + gz * r13 * r33)
-        c2 = 2.0_WP ** (1.0_WP/2.0_WP) / 3.0_WP * (gx * r21 * r31 + gy * r22 * r32 + gz * r23 * r33)
-        c3 = 1.0_WP / 3.0_WP * (gx * (r11 ** 2.0_WP - r21 ** 2.0_WP) + gy * (r12 ** 2.0_WP - r22 ** 2.0_WP) + &
+        c0 = 1.D0 / 3.D0 * (gx + gy + gz)
+        c1 = 2.D0 * 2.D0 ** (1.D0/2.D0) / 3.D0 * (gx * r11 * r31 + gy * r12 * r32 + gz * r13 * r33)
+        c2 = 2.D0 ** (1.D0/2.D0) / 3.D0 * (gx * r21 * r31 + gy * r22 * r32 + gz * r23 * r33)
+        c3 = 1.D0 / 3.D0 * (gx * (r11 ** 2.D0 - r21 ** 2.D0) + gy * (r12 ** 2.D0 - r22 ** 2.D0) + &
                 gz * (r13 ** 2 - r23 ** 2))
-        c4 = 2.0_WP / 3.0_WP * (gx * r11 * r21 + gy * r22 * r12 + gz * r13 * r23)
+        c4 = 2.D0 / 3.D0 * (gx * r11 * r21 + gy * r22 * r12 + gz * r13 * r23)
 
         !!$omp parallel do default(private) &
         !!$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
@@ -140,26 +136,26 @@ contains
         do count = 1, time_num
 
             ! Calculate time dependent hyperfine
-            hyperfine_zz = hyperfine_coupling * (-0.5_WP * (sin(hyperfine_angles(2)) ** 2.0_WP) * &
-                    cos(2.0_WP * (2.0_WP * PI * freq_rotor * (count - 1) * time_step + &
-                            hyperfine_angles(3))) + 2.0_WP ** 2.0_WP * sin(hyperfine_angles(2)) * &
+            hyperfine_zz = hyperfine_coupling * (-0.5D0 * (sin(hyperfine_angles(2)) ** 2.D0) * &
+                    cos(2.D0 * (2.D0 * PI * freq_rotor * (count - 1) * time_step + &
+                            hyperfine_angles(3))) + 2.D0 ** 2.D0 * sin(hyperfine_angles(2)) * &
                     cos(hyperfine_angles(2)) * &
                     cos(2 * PI * freq_rotor * (count - 1) * time_step + hyperfine_angles(3)))
 
-            hyperfine_zx = hyperfine_coupling * (-0.5_WP * sin(hyperfine_angles(2)) * cos(hyperfine_angles(2)) * &
-                    cos(2_WP * PI * freq_rotor * (count - 1) * time_step + &
-                            hyperfine_angles(3)) - (2.0_WP ** 0.5_WP / 4.0_WP) * (sin(hyperfine_angles(2)) ** 2.0_WP)*&
-                    cos(2.0_WP * (2.0_WP * PI * freq_rotor * (count - 1) * time_step + hyperfine_angles(3))) + &
-                    (2.0_WP ** 0.5_WP / 4.0_WP) * (3.0_WP * (cos(hyperfine_angles(2)) ** 2.0_WP) - 1.0_WP))
+            hyperfine_zx = hyperfine_coupling * (-0.5D0 * sin(hyperfine_angles(2)) * cos(hyperfine_angles(2)) * &
+                    cos(2D0 * PI * freq_rotor * (count - 1) * time_step + &
+                            hyperfine_angles(3)) - (2.D0 ** 0.5D0 / 4.D0) * (sin(hyperfine_angles(2)) ** 2.D0)*&
+                    cos(2.D0 * (2.D0 * PI * freq_rotor * (count - 1) * time_step + hyperfine_angles(3))) + &
+                    (2.D0 ** 0.5D0 / 4.D0) * (3.D0 * (cos(hyperfine_angles(2)) ** 2.D0) - 1.D0))
 
-            hyperfine_total = 2.0_WP * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z) + &
-                    2.0_WP * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
+            hyperfine_total = 2.D0 * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z) + &
+                    2.D0 * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
 
             ! Calculate time dependent g-anisotropy frequency
-            ganisotropy = c0 + c1 * cos(2.0_WP * PI * freq_rotor * (count - 1) * time_step) + &
-                    c2 * sin(2.0_WP * PI * freq_rotor * (count - 1) * time_step) + &
-                    c3 * cos(4.0_WP * PI * freq_rotor * (count - 1) * time_step) + &
-                    c4 * sin(4.0_WP * PI * freq_rotor * (count - 1) * time_step)
+            ganisotropy = c0 + c1 * cos(2.D0 * PI * freq_rotor * (count - 1) * time_step) + &
+                    c2 * sin(2.D0 * PI * freq_rotor * (count - 1) * time_step) + &
+                    c3 * cos(4.D0 * PI * freq_rotor * (count - 1) * time_step) + &
+                    c4 * sin(4.D0 * PI * freq_rotor * (count - 1) * time_step)
 
 
             ! Calculate time dependent hamiltonian
@@ -171,32 +167,35 @@ contains
         !!$omp end parallel do
 
         ! Calculate eigenvalues and eigenvectors using LAPACK (OpenMP doesn't help here)
-        do count2 = 1, time_num
-            test1 = hamiltonian(count2, :, :)
-            call ZGEEV('N', 'V', 4, test1, 4, eigval(count2, :), dummy, 1,  &
-                    eig_vector(count2, :, :), 4, work, 8, Rwork, info)
-            write(6, *) eig_vector(1, 1, 1)
+        do count = 1, time_num
+            test1 = hamiltonian(count, :, :)
+            call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 1,  &
+                    eig_vector(count, :, :), 4, work, 8, Rwork, info)
+!            write(6, *) eig_vector(1, 1, 1)
         end do
         energies = real(eigval)
-        write(6, *) eig_vector(1, 1, 1)
+!        write(6,*) info
+!        write(6, *) eig_vector(1, 1, 1)
 
         ! Getting some very odd precision issues, eigvector=1.0000000000000000 if inverse eigenvector loop not present
         ! If present then eigvector=0.99999650020944664
         ! Convert complex to real, then look into precision
 
          ! Calculate inverse eigenvectors using LAPACK (OpenMP doesn't help here)
-        do count2 = 1, size(eig_vector, 1)
-            test2 = eig_vector(count2, :, :)
+        do count = 1, size(eig_vector, 1)
+            test2 = eig_vector(count, :, :)
             call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
             call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-            eig_vector_inv(count2, :, :) = test2
+            eig_vector_inv(count, :, :) = test2
         end do
+!        eig_vector_inv = 0
 !        write(6, *) eig_vector(1, 1, 1)
 !        write(6, *) eig_vector_inv(1, 1, 1)
 !
 !!        temp = inverse_complex(eig_vector)
 !        write(6, *) temp(1, 1, 1)
-!        eig_vector_inv = temp
+        temp = inverse_complex(eig_vector)
+        eig_vector_inv = temp
 !        write(6, *) eig_vector_inv(1, 1, 1)
 
         ! Calculate thermal density matrix from idealised Hamiltonian
@@ -220,19 +219,17 @@ contains
     end subroutine calculate_hamiltonian
 
     subroutine liouville_propagator(time_num, time_step, electron_frequency, freq_nuclear_1, microwave_amplitude, &
-            t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eigvectors, eigvectors_inv, energies, propagator)
+            t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eigvectors, eigvectors_inv2, energies, propagator)
 
-        use iso_fortran_env
         use omp_lib
         use f2py_functions
         implicit none
 
-        integer, parameter :: WP = REAL64
-        complex(kind=8), parameter :: i = (0, 1)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
+        complex(kind=8), parameter :: i = (0, 1.D0)
+        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
 
         integer, intent(in):: time_num
-        complex(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv
+        complex(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv2
         real(kind=8), dimension(:, :), intent(in) :: energies
         real(kind=8), intent(in) :: electron_frequency, freq_nuclear_1, microwave_amplitude, time_step
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
@@ -252,16 +249,18 @@ contains
         real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem
         complex(kind=8) :: timescale
 
+        complex(kind=8), dimension(time_num, 4, 4) :: eigvectors_inv
+
         ! Identity matrix
-        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
+        identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
         identity_size4 = kron_complex(identity_size2, identity_size2)
         identity_size16 = kron_complex(kron_complex(identity_size2, identity_size2), &
                 kron_complex(identity_size2, identity_size2))
 
         ! Pauli matrices
-        spin_x = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
-        spin_y = 0.5 * i * (reshape((/ 0.0_WP, -1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_y), order = (/2, 1/)))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+        spin_x = 0.5 * (reshape((/ 0.D0, 1.D0, 1.D0, 0.D0/), shape(spin_x), order = (/2, 1/)))
+        spin_y = 0.5 * i * (reshape((/ 0.D0, -1.D0, 1.D0, 0.D0/), shape(spin_y), order = (/2, 1/)))
+        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
 
         ! 4x4 matrices for S operator
         spin2_s_x = kron_complex(spin_x, identity_size2)
@@ -276,6 +275,11 @@ contains
         spin2_i_z = kron_complex(identity_size2, spin_z)
         spin2_i_p = spin2_i_x + i * spin2_i_y
         spin2_i_m = spin2_i_x - i * spin2_i_y
+
+!        eigvectors_inv = 0
+        eigvectors_inv = inverse_complex(eigvectors)
+!        write(6,*) eigvectors_inv2
+!        eigvectors_inv = eigvectors_inv2
 
         ! Calculate variables for Liouville space relaxation
         p_e = tanh(0.5 * electron_frequency * (Planck / (Boltzmann * temperature)))
@@ -321,27 +325,27 @@ contains
             spin2_i_m_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_i_m, eigvectors(count, :, :)))
 
             ! Transform spin matrices into time dependent Liouville space basis
-            spin2_i_p_tl = kron_complex(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5_WP * identity_size16 + 0.5_WP * ( &
+            spin2_i_p_tl = kron_complex(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
                            kron_complex(spin2_i_z_t, identity_size4) + &
                            kron_complex(identity_size4, transpose(spin2_i_z_t)))
 
-            spin2_i_m_tl = kron_complex(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5_WP * identity_size16 - 0.5_WP * ( &
+            spin2_i_m_tl = kron_complex(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
                             kron_complex(spin2_i_z_t, identity_size4) + &
                             kron_complex(identity_size4, transpose(spin2_i_z_t)))
 
-            spin2_s_p_tl = kron_complex(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5_WP * identity_size16 + 0.5_WP * ( &
+            spin2_s_p_tl = kron_complex(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
                            kron_complex(spin2_s_z_t, identity_size4) + &
                            kron_complex(identity_size4, transpose(spin2_s_z_t)))
 
-            spin2_s_m_tl = kron_complex(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5_WP * identity_size16 - 0.5_WP * ( &
+            spin2_s_m_tl = kron_complex(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
                            kron_complex(spin2_s_z_t, identity_size4) + &
                            kron_complex(identity_size4, transpose(spin2_s_z_t)))
 
             ! Calculate time dependent Liouville space relaxation matrix
-            relax_t2_elec = (1.0_WP / t2_elec) * (kron_complex(spin2_s_z_t, transpose(spin2_s_z_t)) - &
-                    0.5_WP * 0.5_WP * identity_size16)
-            relax_t2_nuc = (1.0_WP / t2_nuc) * (kron_complex(spin2_i_z_t, transpose(spin2_i_z_t)) - &
-                    0.5_WP * 0.5_WP * identity_size16)
+            relax_t2_elec = (1.D0 / t2_elec) * (kron_complex(spin2_s_z_t, transpose(spin2_s_z_t)) - &
+                    0.5D0 * 0.5D0 * identity_size16)
+            relax_t2_nuc = (1.D0 / t2_nuc) * (kron_complex(spin2_i_z_t, transpose(spin2_i_z_t)) - &
+                    0.5D0 * 0.5D0 * identity_size16)
             relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
             relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
 
@@ -352,7 +356,7 @@ contains
             ! Calculate Liouville space propagator
             liouvillian = hamiltonian_liouville + i * relax_mat
             exponent = -i * liouvillian * time_step
-            timescale = 1.0_WP
+            timescale = 1.D0
             mat_exp = expm_complex(timescale, exponent)
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
 
@@ -366,29 +370,26 @@ contains
 
     subroutine calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
 
-        use iso_fortran_env
         use omp_lib
         use f2py_functions
         implicit none
-
-        integer, parameter :: WP = REAL64
-
+        
         integer, intent(in) :: time_num_prop, time_num
-        complex(kind = 8), dimension(:, :, :), intent(in) :: propagator
-        complex(kind = 8), dimension(:, :), intent(in) :: density_mat
-        real(kind = 8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
+        complex(kind=8), dimension(:, :, :), intent(in) :: propagator
+        complex(kind=8), dimension(:, :), intent(in) :: density_mat
+        real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
 
         integer :: count
-        complex(kind = 8), dimension(16, 1) :: density_mat_liouville, temp
-        complex(kind = 8), dimension(16, 16) :: identity_size16, propagator_strobe
-        complex(kind = 8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
-        complex(kind = 8), dimension(2, 2) :: spin_z, identity_size2
+        complex(kind=8), dimension(16, 1) :: density_mat_liouville, temp
+        complex(kind=8), dimension(16, 16) :: identity_size16, propagator_strobe
+        complex(kind=8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
+        complex(kind=8), dimension(2, 2) :: spin_z, identity_size2
 
         ! Calculate matrices specific to polarisation calculation
-        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
+        identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
         identity_size16 = kron_complex(kron_complex(identity_size2, identity_size2), &
                 kron_complex(identity_size2, identity_size2))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
@@ -422,26 +423,23 @@ contains
 
     subroutine calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
 
-        use iso_fortran_env
         use omp_lib
         use f2py_functions
         implicit none
 
-        integer, parameter :: WP = REAL64
-
         integer, intent(in) :: time_num
-        complex(kind = 8), dimension(:, :, :), intent(in) :: propagator
-        complex(kind = 8), dimension(:, :), intent(in) :: density_mat
-        real(kind = 8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
+        complex(kind=8), dimension(:, :, :), intent(in) :: propagator
+        complex(kind=8), dimension(:, :), intent(in) :: density_mat
+        real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
 
         integer :: count
-        complex(kind = 8), dimension(16, 1) :: density_mat_liouville, temp
-        complex(kind = 8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
-        complex(kind = 8), dimension(2, 2) :: spin_z, identity_size2
+        complex(kind=8), dimension(16, 1) :: density_mat_liouville, temp
+        complex(kind=8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
+        complex(kind=8), dimension(2, 2) :: spin_z, identity_size2
 
         ! Calculate matrices specific to polarisation calculation
-        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
+        identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
+        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
