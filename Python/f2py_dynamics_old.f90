@@ -19,8 +19,8 @@ contains
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
 
         complex(kind=8), dimension(time_num, 16, 16)  :: propagator
-        real(kind=8), dimension(4, 4) :: density_mat
-        real(kind=8) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
+        complex(kind=8), dimension(4, 4) :: density_mat
+        complex(kind=8) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
 
         real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
         real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
@@ -29,14 +29,14 @@ contains
         double precision wtime
 
         wtime = omp_get_wtime()
-
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
             hyperfine_coupling, hyperfine_angles, &
                                     orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
             energies, eig_vector, eig_vector_inv, density_mat)
 
-        wtime = omp_get_wtime ( ) - wtime
+         wtime = omp_get_wtime ( ) - wtime
         write(6,*) sngl(wtime)
+
 
         wtime = omp_get_wtime()
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
@@ -67,35 +67,31 @@ contains
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
         real(kind=8), intent(in) :: time_step, freq_rotor
+        real(kind=8), intent(out) :: energies(time_num, 4)
+        complex(kind=8), intent(out) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4), density_mat(4, 4)
+        complex(kind=8) :: temp(time_num, 4,4)
 
-        real(kind=8), intent(out) :: energies(time_num, 4), density_mat(4, 4)
-        real(kind=8), intent(out) :: eig_vector(time_num, 4,4), eig_vector_inv(time_num, 4,4)
-
-        integer :: count
-        real(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_z, hyperfine_total
-        real(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_z, spin2_identity
-        real(kind=8), dimension(2, 2) :: spin_x, spin_z, identity_spin1
-        real(kind=8) :: hyperfine_zx, hyperfine_zz, ganisotropy
+        integer :: count, count2
+        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, hyperfine_total, test1, test2
+        complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, spin2_identity
+        complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_spin1
+        complex(kind=8) :: hyperfine_zx, hyperfine_zz, ganisotropy
         real(kind=8) :: gx, gy, gz, ca, cb, cg, sa, sb, sg, r11, r12, r13, r21, r22, r23, r31, r32, r33
         real(kind=8) :: c0, c1, c2, c3, c4
 
-!        real(kind=8) :: eigval(time_num, 4), dummy(1,1), work(16), work_inv(8)
-        complex(kind=8) :: eig_vector_complex(time_num, 4,4), eig_vector_inv_complex(time_num, 4,4)
-        complex(kind=8) :: work_inv(8)
-        integer :: info, info_inv, ipiv(4)
         real(kind=8) :: Rwork
-        real(kind=8), dimension(time_num, 4,4) :: hamiltonian
-        complex(kind=8), dimension(time_num, 4,4) :: hamiltonian_complex
-
-        complex(kind=8) :: eigval(time_num, 4), dummy(1,1), work(8)
+        complex(kind=8) :: eigval(time_num, 4), dummy(1,1), work(8), work_inv(8)
+        integer :: info, info_inv
+        complex(kind=8), dimension(time_num, 4,4) :: hamiltonian
         double precision wtime
 
-        real(kind=8), dimension(4, 4) :: hamiltonian_ideal, boltzmann_factors_mat
-        real(kind=8), dimension(4) :: boltzmann_factors, energies_ideal
+        complex(kind=8) :: N(6,6),VL(1,1),W(6),WORK2(12),VR(6,6),NN(6,6)
+        real(kind=8) :: RWORK2(12)
+        integer :: INFO2
+        integer :: ipiv(4)
 
-        real(kind=8) :: temp(time_num, 4,4)
-!        real(kind=8), dimension(4, 4) :: test2
-        complex(kind=8), dimension(4, 4) :: test1, test2
+        complex(kind=8), dimension(4, 4) :: hamiltonian_ideal, boltzmann_factors_mat
+        complex(kind=8), dimension(4) :: boltzmann_factors, energies_ideal
 
         ! Identity matrix
         identity_spin1 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_spin1)))
@@ -105,12 +101,14 @@ contains
         spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
 
         ! 4x4 matrices for S operator
-        spin2_s_x = kron_real(spin_x, identity_spin1)
-        spin2_s_z = kron_real(spin_z, identity_spin1)
+        spin2_s_x = kron_complex(spin_x, identity_spin1)
+        !spin2_s_y = kron_complex(spin_y, identity_spin1)
+        spin2_s_z = kron_complex(spin_z, identity_spin1)
 
         ! 4x4 matrices for I operator
-        spin2_i_x = kron_real(identity_spin1, spin_x)
-        spin2_i_z = kron_real(identity_spin1, spin_z)
+        spin2_i_x = kron_complex(identity_spin1, spin_x)
+        !spin2_i_y = kron_complex(identity_spin1, spin_y)
+        spin2_i_z = kron_complex(identity_spin1, spin_z)
 
         ! Calculate g-anisotropy
         gx = electron_frequency * gtensor(1)
@@ -171,87 +169,42 @@ contains
 
             ! Calculate time dependent hamiltonian
             hamiltonian(count, :, :) = (ganisotropy - microwave_frequency) * spin2_s_z + &
-                                        nuclear_frequency * spin2_i_z + &
-                                        hyperfine_total
+                    nuclear_frequency * spin2_i_z + &
+                    hyperfine_total
 
         end do
         !!$omp end parallel do
 
-!        write(6,*) hamiltonian(1, :, :)
-
-        hamiltonian_complex = hamiltonian
-!        write(6,*) hamiltonian_complex(300, :, :)
-!        write(6,*) hamiltonian_complex
-
-                ! Calculate eigenvalues and eigenvectors using LAPACK (OpenMP doesn't help here)
+        ! Calculate eigenvalues and eigenvectors using LAPACK (OpenMP doesn't help here)
         do count = 1, time_num
-            test1 = hamiltonian_complex(count, :, :)
+            test1 = hamiltonian(count, :, :)
             call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 1,  &
-                    eig_vector_complex(count, :, :), 4, work, 8, Rwork, info)
+                    eig_vector(count, :, :), 4, work, 8, Rwork, info)
 !            write(6, *) eig_vector(1, 1, 1)
         end do
-!
-!        do count = 1, time_num
-!            test1 = hamiltonian(count, :, :)
-!            call DGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, dummy, 1, eig_vector(count, :, :), &
-!                    4, work, 16, info)
-!        end do
         energies = real(eigval)
-
-!        write(6, *) hyperfine_zx
+!        write(6, *) hyperfine_total
 !        write(6, *) hamiltonian(1, :, :)
 !        write(6, *) eigval(1, :)
 !        write(6, *) eig_vector(100, :, :)
 !        write(6, *) info
-
-        do count = 1, size(eig_vector, 1)
-            test2 = eig_vector_complex(count, :, :)
-            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
-            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-            eig_vector_inv_complex(count, :, :) = test2
-        end do
-
-        eig_vector = real(eig_vector_complex)
-        eig_vector_inv = real(eig_vector_inv_complex)
-
-        write(6, *) eig_vector_inv(1:10, :, :)
-
-!        do count = 1, size(eig_vector, 1)
-!            test2 = eig_vector(count, :, :)
-!            call DGETRF(4, 4, test2, 4, ipiv, info_inv)
-!            call DGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-!            eig_vector_inv(count, :, :) = test2
-!        end do
-
-!        write(6, *) info_inv
-!        write(6, *) eig_vector_inv(100, :, :)
-
-
-        ! Calculate eigenvalues and eigenvectors using LAPACK (OpenMP doesn't help here)
-!        do count = 1, time_num
-!            test1 = hamiltonian(count, :, :)
-!            call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 1,  &
-!                    eig_vector(count, :, :), 4, work, 8, Rwork, info)
-!!            write(6, *) eig_vector(1, 1, 1)
-!        end do
-!        energies = real(eigval)
-!        write(6,*) info
-!        write(6, *) eig_vector(1, 1, 1)
 
         ! Getting some very odd precision issues, eigvector=1.0000000000000000 if inverse eigenvector loop not present
         ! If present then eigvector=0.99999650020944664
         ! Convert complex to real, then look into precision
 
          ! Calculate inverse eigenvectors using LAPACK (OpenMP doesn't help here)
-!        do count = 1, size(eig_vector, 1)
-!            test2 = eig_vector(count, :, :)
-!            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
-!            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-!            eig_vector_inv(count, :, :) = test2
-!        end do
+        do count = 1, size(eig_vector, 1)
+            test2 = eig_vector(count, :, :)
+            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
+            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
+            eig_vector_inv(count, :, :) = test2
+        end do
+
+        write(6, *) eig_vector_inv(1:10, :, :)
 !        eig_vector_inv = 0
 !        write(6, *) eig_vector(1, 1, 1)
-!        write(6, *) eig_vector_inv(1, 1, 1)
+!        write(6, *) eig_vector_inv(100, :, :)
 !
 !!        temp = inverse_complex(eig_vector)
 !        write(6, *) temp(1, 1, 1)
@@ -290,40 +243,31 @@ contains
         real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
 
         integer, intent(in):: time_num
-        real(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv
+        complex(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv
         real(kind=8), dimension(:, :), intent(in) :: energies
         real(kind=8), intent(in) :: electron_frequency, freq_nuclear_1, microwave_amplitude, time_step
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
         complex(kind=8), intent(out) :: propagator(time_num, 16, 16)
 
-        integer :: count, count2, count3
-        real(kind=8), dimension(16, 16) :: identity_size16, hamiltonian_liouville, relax_mat
-        real(kind=8), dimension(16, 16) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
-        real(kind=8), dimension(16, 16) :: relax_t2_elec, relax_t2_nuc, relax_t1
-        real(kind=8), dimension(4, 4) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t
-        real(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_z, total_hamiltonian
-        real(kind=8), dimension(4, 4) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m, test1
-        real(kind=8), dimension(4, 4) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
-        real(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_z, identity_size4
-        real(kind=8), dimension(2, 2) :: spin_x, spin_z, identity_size2
+        integer :: count
+        complex(kind=8), dimension(16, 16) :: identity_size16, hamiltonian_liouville, relax_mat, mat_exp
+        complex(kind=8), dimension(16, 16) :: eigvectors_liouville, eigvectors_inv_liouville, liouvillian, exponent
+        complex(kind=8), dimension(16, 16) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
+        complex(kind=8), dimension(16, 16) :: relax_t2_elec, relax_t2_nuc, relax_t1
+        complex(kind=8), dimension(4, 4) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t
+        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, total_hamiltonian
+        complex(kind=8), dimension(4, 4) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m, test1
+        complex(kind=8), dimension(4, 4) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
+        complex(kind=8), dimension(4, 4) :: spin2_i_x, spin2_i_y, spin2_i_z, identity_size4
+        complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_size2
         real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem
-
-        complex(kind=8), dimension(16, 16) :: eigvectors_complex, eigvectors_inv_complex
-        complex(kind=8), dimension(16, 16) :: eigvectors_liouville, eigvectors_inv_liouville
-
-        complex(kind=8) :: identity_size2_complex(2,2), identity_size4_complex(4, 4)
-        complex(kind=8) :: spin2_s_y(4,4), spin_y(2,2), spin2_i_y(4,4), timescale
-        complex(kind=8), dimension(16, 16) :: liouvillian, exponent, mat_exp
+        complex(kind=8) :: timescale
 
         ! Identity matrix
         identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
-        identity_size2_complex = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
-
-        identity_size4 = kron_real(identity_size2, identity_size2)
-        identity_size4_complex = kron_complex(identity_size2_complex, identity_size2_complex)
-
-        identity_size16 = kron_real(kron_real(identity_size2, identity_size2), &
-                kron_real(identity_size2, identity_size2))
+        identity_size4 = kron_complex(identity_size2, identity_size2)
+        identity_size16 = kron_complex(kron_complex(identity_size2, identity_size2), &
+                kron_complex(identity_size2, identity_size2))
 
         ! Pauli matrices
         spin_x = 0.5 * (reshape((/ 0.D0, 1.D0, 1.D0, 0.D0/), shape(spin_x), order = (/2, 1/)))
@@ -331,16 +275,16 @@ contains
         spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
 
         ! 4x4 matrices for S operator
-        spin2_s_x = kron_real(spin_x, identity_size2)
-        spin2_s_y = kron_complex(spin_y, identity_size2_complex)
-        spin2_s_z = kron_real(spin_z, identity_size2)
+        spin2_s_x = kron_complex(spin_x, identity_size2)
+        spin2_s_y = kron_complex(spin_y, identity_size2)
+        spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_s_p = spin2_s_x + i * spin2_s_y
         spin2_s_m = spin2_s_x - i * spin2_s_y
 
         ! 4x4 matrices for I operator
-        spin2_i_x = kron_real(identity_size2, spin_x)
-        spin2_i_y = kron_complex(identity_size4_complex, spin_y)
-        spin2_i_z = kron_real(identity_size2, spin_z)
+        spin2_i_x = kron_complex(identity_size2, spin_x)
+        spin2_i_y = kron_complex(identity_size2, spin_y)
+        spin2_i_z = kron_complex(identity_size2, spin_z)
         spin2_i_p = spin2_i_x + i * spin2_i_y
         spin2_i_m = spin2_i_x - i * spin2_i_y
 
@@ -365,13 +309,7 @@ contains
             microwave_hamiltonian = matmul(eigvectors_inv(count, :, :), matmul(microwave_hamiltonian_init, &
                     eigvectors(count, :, :)))
 
-!            do count2 = 1, 16
-!                do count3 = 1, 16
-!                    eigvectors_complex(count2, count3) = 1 !dcmplx(eigvectors(count, count2, count3), 0)
-!                end do
-!            end do
-
-!            write(6, *) eigvectors(count, 1, 1)
+!            write(6,*) eigvectors(count, 1, 1)
 
             ! Calculate total Hamiltonian
             energy_mat = identity_size4
@@ -384,8 +322,8 @@ contains
             total_hamiltonian = energy_mat + microwave_hamiltonian
 
             ! Transform Hilbert space Hamiltonian into Liouville space
-            hamiltonian_liouville = kron_real(total_hamiltonian, identity_size4) - &
-                    kron_real(identity_size4, transpose(total_hamiltonian))
+            hamiltonian_liouville = kron_complex(total_hamiltonian, identity_size4) - &
+                    kron_complex(identity_size4, transpose(total_hamiltonian))
 
             ! Transform spin matrices into time dependent Hilbert space basis
             spin2_s_z_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_s_z, eigvectors(count, :, :)))
@@ -396,33 +334,33 @@ contains
             spin2_i_m_t = matmul(eigvectors_inv(count, :, :), matmul(spin2_i_m, eigvectors(count, :, :)))
 
             ! Transform spin matrices into time dependent Liouville space basis
-            spin2_i_p_tl = kron_real(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
-                           kron_real(spin2_i_z_t, identity_size4) + &
-                           kron_real(identity_size4, transpose(spin2_i_z_t)))
+            spin2_i_p_tl = kron_complex(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
+                           kron_complex(spin2_i_z_t, identity_size4) + &
+                           kron_complex(identity_size4, transpose(spin2_i_z_t)))
 
-            spin2_i_m_tl = kron_real(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
-                            kron_real(spin2_i_z_t, identity_size4) + &
-                            kron_real(identity_size4, transpose(spin2_i_z_t)))
+            spin2_i_m_tl = kron_complex(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
+                            kron_complex(spin2_i_z_t, identity_size4) + &
+                            kron_complex(identity_size4, transpose(spin2_i_z_t)))
 
-            spin2_s_p_tl = kron_real(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
-                           kron_real(spin2_s_z_t, identity_size4) + &
-                           kron_real(identity_size4, transpose(spin2_s_z_t)))
+            spin2_s_p_tl = kron_complex(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
+                           kron_complex(spin2_s_z_t, identity_size4) + &
+                           kron_complex(identity_size4, transpose(spin2_s_z_t)))
 
-            spin2_s_m_tl = kron_real(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
-                           kron_real(spin2_s_z_t, identity_size4) + &
-                           kron_real(identity_size4, transpose(spin2_s_z_t)))
+            spin2_s_m_tl = kron_complex(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
+                           kron_complex(spin2_s_z_t, identity_size4) + &
+                           kron_complex(identity_size4, transpose(spin2_s_z_t)))
 
             ! Calculate time dependent Liouville space relaxation matrix
-            relax_t2_elec = (1.D0 / t2_elec) * (kron_real(spin2_s_z_t, transpose(spin2_s_z_t)) - &
+            relax_t2_elec = (1.D0 / t2_elec) * (kron_complex(spin2_s_z_t, transpose(spin2_s_z_t)) - &
                     0.5D0 * 0.5D0 * identity_size16)
-            relax_t2_nuc = (1.D0 / t2_nuc) * (kron_real(spin2_i_z_t, transpose(spin2_i_z_t)) - &
+            relax_t2_nuc = (1.D0 / t2_nuc) * (kron_complex(spin2_i_z_t, transpose(spin2_i_z_t)) - &
                     0.5D0 * 0.5D0 * identity_size16)
             relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
             relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
 
             ! Calculate Liouville space eigenvectors
-            eigvectors_liouville = kron_real(eigvectors(count, :, :), eigvectors(count, :, :))
-            eigvectors_inv_liouville = kron_real(eigvectors_inv(count, :, :), eigvectors_inv(count, :, :))
+            eigvectors_liouville = kron_complex(eigvectors(count, :, :), eigvectors(count, :, :))
+            eigvectors_inv_liouville = kron_complex(eigvectors_inv(count, :, :), eigvectors_inv(count, :, :))
 
             ! Calculate Liouville space propagator
             liouvillian = hamiltonian_liouville + i * relax_mat
@@ -438,7 +376,7 @@ contains
 !        write(6, *) eigvectors(1, :, :)
 !        write(6, *) eigvectors_inv(1, :, :)
 !        write(6, *) relax_mat
-
+!
 !        write(6, *) hamiltonian_liouville
 !        write(6, *) propagator(1, 3, 3)
 
@@ -450,10 +388,10 @@ contains
         use omp_lib
         use f2py_functions
         implicit none
-
+        
         integer, intent(in) :: time_num_prop, time_num
         complex(kind=8), dimension(:, :, :), intent(in) :: propagator
-        real(kind=8), dimension(:, :), intent(in) :: density_mat
+        complex(kind=8), dimension(:, :), intent(in) :: density_mat
         real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
 
         integer :: count
@@ -469,7 +407,7 @@ contains
         identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
         identity_size16 = kron_complex(kron_complex(identity_size2, identity_size2), &
                 kron_complex(identity_size2, identity_size2))
-        spin_z = 0.5D0 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
+        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
@@ -485,8 +423,8 @@ contains
         do count = 1, time_num_prop
 
             ! Calculate electronic and nuclear polarisation
-            pol_i_z(count) = real(trace_complex(matmul(density_mat_time, spin2_i_z)))
-            pol_s_z(count) = real(trace_complex(matmul(density_mat_time, spin2_s_z)))
+            pol_i_z(count) = trace_complex(matmul(density_mat_time, spin2_i_z))
+            pol_s_z(count) = trace_complex(matmul(density_mat_time, spin2_s_z))
 
             ! Transform density matrix (2^N x 2^N to 4^N x 1)
             density_mat_liouville = reshape(density_mat_time, (/4 ** 2, 1/))
@@ -509,7 +447,7 @@ contains
 
         integer, intent(in) :: time_num
         complex(kind=8), dimension(:, :, :), intent(in) :: propagator
-        real(kind=8), dimension(:, :), intent(in) :: density_mat
+        complex(kind=8), dimension(:, :), intent(in) :: density_mat
         real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
 
         integer :: count
@@ -522,7 +460,7 @@ contains
 
         ! Calculate matrices specific to polarisation calculation
         identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
-        spin_z = 0.5D0 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
+        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
