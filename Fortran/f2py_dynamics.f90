@@ -11,9 +11,6 @@ contains
         use f2py_functions
         implicit none
 
-        complex(kind=8), parameter :: i = (0, 1.D0)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
-
         integer, intent(in):: time_num, time_num_prop
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
@@ -38,48 +35,33 @@ contains
 
         complex(kind=8) :: eigval(time_num, 4), dummy(4,4), work(8)
 
-        complex(kind=8), dimension(4, 4) :: test1, test2! , temp2
-        !complex(kind=8), dimension(4) :: temp1
+        complex(kind=8), dimension(4, 4) :: test1, test2, temp2
+        complex(kind=8), dimension(4) :: temp1
         integer :: count
 
+        ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
                 hyperfine_coupling, hyperfine_angles, &
                 orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
                 hamiltonian, density_mat)
         hamiltonian_complex = hamiltonian
 
-        do count = 1, size(hamiltonian_complex, 1) !time_num
+        ! Calculate energy, eigenvalues and eigenvectors of intrinsic Hamiltonian
+        do count = 1, size(hamiltonian_complex, 1)
             test1 = hamiltonian_complex(count, :, :)
             call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 4, &
                     eig_vector_complex(count, :, :), 4, work, 8, Rwork, info)
-            !write(6,*) info
         end do
-
-
 !        do count = 1, size(hamiltonian_complex, 1)
-!
 !            test1 = hamiltonian_complex(count, :, :)
-!
-!            call ZGEEV('N', 'N', 4, test1, 4, eigval(count, :), dummy, 4, &
-!                    eig_vector_complex(count, :, :) , 4, work, 8, Rwork, info)
-!
-!!            eigval(count, :) = temp1
-!            !eig_vector_complex(count, :, :) = temp2
-!
+!            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
+!            eigval(count, :) = temp1
+!            eig_vector_complex(count, :, :) = temp2
 !        end do
-        energies = real(eigval)
-!        write(6,*) energies(1, :)
-!        write(6,*) eig_vector_complex(1, :, :)
-
-!        write(6, *) 'in function'
 !        call eig_complex(hamiltonian_complex, eigval, eig_vector_complex)
-!        write(6, *) 'in function check'
-!        write(6, *) eig_vector_complex(1, :, :)
+        energies = real(eigval)
 
-!        write(6, *) 'in main'
-!        write(6, *) eig_vector_complex(1, :, :)
-
-
+        ! Calculate inverse eigenvectors
         do count = 1, size(eig_vector, 1)
             test2 = eig_vector_complex(count, :, :)
             call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
@@ -111,7 +93,6 @@ contains
         use f2py_functions
         implicit none
 
-        complex(kind=8), parameter :: i = (0, 1.D0)
         real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
 
         integer, intent(in):: time_num
@@ -239,7 +220,7 @@ contains
         implicit none
 
         complex(kind=8), parameter :: i = (0, 1.D0)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
+        real(kind=8), parameter :: Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
 
         integer, intent(in):: time_num
         real(kind=8), dimension(:, :, :), intent(in) :: eigvectors, eigvectors_inv

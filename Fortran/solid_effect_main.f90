@@ -5,7 +5,7 @@ program solid_effect_main
     use f2py_functions
     implicit none
 
-    real(kind = 8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
+    real(kind = 8), parameter :: PI = 4.D0 * DATAN(1.D0)
     real(kind = 8), parameter :: deg_to_rad = PI / 180.D0
 
     ! todo make these allocatable based on time_num

@@ -74,33 +74,7 @@ contains
 
     END function kron_complex
 
-    function expm_real(t, H) result(expH)
-
-        real(kind = 8), intent(in) :: t
-        real(kind = 8), dimension(:, :), intent(in) :: H
-        real(kind = 8), dimension(size(H, 1), size(H, 2)) :: expH
-
-        integer, parameter :: ideg = 6
-        real(kind = 8), dimension(4 * size(H, 1) * size(H, 2) + ideg + 1) :: wsp
-        integer, dimension(size(H, 1)) :: iwsp
-        integer :: iexp, ns, iflag, n
-
-        n = size(H, 1)
-        call DGPADM(ideg, n, t, H, n, wsp, size(wsp, 1), iwsp, iexp, ns, iflag)
-        expH = reshape(wsp(iexp : iexp + n * n - 1), shape(expH))
-
-        ! ideg, degre of the diagonal Pade to be used
-        ! n the order of H
-        ! t the timescale
-        ! H the argument matrix
-        ! wsp workspace variable
-        ! iexp output
-        ! ns number of scaling-squaring used
-        ! iflag exit flag
-
-    end function expm_real
-
-    function expm_complex(t, H) result(expH)
+    function expm_complex(t, H) result(expH) ! todo consider reducing precision of calculation
 
         complex(kind=8), intent(in) :: t
         complex(kind=8), dimension(:, :), intent(in) :: H
@@ -113,16 +87,7 @@ contains
 
         n = size(H, 1)
         call ZGPADM(ideg, n, t, H, n, wsp, size(wsp, 1), iwsp, iexp, ns, iflag)
-        expH = reshape(wsp(iexp : iexp + n * n - 1), shape(expH))
-
-        ! ideg, degre of the diagonal Pade to be used
-        ! n the order of H
-        ! t the timescale
-        ! H the argument matrix
-        ! wsp workspace variable
-        ! iexp output
-        ! ns number of scaling-squaring used
-        ! iflag exit flag
+        expH = reshape(wsp(iexp : iexp + n * n - 1), (/ n, n/))
 
     end function expm_complex
 
@@ -154,38 +119,32 @@ contains
 
     end function inverse_complex
 
-    subroutine eig_complex(hamil_complex, eigvals, eig_vector_complexs)
+    subroutine eig_complex(hamiltonian_complex, eigval, eig_vector_complex)
 
-        !use omp_lib
         implicit none
 
-        complex(kind=8), dimension(10000, 4, 4), intent(in) :: hamil_complex
-        complex(kind=8), dimension(10000, 4), intent(out) :: eigvals
-        complex(kind=8), dimension(10000, 4, 4), intent(out) :: eig_vector_complexs
-        complex(kind=8) :: eig_vector_complex(10000, 4,4)
+        complex(kind=8), dimension(10000, 4, 4), intent(in) :: hamiltonian_complex
+        complex(kind=8), dimension(10000, 4), intent(out) :: eigval
+        complex(kind=8), dimension(10000, 4, 4), intent(out) :: eig_vector_complex
 
-        complex(kind=8) :: dummy_eig(4,4), work_eig(8), temp_eig(4,4)
-        real(kind=8) :: Rwork_eig
-        integer :: info_eig, count
+        complex(kind=8) :: dummy(4,4), work(8)
+        real(kind=8) :: Rwork
+        integer :: info, count
 
-        write(6,*) 'start'
+        complex(kind=8), dimension(4, 4) :: test1, temp2
+        complex(kind=8), dimension(4) :: temp1
 
-        do count = 1, size(hamil_complex, 1)
-
-            temp_eig = hamil_complex(count, :, :)
-!            write(6,*) temp_eig
-!            write(6, *) eig_vector_complexs(count, 1, 1)
-            call ZGEEV('N', 'V', 4, temp_eig, 4, eigvals(count, :), dummy_eig, 4,  &
-                    eig_vector_complex(count, :, :), 4, work_eig, 8, Rwork_eig, info_eig)
-!            write(6, *) eig_vector_complexs(count, 1, 1)
+        ! Calculate energy, eigenvalues and eigenvectors of intrinsic Hamiltonian
+        do count = 1, size(hamiltonian_complex, 1)
+            test1 = hamiltonian_complex(count, :, :)
+            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
+            eigval(count, :) = temp1
+            eig_vector_complex(count, :, :) = temp2
         end do
 
-        write(6,*) 'finished'
-        write(6, *) eig_vector_complex(1, :, :)
-        write(6, *) eigvals(1, :)
-        write(6, *) info_eig
+        write(6,*) eigval(1, :)
+        write(6,*) eig_vector_complex(1, :, :)
 
-        eig_vector_complexs = eig_vector_complex
 
     end subroutine
 
