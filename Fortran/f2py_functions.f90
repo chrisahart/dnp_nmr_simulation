@@ -29,6 +29,7 @@ contains
     end function trace_complex
 
     function kron_real(A, B) result(AB)
+        ! https://rosettacode.org/wiki/Kronecker_product#Fortran
 
         real(kind = 8), intent(in) :: A(:, :), B(:, :)
         real(kind = 8) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )

@@ -46,23 +46,25 @@ contains
                 hamiltonian, density_mat)
         hamiltonian_complex = hamiltonian
 
+        write(6, *) hamiltonian_complex(1, :, :)
+
 !        ! Calculate energy, eigenvalues and eigenvectors of intrinsic Hamiltonian
 !        do count = 1, size(hamiltonian_complex, 1)
 !            test1 = hamiltonian_complex(count, :, :)
 !            call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 4, &
 !                    eig_vector_complex(count, :, :), 4, work, 8, Rwork, info)
 !        end do
-        do count = 1, size(hamiltonian_complex, 1)
-            test1 = hamiltonian_complex(count, :, :)
-            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
-            eigval(count, :) = temp1
-            eig_vector_complex(count, :, :) = temp2
-        end do
+!        do count = 1, size(hamiltonian_complex, 1)
+!            test1 = hamiltonian_complex(count, :, :)
+!            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
+!            eigval(count, :) = temp1
+!            eig_vector_complex(count, :, :) = temp2
+!        end do
 !        call eig_complex(hamiltonian_complex, eigval, eig_vector_complex)
-        energies = real(eigval)
-
-        write(6,*) energies(1, :)
-        write(6,*) eig_vector_complex(1, :, :)
+!        energies = real(eigval)
+!
+!        write(6,*) energies(1, :)
+!        write(6,*) eig_vector_complex(1, :, :)
 !
 !        ! Calculate inverse eigenvectors
 !        do count = 1, size(eig_vector, 1)
