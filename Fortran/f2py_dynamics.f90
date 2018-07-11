@@ -38,7 +38,8 @@ contains
 
         complex(kind=8) :: eigval(time_num, 4), dummy(4,4), work(8)
 
-        complex(kind=8), dimension(4, 4) :: test1, test2
+        complex(kind=8), dimension(4, 4) :: test1, test2! , temp2
+        !complex(kind=8), dimension(4) :: temp1
         integer :: count
 
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, &
@@ -47,12 +48,28 @@ contains
                 hamiltonian, density_mat)
         hamiltonian_complex = hamiltonian
 
-
         do count = 1, size(hamiltonian_complex, 1) !time_num
             test1 = hamiltonian_complex(count, :, :)
             call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 4, &
                     eig_vector_complex(count, :, :), 4, work, 8, Rwork, info)
+            !write(6,*) info
         end do
+
+
+!        do count = 1, size(hamiltonian_complex, 1)
+!
+!            test1 = hamiltonian_complex(count, :, :)
+!
+!            call ZGEEV('N', 'N', 4, test1, 4, eigval(count, :), dummy, 4, &
+!                    eig_vector_complex(count, :, :) , 4, work, 8, Rwork, info)
+!
+!!            eigval(count, :) = temp1
+!            !eig_vector_complex(count, :, :) = temp2
+!
+!        end do
+        energies = real(eigval)
+!        write(6,*) energies(1, :)
+!        write(6,*) eig_vector_complex(1, :, :)
 
 !        write(6, *) 'in function'
 !        call eig_complex(hamiltonian_complex, eigval, eig_vector_complex)
@@ -61,7 +78,7 @@ contains
 
 !        write(6, *) 'in main'
 !        write(6, *) eig_vector_complex(1, :, :)
-        energies = real(eigval)
+
 
         do count = 1, size(eig_vector, 1)
             test2 = eig_vector_complex(count, :, :)
@@ -74,7 +91,7 @@ contains
 
 !        eig_vector_inv = real(inverse_complex(eig_vector_complex))
 !        eig_vector = real(eig_vector_complex)
-        write(6, *) eig_vector_inv(1, :, :)
+!        write(6, *) eig_vector_inv(1, :, :)
 
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
                 t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eig_vector, eig_vector_inv, energies, propagator)
@@ -123,9 +140,7 @@ contains
         spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
 
         ! 4x4 matrices for S operator
-        write(6,*) 'test'
         spin2_s_x = kron_real(spin_x, identity_spin1)
-        write(6,*) 'spin2_s_x = kron_real(spin_x, identity_spin1)'
         spin2_s_z = kron_real(spin_z, identity_spin1)
 
         ! 4x4 matrices for I operator
@@ -254,10 +269,8 @@ contains
         ! Identity matrix
         identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
         identity_size2_complex = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
-
         identity_size4 = kron_real(identity_size2, identity_size2)
         identity_size4_complex = kron_complex(identity_size2_complex, identity_size2_complex)
-
         identity_size16 = kron_real(kron_real(identity_size2, identity_size2), &
                 kron_real(identity_size2, identity_size2))
 
@@ -362,14 +375,6 @@ contains
         end do
         !!$omp end parallel do
 
-!        write(6, *) sum(eigvectors(:, :, :))
-!        write(6, *) eigvectors(1, :, :)
-!        write(6, *) eigvectors_inv(1, :, :)
-!        write(6, *) relax_mat
-
-!        write(6, *) hamiltonian_liouville
-!        write(6, *) propagator(1, 3, 3)
-
     end subroutine liouville_propagator
 
 
@@ -389,9 +394,6 @@ contains
         complex(kind=8), dimension(16, 16) :: identity_size16, propagator_strobe
         complex(kind=8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
         complex(kind=8), dimension(2, 2) :: spin_z, identity_size2
-
-!        write(6, *) propagator(100, :, :)
-!        write(6, *) density_mat(:, :)
 
         ! Calculate matrices specific to polarisation calculation
         identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
@@ -445,9 +447,6 @@ contains
         complex(kind=8), dimension(4, 4) :: spin2_s_z, spin2_i_z, density_mat_time
         complex(kind=8), dimension(2, 2) :: spin_z, identity_size2
 
-!        write(6, *) propagator(100, :, :)
-!        write(6, *) density_mat(:, :)
-
         ! Calculate matrices specific to polarisation calculation
         identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
         spin_z = 0.5D0 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
@@ -474,7 +473,5 @@ contains
         end do
 
     end subroutine calculate_polarisation_sub_rotor
-
-
 
 end module

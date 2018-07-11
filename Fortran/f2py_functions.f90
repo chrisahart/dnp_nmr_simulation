@@ -28,69 +28,51 @@ contains
 
     end function trace_complex
 
-    function kron_real(A, B) result(C)
+    function kron_real(A, B) result(AB)
 
-        real(kind = 8), dimension (:, :), intent(in) :: A, B
-        real(kind = 8), dimension (:, :), allocatable :: C
-        integer :: i = 0, j = 0
-        integer :: m = 0, n = 0, p = 0, q = 0
-        allocate(C(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2)))
+        real(kind = 8), intent(in) :: A(:, :), B(:, :)
+        real(kind = 8) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
+        INTEGER R, RA, RB, C, CA, CB, I, J
 
-        C = 0
+        R = 0
+        RA = UBOUND(A, DIM = 1)
+        CA = UBOUND(A, DIM = 2)
+        RB = UBOUND(B, DIM = 1)
+        CB = UBOUND(B, DIM = 2)
 
-        write(6,*) (size(C, 1))
-        write(6,*) (size(C, 2))
-        write(6,*) (size(C))
+        DO I = 1, RA
+            C = 0
+            DO J = 1, CA
+                AB(R + 1 : R + RB, C + 1 : C + CB) = A(I, J) * B
+                C = C + CB
+            END DO
+            R = R + RB
+        END DO
 
-        write(6,*) 'test', C(1:3, 1:3)
+    END function kron_real
 
-        do i = 1, size(A, 1)
-            do j = 1, size(A, 2)
+    function kron_complex(A, B) result(AB)
 
-                write(6,*) 'loop', j
+        complex(kind = 8), intent(in) :: A(:, :), B(:, :)
+        complex(kind = 8) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
+        INTEGER R, RA, RB, C, CA, CB, I, J
 
-                n = (i - 1) * size(B, 1) + 1
-                m = n + size(B, 1)
-                p = (j - 1) * size(B, 2) + 1
-                q = p + size(B, 2)
+        R = 0
+        RA = UBOUND(A, DIM = 1)
+        CA = UBOUND(A, DIM = 2)
+        RB = UBOUND(B, DIM = 1)
+        CB = UBOUND(B, DIM = 2)
 
-                write(6,*) 'n', n
-                write(6,*) 'm', m
-                write(6,*) 'p', p
-                write(6,*) 'q', q
+        DO I = 1, RA
+            C = 0
+            DO J = 1, CA
+                AB(R + 1 : R + RB, C + 1 : C + CB) = A(I, J) * B
+                C = C + CB
+            END DO
+            R = R + RB
+        END DO
 
-                C(1:3, 1:3) = A(i, j) * B
-                write(6,*) 'once'
-                C(n : m, p : q) = A(i, j) * B
-
-
-            enddo
-        enddo
-
-    end function kron_real
-
-    function kron_complex(A, B) result(C)
-
-        complex(kind=8), dimension (:, :), intent(in) :: A, B
-        complex(kind=8), dimension (:, :), allocatable :: C
-        integer :: i = 0, j = 0
-        integer :: m = 0, n = 0, p = 0, q = 0
-        allocate(C(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2)))
-
-        !!$omp parallel do default(private) &
-        !!$omp& shared(A, B, C)
-        do i = 1, size(A, 1)
-            do j = 1, size(A, 2)
-                n = (i - 1) * size(B, 1) + 1
-                m = n + size(B, 1)
-                p = (j - 1) * size(B, 2) + 1
-                q = p + size(B, 2)
-                C(n : m, p : q) = A(i, j) * B
-            enddo
-        enddo
-        !!$omp end parallel do
-
-    end function kron_complex
+    END function kron_complex
 
     function expm_real(t, H) result(expH)
 

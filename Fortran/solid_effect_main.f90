@@ -81,6 +81,6 @@ program solid_effect_main
     close(8, status = 'keep')
     close(9, status = 'keep')
 
-    write(6,*) 'testing'
+    write(6,*) 'Finished saving data, end of program.'
 
 end program solid_effect_main
