@@ -32,23 +32,40 @@ contains
 
         real(kind = 8), dimension (:, :), intent(in) :: A, B
         real(kind = 8), dimension (:, :), allocatable :: C
-        integer :: i = 0, j = 0, k = 0, l = 0
+        integer :: i = 0, j = 0
         integer :: m = 0, n = 0, p = 0, q = 0
         allocate(C(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2)))
+
         C = 0
 
-        !!$omp parallel do default(private) &
-        !!$omp& shared(A, B, C)
+        write(6,*) (size(C, 1))
+        write(6,*) (size(C, 2))
+        write(6,*) (size(C))
+
+        write(6,*) 'test', C(1:3, 1:3)
+
         do i = 1, size(A, 1)
             do j = 1, size(A, 2)
+
+                write(6,*) 'loop', j
+
                 n = (i - 1) * size(B, 1) + 1
                 m = n + size(B, 1)
                 p = (j - 1) * size(B, 2) + 1
                 q = p + size(B, 2)
+
+                write(6,*) 'n', n
+                write(6,*) 'm', m
+                write(6,*) 'p', p
+                write(6,*) 'q', q
+
+                C(1:3, 1:3) = A(i, j) * B
+                write(6,*) 'once'
                 C(n : m, p : q) = A(i, j) * B
+
+
             enddo
         enddo
-        !!$omp end parallel do
 
     end function kron_real
 
@@ -56,10 +73,9 @@ contains
 
         complex(kind=8), dimension (:, :), intent(in) :: A, B
         complex(kind=8), dimension (:, :), allocatable :: C
-        integer :: i = 0, j = 0, k = 0, l = 0
+        integer :: i = 0, j = 0
         integer :: m = 0, n = 0, p = 0, q = 0
         allocate(C(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2)))
-        C = 0
 
         !!$omp parallel do default(private) &
         !!$omp& shared(A, B, C)
@@ -158,29 +174,36 @@ contains
 
     subroutine eig_complex(hamil_complex, eigvals, eig_vector_complexs)
 
-        use omp_lib
+        !use omp_lib
         implicit none
 
         complex(kind=8), dimension(10000, 4, 4), intent(in) :: hamil_complex
         complex(kind=8), dimension(10000, 4), intent(out) :: eigvals
         complex(kind=8), dimension(10000, 4, 4), intent(out) :: eig_vector_complexs
+        complex(kind=8) :: eig_vector_complex(10000, 4,4)
 
         complex(kind=8) :: dummy_eig(4,4), work_eig(8), temp_eig(4,4)
         real(kind=8) :: Rwork_eig
-        integer :: info_eig, eig_count, count
-        eig_count = 1
+        integer :: info_eig, count
+
+        write(6,*) 'start'
 
         do count = 1, size(hamil_complex, 1)
 
-            eig_count = count
-            write(6,*) 'eig_count', eig_count
-
-            temp_eig = hamil_complex(eig_count, :, :)
-
-            call ZGEEV('N', 'V', 4, temp_eig, 4, eigvals(eig_count, :), dummy_eig, 4,  &
-                    eig_vector_complexs(eig_count, :, :), 4, work_eig, 8, Rwork_eig, info_eig)
-
+            temp_eig = hamil_complex(count, :, :)
+!            write(6,*) temp_eig
+!            write(6, *) eig_vector_complexs(count, 1, 1)
+            call ZGEEV('N', 'V', 4, temp_eig, 4, eigvals(count, :), dummy_eig, 4,  &
+                    eig_vector_complex(count, :, :), 4, work_eig, 8, Rwork_eig, info_eig)
+!            write(6, *) eig_vector_complexs(count, 1, 1)
         end do
+
+        write(6,*) 'finished'
+        write(6, *) eig_vector_complex(1, :, :)
+        write(6, *) eigvals(1, :)
+        write(6, *) info_eig
+
+        eig_vector_complexs = eig_vector_complex
 
     end subroutine
 
