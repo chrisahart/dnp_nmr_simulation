@@ -3,6 +3,8 @@ import spin_matrices as sp
 import numpy as np
 from scipy import linalg as la
 import f2py_dynamics as fortran
+import parameters as param
+import functions as fn
 
 A = sp.spin3_i_x
 B = sp.spin3_i_z
@@ -38,9 +40,27 @@ C = int(1E6)
 # eigvals, eigvectors = np.linalg.eig(sp.spin2_i_z)
 # print(eigvectors)
 
-print('sp.spin2_s_y', sp.spin2_s_z)
-print('inv sp.spin2_s_y', np.linalg.inv(sp.spin2_s_z))
+# hamiltonian = np.zeros((100, 2 ** 2, 2 ** 2,), dtype=np.complex)
+#
+# for count in range(0, 99):
+#
+#     hamiltonian[count, :] = (count+1) * 2E6 * sp.spin2_s_z + \
+#                             1E6 * sp.spin2_i_z #+ \
+#                             #2 * 1E4 * np.matmul(sp.spin2_i_x, sp.spin2_s_z)
 
+hamiltonian = np.zeros((100, 2, 2,), dtype=np.complex)
+spin_x = 1/2 * np.array([[0, 1],  [1, 0]])
+spin_z = 1/2 * np.array([[1, 0], [0, -1]])
+
+for count in range(0, 99):
+
+    hamiltonian[count, :] = 2E6 * spin_z + 1E6 * spin_x + 1E6 * np.matmul(spin_x, spin_z)
+
+eigvals, eigvectors = np.linalg.eig(hamiltonian)
+
+print('hamiltonian \n', hamiltonian[1, :, :])
+print('eigvals \n', eigvals[1, :])
+print('eigvectors \n', eigvectors[1, :, ])
 
 # start = time.time()
 # fortran.f2py_dynamics.testing()

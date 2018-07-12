@@ -129,7 +129,7 @@ contains
         complex(kind=8), dimension(10000, 4, 4), intent(out) :: eig_vector_complex
 
         complex(kind=8) :: dummy(4,4), work(8)
-        real(kind=8) :: Rwork
+        complex(kind=8) :: Rwork
         integer :: info, count
 
         complex(kind=8), dimension(4, 4) :: test1, temp2
@@ -143,8 +143,8 @@ contains
             eig_vector_complex(count, :, :) = temp2
         end do
 
-        write(6,*) eigval(1, :)
-        write(6,*) eig_vector_complex(1, :, :)
+!        write(6,*) eigval(1, :)
+!        write(6,*) eig_vector_complex(1, :, :)
 
 
     end subroutine

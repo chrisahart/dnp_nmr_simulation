@@ -31,7 +31,7 @@ contains
         complex(kind=8) :: eig_vector_complex(time_num, 4,4), eig_vector_inv_complex(time_num, 4,4)
         complex(kind=8) :: work_inv(8)
         integer :: info, info_inv, ipiv(4)
-        real(kind=8) :: Rwork
+        complex(kind=8) :: Rwork
 
         complex(kind=8) :: eigval(time_num, 4), dummy(4,4), work(8)
 
@@ -46,46 +46,46 @@ contains
                 hamiltonian, density_mat)
         hamiltonian_complex = hamiltonian
 
-        write(6, *) hamiltonian_complex(1, :, :)
+!        write(6, *) hamiltonian_complex(1, :, :)
 
-!        ! Calculate energy, eigenvalues and eigenvectors of intrinsic Hamiltonian
+        ! Calculate energy, eigenvalues and eigenvectors of intrinsic Hamiltonian
 !        do count = 1, size(hamiltonian_complex, 1)
 !            test1 = hamiltonian_complex(count, :, :)
 !            call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 4, &
 !                    eig_vector_complex(count, :, :), 4, work, 8, Rwork, info)
 !        end do
-!        do count = 1, size(hamiltonian_complex, 1)
-!            test1 = hamiltonian_complex(count, :, :)
-!            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
-!            eigval(count, :) = temp1
-!            eig_vector_complex(count, :, :) = temp2
-!        end do
+        do count = 1, size(hamiltonian_complex, 1)
+            test1 = hamiltonian_complex(count, :, :)
+            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
+            eigval(count, :) = temp1
+            eig_vector_complex(count, :, :) = temp2
+        end do
 !        call eig_complex(hamiltonian_complex, eigval, eig_vector_complex)
-!        energies = real(eigval)
+        energies = real(eigval)
 !
 !        write(6,*) energies(1, :)
 !        write(6,*) eig_vector_complex(1, :, :)
-!
-!        ! Calculate inverse eigenvectors
-!        do count = 1, size(eig_vector, 1)
-!            test2 = eig_vector_complex(count, :, :)
-!            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
-!            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-!            eig_vector_inv_complex(count, :, :) = test2
-!        end do
+
+        ! Calculate inverse eigenvectors
+        do count = 1, size(eig_vector, 1)
+            test2 = eig_vector_complex(count, :, :)
+            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
+            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
+            eig_vector_inv_complex(count, :, :) = test2
+        end do
+        eig_vector = real(eig_vector_complex)
+        eig_vector_inv = real(eig_vector_inv_complex)
+
+!        eig_vector_inv = real(inverse_complex(eig_vector_complex))
 !        eig_vector = real(eig_vector_complex)
-!        eig_vector_inv = real(eig_vector_inv_complex)
-!
-!!        eig_vector_inv = real(inverse_complex(eig_vector_complex))
-!!        eig_vector = real(eig_vector_complex)
-!!        write(6, *) eig_vector_inv(1, :, :)
-!
-!        call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
-!                t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eig_vector, eig_vector_inv, energies, propagator)
-!
-!        call calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
-!
-!        call calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
+!        write(6, *) eig_vector_inv(1, :, :)
+
+        call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
+                t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eig_vector, eig_vector_inv, energies, propagator)
+
+        call calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
+
+        call calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
 
     end subroutine main
 
