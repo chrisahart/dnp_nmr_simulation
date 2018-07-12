@@ -1,8 +1,7 @@
 program solid_effect_main
 
     use omp_lib
-    use f2py_dynamics
-    use f2py_functions
+    use solid_effect_dynamics
     implicit none
 
     real(kind = 8), parameter :: PI = 4.D0 * DATAN(1.D0)
@@ -51,7 +50,7 @@ program solid_effect_main
             pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies)
 
     wtime = omp_get_wtime () - wtime
-    write(6, *) sngl(wtime)
+    write(6, *) 'Total elapsed time:', sngl(wtime)
 
     ! Save output, todo replace with FLIBS to save to csv, and dynamic save location
     open(1, file = 'out/pol_i_z.out', status = 'replace')

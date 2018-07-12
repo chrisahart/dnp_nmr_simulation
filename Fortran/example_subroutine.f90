@@ -7,7 +7,8 @@ contains
         use iso_fortran_env
         implicit none
 
-        real(kind = real64), dimension(4, 4), intent(out) :: hamiltonian
+        integer, parameter :: size = 2 ** (2) ! Change (value) to change number of spins
+        real(kind = real64), dimension(size, size), intent(out) :: hamiltonian
         real(kind = real64), dimension(4, 4) :: spin2_s_x, spin2_s_z
         real(kind = real64), dimension(4, 4) :: spin2_i_x, spin2_i_z
         real(kind = real64), dimension(2, 2) :: spin_x, spin_z, identity_spin1
@@ -23,21 +24,23 @@ contains
         spin2_i_z = kron_real(identity_spin1, spin_z)
 
         hamiltonian = 2E6 * spin2_s_z + 1E6 * spin2_i_z + 1E6 * matmul(spin2_i_x, spin2_s_z)
+        ! hamiltonian = 2E6 * spin_z + 1E6 * spin_x + 1E6 * matmul(spin_x, spin_z)
 
     end subroutine calculate_hamiltonian
 
-    subroutine eig(hamiltonian, eigval, eig_vector)
+    subroutine eig(H, eigval, eig_vector)
 
         use iso_fortran_env
         implicit none
 
-        real(kind = real64), dimension(4, 4), intent(in) :: hamiltonian
-        real(kind = real64), intent(out) :: eigval(4), eig_vector(4, 4)
+        real(kind = real64), dimension(:, :), intent(in) :: H
+        real(kind = real64), intent(out) :: eigval(size(H, 1)), eig_vector(size(H, 1), size(H, 1))
 
-        real(kind = real64) :: dummy1(4), dummy2(4, 4), work(16)
+        real(kind = real64) :: dummy1(size(H, 1)), dummy2(size(H, 1), size(H, 1)), work(4*size(H, 1))
         integer :: info
 
-        call DGEEV('N', 'V', 4, hamiltonian, 4, eigval, dummy1, dummy2, 4, eig_vector, 4, work, 16, info)
+        call DGEEV('N', 'V', size(H, 1), H, size(H, 1), eigval, dummy1, dummy2, size(H, 1), eig_vector, &
+                size(H, 1), work, size(work, 1), info)
 
     end subroutine eig
 
@@ -46,16 +49,16 @@ contains
         use iso_fortran_env
         implicit none
 
-        real(kind = real64), dimension(4, 4), intent(in) :: eig_vector
-        real(kind = real64), dimension(4, 4), intent(out) :: eig_vector_inv
+        real(kind = real64), dimension(:, :), intent(in) :: eig_vector
+        real(kind = real64), dimension(size(eig_vector, 1), size(eig_vector, 2)), intent(out) :: eig_vector_inv
 
-        integer :: info, ipiv(4)
-        real(kind=real64) :: work(8)
+        integer :: info, ipiv(size(eig_vector, 1))
+        real(kind=real64) :: work(size(eig_vector, 1))
 
         eig_vector_inv = eig_vector
 
-        call DGETRF(4, 4, eig_vector_inv, 4, ipiv, info)
-        call DGETRI(4, eig_vector_inv, 4, ipiv, work, 4, info)
+        call DGETRF(size(eig_vector, 1), size(eig_vector, 1), eig_vector_inv, size(eig_vector, 1), ipiv, info)
+        call DGETRI(size(eig_vector, 1), eig_vector_inv, size(eig_vector, 1), ipiv, work, size(eig_vector, 1), info)
 
     end subroutine inv
 

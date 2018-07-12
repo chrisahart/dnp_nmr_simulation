@@ -1,4 +1,4 @@
-module f2py_dynamics
+module solid_effect_dynamics
 
 contains
 
@@ -8,9 +8,10 @@ contains
             pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies)
 
         use omp_lib
-        use f2py_functions
+        use functions
         implicit none
 
+        integer, parameter :: size = 2 ** (2) ! Change (value) to change number of spins
         integer, intent(in):: time_num, time_num_prop
         real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
         real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
@@ -31,9 +32,9 @@ contains
         complex(kind=8) :: eig_vector_complex(time_num, 4,4), eig_vector_inv_complex(time_num, 4,4)
         complex(kind=8) :: work_inv(8)
         integer :: info, info_inv, ipiv(4)
-        complex(kind=8) :: Rwork
+        complex(kind=8) :: Rwork(8)
 
-        complex(kind=8) :: eigval(time_num, 4), dummy(4,4), work(8)
+        real(kind=8) :: eigval(time_num, 4)
 
         complex(kind=8), dimension(4, 4) :: test1, test2, temp2
         complex(kind=8), dimension(4) :: temp1
@@ -44,47 +45,20 @@ contains
                 hyperfine_coupling, hyperfine_angles, &
                 orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
                 hamiltonian, density_mat)
-        hamiltonian_complex = hamiltonian
 
-!        write(6, *) hamiltonian_complex(1, :, :)
-
-        ! Calculate energy, eigenvalues and eigenvectors of intrinsic Hamiltonian
-!        do count = 1, size(hamiltonian_complex, 1)
-!            test1 = hamiltonian_complex(count, :, :)
-!            call ZGEEV('N', 'V', 4, test1, 4, eigval(count, :), dummy, 4, &
-!                    eig_vector_complex(count, :, :), 4, work, 8, Rwork, info)
-!        end do
-        do count = 1, size(hamiltonian_complex, 1)
-            test1 = hamiltonian_complex(count, :, :)
-            call ZGEEV('N', 'V', 4, test1, 4, temp1, dummy, 4, temp2, 4, work, 8, Rwork, info)
-            eigval(count, :) = temp1
-            eig_vector_complex(count, :, :) = temp2
-        end do
-!        call eig_complex(hamiltonian_complex, eigval, eig_vector_complex)
+        ! Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
+        call eig_real(hamiltonian, eigval, eig_vector)
+        eig_vector_inv = inverse_real(eig_vector)
         energies = real(eigval)
-!
-!        write(6,*) energies(1, :)
-!        write(6,*) eig_vector_complex(1, :, :)
 
-        ! Calculate inverse eigenvectors
-        do count = 1, size(eig_vector, 1)
-            test2 = eig_vector_complex(count, :, :)
-            call ZGETRF(4, 4, test2, 4, ipiv, info_inv)
-            call ZGETRI(4, test2, 4, ipiv, work_inv, 8, info_inv)
-            eig_vector_inv_complex(count, :, :) = test2
-        end do
-        eig_vector = real(eig_vector_complex)
-        eig_vector_inv = real(eig_vector_inv_complex)
-
-!        eig_vector_inv = real(inverse_complex(eig_vector_complex))
-!        eig_vector = real(eig_vector_complex)
-!        write(6, *) eig_vector_inv(1, :, :)
-
+        ! Calculate Liouville space propagator with relaxation
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
                 t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eig_vector, eig_vector_inv, energies, propagator)
 
+        ! Propagate density matrix stroboscopically, calculating polarisations
         call calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
 
+        ! Propagate density matrix for single rotor period, calculating polarisations
         call calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
 
     end subroutine main
@@ -95,7 +69,8 @@ contains
             hamiltonian, density_mat)
 
         use omp_lib
-        use f2py_functions
+        use functions
+        use interactions
         implicit none
 
         real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
@@ -232,7 +207,7 @@ contains
             t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, eigvectors, eigvectors_inv, energies, propagator)
 
         use omp_lib
-        use f2py_functions
+        use functions
         implicit none
 
         complex(kind=8), parameter :: i = (0, 1.D0)
@@ -378,7 +353,7 @@ contains
     subroutine calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, pol_i_z, pol_s_z)
 
         use omp_lib
-        use f2py_functions
+        use functions
         implicit none
 
         integer, intent(in) :: time_num_prop, time_num
@@ -431,7 +406,7 @@ contains
     subroutine calculate_polarisation_sub_rotor(time_num, density_mat, propagator, pol_i_z_rot, pol_s_z_rot)
 
         use omp_lib
-        use f2py_functions
+        use functions
         implicit none
 
         integer, intent(in) :: time_num
