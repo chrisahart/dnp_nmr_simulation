@@ -133,6 +133,9 @@ contains
         spin2_i_x = kron_real(identity_spin1, spin_x)
         spin2_i_z = kron_real(identity_spin1, spin_z)
 
+        ! Calculate time independent electron g-anisotropy coefficients
+!        call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)
+
         ! Calculate g-anisotropy
         gx = electron_frequency * gtensor(1)
         gy = electron_frequency * gtensor(2)
@@ -169,6 +172,11 @@ contains
         do count = 1, time_num
 
             ! Calculate time dependent hyperfine
+            !call hyperfine(hyperfine_coupling, hyperfine_angles, time, hyperfine_zz, hyperfine_zx)
+!            hyperfine_total = 2.D0 * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z) + &
+!                              2.D0 * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
+
+            ! Calculate time dependent hyperfine
             hyperfine_zz = hyperfine_coupling * (-0.5D0 * (sin(hyperfine_angles(2)) ** 2.D0) * &
                     cos(2.D0 * (2.D0 * PI * freq_rotor * (count - 1) * time_step + &
                             hyperfine_angles(3))) + 2.D0 ** 2.D0 * sin(hyperfine_angles(2)) * &
@@ -183,6 +191,9 @@ contains
 
             hyperfine_total = 2.D0 * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z)+ &
                     2.D0 * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
+
+            ! Calculate time dependent electron g-anisotropy
+            !call anisotropy(c0, c1, c2, c3, c4, freq_rotor, (count - 1) * time_step, ganisotropy)
 
             ! Calculate time dependent g-anisotropy frequency
             ganisotropy = c0 + c1 * cos(2.D0 * PI * freq_rotor * (count - 1) * time_step) + &

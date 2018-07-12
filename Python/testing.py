@@ -48,19 +48,18 @@ C = int(1E6)
 #                             1E6 * sp.spin2_i_z #+ \
 #                             #2 * 1E4 * np.matmul(sp.spin2_i_x, sp.spin2_s_z)
 
-hamiltonian = np.zeros((100, 2, 2,), dtype=np.complex)
 spin_x = 1/2 * np.array([[0, 1],  [1, 0]])
 spin_z = 1/2 * np.array([[1, 0], [0, -1]])
 
-for count in range(0, 99):
+hamiltonian = 2E6 * spin_z + 1E6 * spin_x + 1E6 * np.matmul(spin_x, spin_z)
 
-    hamiltonian[count, :] = 2E6 * spin_z + 1E6 * spin_x + 1E6 * np.matmul(spin_x, spin_z)
+print('hamiltonian', hamiltonian)
 
 eigvals, eigvectors = np.linalg.eig(hamiltonian)
 
-print('hamiltonian \n', hamiltonian[1, :, :])
-print('eigvals \n', eigvals[1, :])
-print('eigvectors \n', eigvectors[1, :, ])
+print('hamiltonian', hamiltonian)
+print('eigvals', eigvals)
+print('eigvectors', eigvectors)
 
 # start = time.time()
 # fortran.f2py_dynamics.testing()
