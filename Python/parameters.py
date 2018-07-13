@@ -5,7 +5,7 @@ import spin_matrices as sp
 # Literature parameters
 b_field = 9.4                                                       # Magnetic field
 temperature = 100                                                   # Temperature
-freq_nuclear_1 = -400.9E6                                           # Nuclear frequency 1
+freq_nuclear_1 = -400.9E6                                           # todo change to nuclear_frequency
 electron_frequency = 28.025E9 * b_field                             # Electron frequency
 microwave_frequency = 264E9                                         # Microwave frequency
 freq_rotor = 3E3                                                    # Rotor frequency
