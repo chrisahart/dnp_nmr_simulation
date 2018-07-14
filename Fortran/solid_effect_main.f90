@@ -12,7 +12,7 @@ program solid_effect_main
 
     real(kind = 8), allocatable :: energies(:, :), pol_i_z(:), pol_s_z(:), pol_i_z_rot(:), pol_s_z_rot(:)
     integer :: time_num, time_num_prop, num_periods
-    real(kind = 8), dimension(3) :: gtensor, hyperfine_angles, orientation_se
+    real(kind = 8), dimension(3) :: gtensor, hyperfine_angles, orientation_se, orientation_ce_1, orientation_ce_2
     real(kind = 8) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
     real(kind = 8) :: time_step, freq_rotor, b_field, microwave_amplitude, temperature
     real(kind = 8) :: t1_nuc, t1_elec, t2_nuc, t2_elec

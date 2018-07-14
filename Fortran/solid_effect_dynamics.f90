@@ -1,6 +1,7 @@
 module solid_effect_dynamics
 
     ! This module calculates dynamics for solid effect MAS DNP NMR.
+    ! OMP statements are included for all do loops, however are disabled where performance is decreased.
 
 contains
 
@@ -11,7 +12,8 @@ contains
 
         ! Call required functions to calculate dynamics for solid effect MAS DNP NMR
 
-        use functions
+         use omp_lib
+         use functions
         implicit none
 
         integer, parameter :: sizeH = 2 ** (2), sizeL = 4 ** (2) ! Change (value) to change number of spins
@@ -60,6 +62,7 @@ contains
                 sizeH, sizeL, hamiltonian, density_mat)
 
         ! Calculate intrinsic Hilbert space Hamiltonian and density matrix from an ideal Hamiltonian
+        ! Independent processes so OMP threads can take any value
 
         use omp_lib
         use interactions
@@ -103,10 +106,11 @@ contains
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)
 
-        !!$omp parallel do default(private) &
-        !!$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
-        !!$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
-        !!$omp& shared(spin2_i_x, spin2_i_y, spin2_i_z, spin2_s_z)
+        call omp_set_num_threads(8)
+        !$omp parallel do default(private) &
+        !$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
+        !$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
+        !$omp& shared(spin2_i_x, spin2_i_z, spin2_s_z)
         do count = 1, time_num
 
             ! Calculate time dependent hyperfine
@@ -125,17 +129,21 @@ contains
                                         hyperfine_total
 
         end do
-        !!$omp end parallel do
+        !$omp end parallel do
 
         ! Calculate idealised Hamiltonian (must calculate density matrix outside of rotating frame)
         hamiltonian_ideal = electron_frequency * spin2_s_z + nuclear_frequency * spin2_i_z
 
         ! Calculate initial Zeeman basis density matrix from Boltzmann factors
+        !$omp parallel do default(private) &
+        !$omp& shared(boltzmann_factors, boltzmann_factors_mat, hamiltonian_ideal, temperature)
         do count = 1, sizeH
             boltzmann_factors(count) = exp(-(Planck * hamiltonian_ideal(count, count)) / (Boltzmann * temperature))
             boltzmann_factors_mat(count, count) = boltzmann_factors(count)
         end do
+        !$omp end parallel do
         density_mat = (1/sum(boltzmann_factors)) * boltzmann_factors_mat
+
 
     end subroutine calculate_hamiltonian
 
@@ -144,6 +152,7 @@ contains
                 propagator)
 
         ! Calculate Louville space propagator with relaxation
+        ! Independent processes so OMP threads can take any value
 
         use omp_lib
         use functions
@@ -153,8 +162,8 @@ contains
         real(kind=8), parameter :: Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
 
         integer, intent(in):: time_num, sizeH, sizeL
-        real(kind=8), dimension(:, :, :), intent(in) :: eig_vector, eig_vector_inv
-        real(kind=8), dimension(:, :), intent(in) :: energies
+        real(kind=8), dimension(time_num, sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
+        real(kind=8), dimension(sizeH, sizeH), intent(in) :: energies
         real(kind=8), intent(in) :: electron_frequency, nuclear_frequency, microwave_amplitude, time_step
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
         complex(kind=8), intent(out) :: propagator(time_num, sizeL, sizeL)
@@ -216,10 +225,11 @@ contains
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
 
-        !!$omp parallel do default(private) &
-        !!$omp& shared(microwave_hamiltonian_init, eig_vector, eig_vector_inv, energies, time_step)&
-        !!$omp& shared(t2_elec, t2_nuc, gnp, gnm, gep, gem, propagator) &
-        !!$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, identity_size4, identity_size16)
+        call omp_set_num_threads(8)
+        !$omp parallel do default(private) &
+        !$omp& shared(eig_vector, eig_vector_inv, identity_size4, identity_size16, sizeL, sizeH) &
+        !$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t2_elec, t2_nuc) &
+        !$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
         do count = 1, time_num
 
             ! Transform microwave Hamiltonian into time dependent basis
@@ -228,9 +238,12 @@ contains
 
             ! Calculate total Hamiltonian
             energy_mat = identity_size4
+            !$omp parallel do default(private) &
+            !$omp& shared(energy_mat, energies, count)
             do count2 = 1, sizeH
                 energy_mat(count2, count2) = energies(count, count2)
             end do
+            !$omp end parallel do
 
             ! Calculate total Hamiltonian
             total_hamiltonian = energy_mat + microwave_hamiltonian
@@ -239,38 +252,11 @@ contains
             hamiltonian_liouville = kron_real(total_hamiltonian, identity_size4) - &
                     kron_real(identity_size4, transpose(total_hamiltonian))
 
-            ! Transform spin matrices into time dependent Hilbert space basis
-            spin2_s_z_t = matmul(eig_vector_inv(count, :, :), matmul(spin2_s_z, eig_vector(count, :, :)))
-            spin2_s_p_t = matmul(eig_vector_inv(count, :, :), matmul(spin2_s_p, eig_vector(count, :, :)))
-            spin2_s_m_t = matmul(eig_vector_inv(count, :, :), matmul(spin2_s_m, eig_vector(count, :, :)))
-            spin2_i_z_t = matmul(eig_vector_inv(count, :, :), matmul(spin2_i_z, eig_vector(count, :, :)))
-            spin2_i_p_t = matmul(eig_vector_inv(count, :, :), matmul(spin2_i_p, eig_vector(count, :, :)))
-            spin2_i_m_t = matmul(eig_vector_inv(count, :, :), matmul(spin2_i_m, eig_vector(count, :, :)))
-
-            ! Transform spin matrices into time dependent Liouville space basis
-            spin2_i_p_tl = kron_real(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
-                           kron_real(spin2_i_z_t, identity_size4) + &
-                           kron_real(identity_size4, transpose(spin2_i_z_t)))
-
-            spin2_i_m_tl = kron_real(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
-                            kron_real(spin2_i_z_t, identity_size4) + &
-                            kron_real(identity_size4, transpose(spin2_i_z_t)))
-
-            spin2_s_p_tl = kron_real(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * ( &
-                           kron_real(spin2_s_z_t, identity_size4) + &
-                           kron_real(identity_size4, transpose(spin2_s_z_t)))
-
-            spin2_s_m_tl = kron_real(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * ( &
-                           kron_real(spin2_s_z_t, identity_size4) + &
-                           kron_real(identity_size4, transpose(spin2_s_z_t)))
-
-            ! Calculate time dependent Liouville space relaxation matrix
-            relax_t2_elec = (1.D0 / t2_elec) * (kron_real(spin2_s_z_t, transpose(spin2_s_z_t)) - &
-                    0.5D0 * 0.5D0 * identity_size16)
-            relax_t2_nuc = (1.D0 / t2_nuc) * (kron_real(spin2_i_z_t, transpose(spin2_i_z_t)) - &
-                    0.5D0 * 0.5D0 * identity_size16)
-            relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
-            relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
+            ! Calculate Louville space relaxation matrix
+            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
+                    identity_size16, sizeL, sizeH, &
+                    spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t2_elec, t2_nuc, &
+                    gnp, gnm, gep, gem, relax_mat)
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron_real(eig_vector(count, :, :), eig_vector(count, :, :))
@@ -282,23 +268,82 @@ contains
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
 
         end do
-        !!$omp end parallel do
+        !$omp end parallel do
 
     end subroutine liouville_propagator
 
+    subroutine calculate_relaxation_mat(eig_vector, eig_vector_inv, identity_size4, identity_size16, sizeL, sizeH, &
+            spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t2_elec, t2_nuc, &
+            gnp, gnm, gep, gem, relax_mat)
+
+        ! Calculate Louville space relaxation matrix
+
+        use functions
+        implicit none
+
+        integer, intent(in) :: sizeH, sizeL
+        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
+        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, identity_size4
+        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
+        real(kind=8), dimension(sizeL, sizeL), intent(in) :: identity_size16
+        real(kind = 8), intent(in) :: t2_nuc, t2_elec
+        real(kind = 8), intent(in) :: gnp, gnm, gep, gem
+
+        real(kind = 8), dimension(sizeL, sizeL), intent(out) :: relax_mat
+
+        real(kind = 8), dimension(sizeL, sizeL) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
+        real(kind = 8), dimension(sizeL, sizeL) :: relax_t2_elec, relax_t2_nuc, relax_t1
+        real(kind = 8), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
+        real(kind = 8), dimension(sizeH, sizeH) :: spin2_i_m_t
+
+        ! Transform spin matrices into time dependent Hilbert space basis
+        spin2_s_z_t = matmul(eig_vector_inv, matmul(spin2_s_z, eig_vector))
+        spin2_s_p_t = matmul(eig_vector_inv, matmul(spin2_s_p, eig_vector))
+        spin2_s_m_t = matmul(eig_vector_inv, matmul(spin2_s_m, eig_vector))
+        spin2_i_z_t = matmul(eig_vector_inv, matmul(spin2_i_z, eig_vector))
+        spin2_i_p_t = matmul(eig_vector_inv, matmul(spin2_i_p, eig_vector))
+        spin2_i_m_t = matmul(eig_vector_inv, matmul(spin2_i_m, eig_vector))
+
+        ! Transform spin matrices into time dependent Liouville space basis
+        spin2_i_p_tl = kron_real(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * (&
+                kron_real(spin2_i_z_t, identity_size4) + &
+                        kron_real(identity_size4, transpose(spin2_i_z_t)))
+
+        spin2_i_m_tl = kron_real(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * (&
+                kron_real(spin2_i_z_t, identity_size4) + &
+                        kron_real(identity_size4, transpose(spin2_i_z_t)))
+
+        spin2_s_p_tl = kron_real(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * (&
+                kron_real(spin2_s_z_t, identity_size4) + &
+                        kron_real(identity_size4, transpose(spin2_s_z_t)))
+
+        spin2_s_m_tl = kron_real(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * (&
+                kron_real(spin2_s_z_t, identity_size4) + &
+                        kron_real(identity_size4, transpose(spin2_s_z_t)))
+
+        ! Calculate time dependent Liouville space relaxation matrix
+        relax_t2_elec = (1.D0 / t2_elec) * (kron_real(spin2_s_z_t, transpose(spin2_s_z_t)) - &
+                0.5D0 * 0.5D0 * identity_size16)
+        relax_t2_nuc = (1.D0 / t2_nuc) * (kron_real(spin2_i_z_t, transpose(spin2_i_z_t)) - &
+                0.5D0 * 0.5D0 * identity_size16)
+        relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
+        relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
+
+    end subroutine calculate_relaxation_mat
 
     subroutine calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, sizeH, sizeL, &
                 pol_i_z, pol_s_z)
 
         ! Calculate polarisation stroboscopically across multiple rotor periods
+        ! Iterative process so OMP threads must equal 1
 
         use omp_lib
         use functions
         implicit none
 
         integer, intent(in) :: time_num_prop, time_num, sizeH, sizeL
-        complex(kind=8), dimension(:, :, :), intent(in) :: propagator
-        real(kind=8), dimension(:, :), intent(in) :: density_mat
+        complex(kind=8), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
+        real(kind=8), dimension(sizeH, sizeH), intent(in) :: density_mat
         real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
 
         integer :: count
@@ -322,11 +367,19 @@ contains
         propagator_strobe = identity_size16
 
         ! Calculate stroboscopic propagator (product of all operators within rotor period)
+        call omp_set_num_threads(1)
+        !$omp parallel do default(private) &
+        !$omp& shared(propagator_strobe, propagator)
         do count = 1, time_num
             propagator_strobe = matmul(propagator_strobe, propagator(count, :, :))
         end do
+        !$omp end parallel do
 
         ! Propogate density matrix using stroboscopic propagator
+        call omp_set_num_threads(1)
+        !$omp parallel do default(private) &
+        !$omp& shared(pol_i_z, pol_s_z, spin2_i_z, spin2_s_z, sizeL, sizeH) &
+        !$omp& shared(density_mat_time, density_mat_liouville, propagator_strobe)
         do count = 1, time_num_prop
 
             ! Calculate electronic and nuclear polarisation
@@ -343,6 +396,7 @@ contains
             density_mat_time = reshape(temp, (/sizeH, sizeH/))
 
         end do
+        !$omp end parallel do
 
     end subroutine calculate_polarisation_rotor
 
@@ -350,14 +404,15 @@ contains
                 pol_i_z_rot, pol_s_z_rot)
 
         ! Calculate sub rotor polarisation
+        ! Iterative process so OMP threads must equal 1
 
         use omp_lib
         use functions
         implicit none
 
         integer, intent(in) :: time_num, sizeH, sizeL
-        complex(kind=8), dimension(:, :, :), intent(in) :: propagator
-        real(kind=8), dimension(:, :), intent(in) :: density_mat
+        complex(kind=8), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
+        real(kind=8), dimension(sizeH, sizeH), intent(in) :: density_mat
         real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
 
         integer :: count
@@ -374,6 +429,11 @@ contains
 
         density_mat_time = density_mat
 
+        ! Propogate density matrix using stroboscopic propagator
+        call omp_set_num_threads(1)
+        !$omp parallel do default(private) &
+        !$omp& shared(pol_i_z_rot ,pol_s_z_rot, spin2_i_z, spin2_s_z, sizeL, sizeH) &
+        !$omp& shared(density_mat_time, density_mat_liouville, propagator)
         do count = 1, time_num
 
             ! Calculate electronic and nuclear polarisation
@@ -381,15 +441,16 @@ contains
             pol_s_z_rot(count) = real(trace_complex(matmul(density_mat_time, spin2_s_z)))
 
             ! Transform density matrix (2^N x 2^N to 4^N x 1)
-            density_mat_liouville = reshape(density_mat_time, (/4 ** 2, 1/))
+            density_mat_liouville = reshape(density_mat_time, (/sizeL, 1/))
 
             ! Propagate density matrix
             temp = matmul(propagator(count, :, :), density_mat_liouville)
 
             ! Transform density matrix (4^N x 1 to 2^N x 2^N)
-            density_mat_time = reshape(temp, (/2 ** 2, 2 ** 2/))
+            density_mat_time = reshape(temp, (/sizeH, sizeH/))
 
         end do
+        !$omp end parallel do
 
     end subroutine calculate_polarisation_sub_rotor
 
