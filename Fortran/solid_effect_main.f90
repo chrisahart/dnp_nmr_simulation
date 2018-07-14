@@ -47,6 +47,9 @@ program solid_effect_main
     allocate (energies(time_num, sizeH), pol_i_z(time_num_prop), pol_s_z(time_num_prop))
     allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num))
 
+    ! Manually set number of OMP threads
+    call omp_set_num_threads(8)
+
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()
 

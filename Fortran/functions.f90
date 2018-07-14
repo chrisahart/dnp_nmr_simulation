@@ -1,13 +1,13 @@
 module functions
 
     ! This module contains an assortment of common Fortran functions and subroutines for 2D and 3D arrays.
-    ! OMP statements are included for all do loops, however are disabled where performance is decreased.
+    ! OMP statements are included for all suitable do loops, however are disabled where performance is decreased.
 
 contains
 
     function trace_real(A) result(C)
         ! Calculate trace of real matrix A
-        ! Iterative process so OMP threads must equal 1
+        ! Iterative process so number of OMP threads must equal 1
 
         use omp_lib
         implicit none
@@ -17,19 +17,15 @@ contains
         integer :: i
         C = 0
 
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(A, C)
         do i = 1, size(A, 1)
             C = C + A(i, i)
         end do
-        !$omp end parallel do
 
     end function trace_real
 
     function trace_complex(A) result(C)
         ! Calculate trace of complex matrix A
-        ! Iterative process so OMP threads must equal 1
+        ! Iterative process so number of OMP threads must equal 1
 
         use omp_lib
         implicit none
@@ -39,19 +35,15 @@ contains
         integer :: i
         C = 0
 
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(A, C)
         do i = 1, size(A, 1)
             C = C + A(i, i)
         end do
-        !$omp end parallel do
 
     end function trace_complex
 
     function kron_real(A, B) result(AB)
         ! Calculate Kronecker product of real matrices A and B, adapted from Rosetta Code
-        ! Iterative process so OMP threads must equal 1
+        ! Iterative process so number of OMP threads must equal 1
 
         use omp_lib
         implicit none
@@ -66,9 +58,6 @@ contains
         RB = size(B, DIM = 1)
         CB = size(B, DIM = 2)
 
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(A, B, AB, RA, CA, R, RB, CB)
         do I = 1, RA
             C = 0
             do J = 1, CA
@@ -77,13 +66,12 @@ contains
             end do
             R = R + RB
         end do
-        !$omp end parallel do
 
     end function kron_real
 
     function kron_complex(A, B) result(AB)
         ! Calculate Kronecker product of complex matrices A and B, adapted from Rosetta Code
-        ! Iterative process so OMP threads must equal 1
+        ! Iterative process so number of OMP threads must equal 1
 
         use omp_lib
         implicit none
@@ -98,9 +86,6 @@ contains
         RB = size(B, DIM = 1)
         CB = size(B, DIM = 2)
 
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(A, B, AB, RA, CA, R, RB, CB)
         do I = 1, RA
             C = 0
             do J = 1, CA
@@ -109,13 +94,12 @@ contains
             end do
             R = R + RB
         end do
-        !$omp end parallel do
 
     end function kron_complex
 
     function inverse_real(A) result(B)
         ! Calculate inverse of 3D real matrix A using LAPACK
-        ! Independent processes so OMP threads can take any value
+        ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
         implicit none
@@ -128,21 +112,21 @@ contains
         integer :: count
         integer :: ipiv(4), info
 
-        !$omp parallel do default(private) &
-        !$omp& shared(A, B)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(A, B)
         do count = 1, size(A, 1)
             temp = A(count, :, :)
             call DGETRF(size(A, 2), size(A, 2), temp, size(A, 2), ipiv, info)
             call DGETRI(size(A, 2), temp, size(A, 2), ipiv, work, size(A, 1)*2, info)
             B(count, :, :) = temp
         end do
-        !$omp end parallel do
+        !!$omp end parallel do
 
     end function inverse_real
 
     function inverse_complex(A) result(B)
         ! Calculate inverse of 3D complex matrix A using LAPACK
-        ! Independent processes so OMP threads can take any value
+        ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
         implicit none
@@ -155,16 +139,15 @@ contains
         integer :: count
         integer :: ipiv(4), info
 
-        !$omp parallel do default(private) &
-        !$omp& shared(A, B)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(A, B)
         do count = 1, size(A, 1)
-
             temp = A(count, :, :)
             call ZGETRF(size(A, 2), size(A, 2), temp, size(A, 2), ipiv, info)
             call ZGETRI(size(A, 2), temp, size(A, 2), ipiv, work, size(A, 1)*2, info)
             B(count, :, :) = temp
         end do
-        !$omp end parallel do
+        !!$omp end parallel do
 
     end function inverse_complex
 
@@ -189,7 +172,7 @@ contains
 
     subroutine eig_real(A, eig_val, eig_vect)
         ! Calculate eigenvalues and eigenvectors of 3D real matrix A using LAPACK
-        ! Independent processes so OMP threads can take any value
+        ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
         implicit none
@@ -204,23 +187,22 @@ contains
         real(kind=8), dimension(size(A, 2), size(A, 2)) :: test1, temp2
         real(kind=8), dimension(size(A, 2)) :: temp1
 
-        !$omp parallel do default(private) &
-        !$omp& shared(A, eig_val, eig_vect)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(A, eig_val, eig_vect)
         do count = 1, size(A, 1)
-
             test1 = A(count, :, :)
             call DGEEV('N', 'V', size(A, 2), test1, size(A, 2), temp1, dummy_val, dummy_vect, size(A, 2), temp2, &
                     size(A, 2), work, size(A, 2)*4, info)
             eig_val(count, :) = temp1
             eig_vect(count, :, :) = temp2
         end do
-        !$omp end parallel do
+        !!$omp end parallel do
 
     end subroutine
 
     subroutine eig_complex(A, eig_val, eig_vect)
         ! Calculate eigenvalues and eigenvectors of 3D complex matrix A using LAPACK.
-        ! Independent processes so OMP threads can take any value
+        ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
         implicit none
@@ -236,17 +218,16 @@ contains
         complex(kind=8), dimension(size(A, 2), size(A, 2)) :: test1, temp2
         complex(kind=8), dimension(size(A, 2)) :: temp1
 
-        !$omp parallel do default(private) &
-        !$omp& shared(A, eig_val, eig_vect)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(A, eig_val, eig_vect)
         do count = 1, size(A, 1)
-
             test1 = A(count, :, :)
             call ZGEEV('N', 'V', size(A, 2), test1, size(A, 2), temp1, dummy, size(A, 2), temp2, size(A, 2), work, &
                     size(A, 2)*2, Rwork, info)
             eig_val(count, :) = temp1
             eig_vect(count, :, :) = temp2
         end do
-        !$omp end parallel do
+        !!$omp end parallel do
 
     end subroutine
 

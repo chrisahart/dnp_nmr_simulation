@@ -1,7 +1,6 @@
 module solid_effect_dynamics
 
     ! This module calculates dynamics for solid effect MAS DNP NMR.
-    ! OMP statements are included for all do loops, however are disabled where performance is decreased.
 
 contains
 
@@ -62,7 +61,7 @@ contains
                 sizeH, sizeL, hamiltonian, density_mat)
 
         ! Calculate intrinsic Hilbert space Hamiltonian and density matrix from an ideal Hamiltonian
-        ! Independent processes so OMP threads can take any value
+        ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
         use interactions
@@ -106,7 +105,6 @@ contains
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)
 
-        call omp_set_num_threads(8)
         !$omp parallel do default(private) &
         !$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
         !$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
@@ -152,7 +150,7 @@ contains
                 propagator)
 
         ! Calculate Louville space propagator with relaxation
-        ! Independent processes so OMP threads can take any value
+        ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
         use functions
@@ -163,7 +161,7 @@ contains
 
         integer, intent(in):: time_num, sizeH, sizeL
         real(kind=8), dimension(time_num, sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
-        real(kind=8), dimension(sizeH, sizeH), intent(in) :: energies
+        real(kind=8), dimension(time_num, sizeH), intent(in) :: energies
         real(kind=8), intent(in) :: electron_frequency, nuclear_frequency, microwave_amplitude, time_step
         real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
         complex(kind=8), intent(out) :: propagator(time_num, sizeL, sizeL)
@@ -172,19 +170,15 @@ contains
         real(kind=8), dimension(2, 2) :: spin_x, spin_z, identity_size2
         complex(kind=8), dimension(2, 2) :: identity_size2_complex, spin_y
         real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem
-        complex(kind=8) :: timescale
 
         real(kind=8), dimension(sizeL, sizeL) :: identity_size16, hamiltonian_liouville, relax_mat
-        real(kind=8), dimension(sizeL, sizeL) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
-        real(kind=8), dimension(sizeL, sizeL) :: relax_t2_elec, relax_t2_nuc, relax_t1
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, total_hamiltonian, spin2_i_m_t
+        real(kind=8), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, total_hamiltonian
         real(kind=8), dimension(sizeH, sizeH) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
         real(kind=8), dimension(sizeH, sizeH) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
         real(kind=8), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z, identity_size4
 
         complex(kind=8), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
-        complex(kind=8), dimension(sizeL, sizeL) :: liouvillian, exponent, mat_exp
+        complex(kind=8), dimension(sizeL, sizeL) :: liouvillian, mat_exp
         complex(kind=8), dimension(sizeH, sizeH) :: identity_size4_complex, spin2_s_y, spin2_i_y
 
         ! Identity matrix
@@ -224,8 +218,7 @@ contains
 
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
-
-        call omp_set_num_threads(8)
+        
         !$omp parallel do default(private) &
         !$omp& shared(eig_vector, eig_vector_inv, identity_size4, identity_size16, sizeL, sizeH) &
         !$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t2_elec, t2_nuc) &
@@ -238,12 +231,9 @@ contains
 
             ! Calculate total Hamiltonian
             energy_mat = identity_size4
-            !$omp parallel do default(private) &
-            !$omp& shared(energy_mat, energies, count)
             do count2 = 1, sizeH
                 energy_mat(count2, count2) = energies(count, count2)
             end do
-            !$omp end parallel do
 
             ! Calculate total Hamiltonian
             total_hamiltonian = energy_mat + microwave_hamiltonian
@@ -254,9 +244,8 @@ contains
 
             ! Calculate Louville space relaxation matrix
             call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
-                    identity_size16, sizeL, sizeH, &
-                    spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t2_elec, t2_nuc, &
-                    gnp, gnm, gep, gem, relax_mat)
+                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
+                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron_real(eig_vector(count, :, :), eig_vector(count, :, :))
@@ -335,7 +324,7 @@ contains
                 pol_i_z, pol_s_z)
 
         ! Calculate polarisation stroboscopically across multiple rotor periods
-        ! Iterative process so OMP threads must equal 1
+        ! Iterative process so number of OMP threads must equal 1
 
         use omp_lib
         use functions
@@ -367,19 +356,11 @@ contains
         propagator_strobe = identity_size16
 
         ! Calculate stroboscopic propagator (product of all operators within rotor period)
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(propagator_strobe, propagator)
         do count = 1, time_num
             propagator_strobe = matmul(propagator_strobe, propagator(count, :, :))
         end do
-        !$omp end parallel do
 
         ! Propogate density matrix using stroboscopic propagator
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(pol_i_z, pol_s_z, spin2_i_z, spin2_s_z, sizeL, sizeH) &
-        !$omp& shared(density_mat_time, density_mat_liouville, propagator_strobe)
         do count = 1, time_num_prop
 
             ! Calculate electronic and nuclear polarisation
@@ -396,7 +377,6 @@ contains
             density_mat_time = reshape(temp, (/sizeH, sizeH/))
 
         end do
-        !$omp end parallel do
 
     end subroutine calculate_polarisation_rotor
 
@@ -404,7 +384,7 @@ contains
                 pol_i_z_rot, pol_s_z_rot)
 
         ! Calculate sub rotor polarisation
-        ! Iterative process so OMP threads must equal 1
+        ! Iterative process so number of OMP threads must equal 1
 
         use omp_lib
         use functions
@@ -430,10 +410,6 @@ contains
         density_mat_time = density_mat
 
         ! Propogate density matrix using stroboscopic propagator
-        call omp_set_num_threads(1)
-        !$omp parallel do default(private) &
-        !$omp& shared(pol_i_z_rot ,pol_s_z_rot, spin2_i_z, spin2_s_z, sizeL, sizeH) &
-        !$omp& shared(density_mat_time, density_mat_liouville, propagator)
         do count = 1, time_num
 
             ! Calculate electronic and nuclear polarisation
@@ -450,7 +426,6 @@ contains
             density_mat_time = reshape(temp, (/sizeH, sizeH/))
 
         end do
-        !$omp end parallel do
 
     end subroutine calculate_polarisation_sub_rotor
 
