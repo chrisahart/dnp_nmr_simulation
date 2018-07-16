@@ -35,7 +35,8 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
                                 kron_n_a(2 ** num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
-        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
+        # relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
+        relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], spin_all)
 
         # Calculate Liouville space eigenvectors
         eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
@@ -46,9 +47,6 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
 
         test2 = la.cosm(liouvillian * param.time_step) - 1j * la.sinm(liouvillian * param.time_step)
         propagator[count, :] = np.matmul(eigvectors_inv_liouville, np.matmul(test2, eigvectors_liouville))
-
-        # propagator[count, :] = np.matmul(eigvectors_inv_liouville,
-        #                                  np.matmul(la.expm(-1j * liouvillian * param.time_step), eigvectors_liouville))
 
     return propagator
 
@@ -147,18 +145,18 @@ def hyperfine(hyperfine_angles, time):
 
 def kron_a_n(A, N):  # Simulates np.kron(A, np.eye(N))
 
-    m,n = A.shape
-    out = np.zeros((m,N,n,N),dtype=A.dtype)
+    m, n = A.shape
+    out = np.zeros((m, N, n, N), dtype=A.dtype)
     r = np.arange(N)
-    out[:,r,:,r] = A
-    out.shape = (m*N,n*N)
+    out[:, r, :, r] = A
+    out.shape = (m * N, n * N)
     return out
 
 
 def kron_n_a(N, A):  # Simulates np.kron(np.eye(N), A)
-    m,n = A.shape
-    out = np.zeros((N,m,N,n),dtype=A.dtype)
+    m, n = A.shape
+    out = np.zeros((N, m, N, n), dtype=A.dtype)
     r = np.arange(N)
-    out[r,:,r,:] = A
-    out.shape = (m*N,n*N)
+    out[r, :, r, :] = A
+    out.shape = (m * N, n * N)
     return out

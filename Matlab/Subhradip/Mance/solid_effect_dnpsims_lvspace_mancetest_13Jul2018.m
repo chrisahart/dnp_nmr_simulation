@@ -230,12 +230,15 @@ for mm=2:4
         t2val_v2(mm,1)=abs(Szt(mm,mm)-Szt(mm-1,mm-1))^2*(1/t2e)...
                         +abs(Izt(mm,mm)-Izt(mm-1,mm-1))^2*(1/t2n);
 end
-relmatt2=diag([t2val_v2; circshift(t2val_v2,1); circshift(t2val_v2,2); circshift(t2val_v2,3)]);
+relmatt2_temp=[t2val_v2; circshift(t2val_v2,1); circshift(t2val_v2,2); circshift(t2val_v2,3)];
+relmatt2=diag(relmatt2_temp);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-    Rtot=-1*relmatt2+Rfull;
+    %Rtot=-1*relmatt2+Rfull;
+    %Rtot=Rfull;
+    Rtot=-1*relmatt2;
    
     Lhamilt=kron((hamilt),eye(4))-kron(eye(4),(hamilt).');
  

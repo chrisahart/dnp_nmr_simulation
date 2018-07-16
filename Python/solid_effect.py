@@ -9,14 +9,12 @@ import solid_effect_plotting
 from shutil import copyfile
 import os
 import matplotlib.pyplot as plt
-import f2py_dynamics as fortran
-import f2py_dynamics_old as fortran_old
+#import f2py_dynamics as fortran
+#import f2py_dynamics_old as fortran_old
 
 
 def main():
     """ Loop over dynamics function as required, writing output to disk and calling plotting function.
-        Can't use Numba or Pythran as not pure python, using Numpy instead.
-        Multiprocessing doesn't work due to overhead, and nature of numpy matrix products.
     """
 
     # Pre-allocate arrays
@@ -61,104 +59,78 @@ def dynamics(microwave_amplitude):
         Python code is left with some optimisation omitted for clarity, as performance gain is negligible.
     """
 
-    # # Pre-compute spin matrices to avoid re-evaluation Kronecker products
-    # spin2_s_x = sp.spin2_s_x
-    # spin2_s_z = sp.spin2_s_z
-    #
-    # # Pre-compute spin matrices to avoid re-evaluation Kronecker products
-    # spin2_i_x = sp.spin2_i_x
-    # spin2_i_z = sp.spin2_i_z
-    # spin2_all = sp.spin2_all
-    #
-    #
-    #
-    # # energies, eigvectors, eigvectors_inv, density_mat = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num,
-    # #                                                                                 param.time_step, param.freq_rotor,
-    # #                                                          param.gtensor,
-    # #                                                          param.hyperfine_coupling, param.hyperfine_angles_1,
-    # #                                                          param.orientation_se, param.electron_frequency,
-    # #                                                          param.microwave_frequency, param.freq_nuclear_1)
-    #
-    # # Calculate thermal density matrix from idealised Hamiltonian
-    # # hamiltonian_ideal = param.electron_frequency * spin2_s_z + \
-    # #                     param.freq_nuclear_1 * spin2_i_z
-    # # density_mat = fn.density_mat_thermal(hamiltonian_ideal)
-    #
-    # # print('density_mat', density_mat)
-    #
-    # # odd issue with density matrix precision, requires initializing as 1 to avoid NaN
-    # density_mat = 0
-    # print('density_mat', density_mat)
-    #
-    # # Construct intrinsic Hilbert space Hamiltonian
-    # # hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
-    # energies, eigvectors, eigvectors_inv, density_mat = fortran.f2py_dynamics.calculate_hamiltonian(param.time_step_num,
+    # Pre-compute spin matrices to avoid re-evaluation Kronecker products
+    spin2_s_x = sp.spin2_s_x
+    spin2_s_z = sp.spin2_s_z
+
+    # Pre-compute spin matrices to avoid re-evaluation Kronecker products
+    spin2_i_x = sp.spin2_i_x
+    spin2_i_z = sp.spin2_i_z
+    spin2_all = sp.spin2_all
+
+    # Calculate thermal density matrix from idealised Hamiltonian
+    hamiltonian_ideal = param.electron_frequency * spin2_s_z + \
+                        param.freq_nuclear_1 * spin2_i_z
+    density_mat = fn.density_mat_thermal(hamiltonian_ideal)
+
+    # Construct intrinsic Hilbert space Hamiltonian
+    hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
+    # energies, eigvectors, eigvectors_inv, density_mat = fortran.f2py_dynamics.calculate_hamiltonian(
+    # param.time_step_num,
     #                                                                                 param.time_step, param.freq_rotor,
     #                                                          param.gtensor,
     #                                                          param.hyperfine_coupling, param.hyperfine_angles_1,
     #                                                          param.orientation_se, param.electron_frequency,
     #                                                          param.microwave_frequency, param.freq_nuclear_1)
-    #
-    # # density_mat = np.real(density_mat)
-    # # eigvectors = np.real(eigvectors)
-    # # eigvectors_inv = np.real(eigvectors_inv)
-    # # energies = np.real(energies)
-    #
-    # # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
-    # # # start = time.time()
-    # # eigvals, eigvectors = np.linalg.eig(hamiltonian)
-    # # # end = time.time() - start
-    # # # print('python eig() time taken', end)
-    # # energies = np.real(eigvals)
-    # # eigvectors_inv = np.linalg.inv(eigvectors)
-    #
-    #
-    # # Calculate microwave Hamiltonian
-    # # microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
-    #
-    # # Calculate Liouville space propagator with relaxation
-    # # start = time.time()
-    # # propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
-    # #                                      microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all)
+
+    # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
+    eigvals, eigvectors = np.linalg.eig(hamiltonian)
+    energies = np.real(eigvals)
+    # print('energies \n', energies[0, :])
+    # print('eigvectors \n', eigvectors)
+    eigvectors_inv = np.linalg.inv(eigvectors)
+
+    # Calculate microwave Hamiltonian
+    microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
+
+    # Calculate Liouville space propagator with relaxation
+    # propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
+    #                                      microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all)
+    propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
+                                         microwave_hamiltonian_init, calculate_relaxation_mat_mance, spin2_all)
     # propagator = fortran.f2py_dynamics.liouville_propagator(param.time_step_num, param.time_step,
     #                                                         param.electron_frequency, param.freq_nuclear_1,
     #                                                         param.microwave_amplitude, param.t1_nuc,
     #                                                         param.t1_elec, param.t2_nuc, param.t2_elec,
     #                                                         param.temperature, eigvectors,
     #                                                         eigvectors_inv, energies)
-    # # end = time.time() - start
-    # # print('propagator time taken', end)
-    #
-    # # Propagate density matrix for single rotor period, calculating polarisations
-    # # pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i_z)
+
+    # Propagate density matrix for single rotor period, calculating polarisations
+    pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i_z)
     # pol_i_z_rot, pol_s_z_rot = fortran.f2py_dynamics.calculate_polarisation_sub_rotor(param.time_step_num,
     #                                                                       density_mat, propagator)
-    # # pol_i_z_rot = np.real(pol_i_z_rot)
-    # # pol_s_z_rot = np.real(pol_s_z_rot)
-    #
-    # # Calculate stroboscopic propagator (product of all operators within rotor period)
-    # # propagator_strobe = np.eye(4 ** 2)
-    # # for count in range(0, int(param.time_step_num)):
-    # #     propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
-    #
-    # # Propagate density matrix stroboscopically, calculating polarisations
-    # # pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin2_i_z)
+
+    # Calculate stroboscopic propagator (product of all operators within rotor period)
+    propagator_strobe = np.eye(4 ** 2)
+    for count in range(0, int(param.time_step_num)):
+        propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
+
+    # Propagate density matrix stroboscopically, calculating polarisations
+    pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin2_i_z)
     # pol_i_z, pol_s_z = fortran.f2py_dynamics.calculate_polarisation_rotor(param.time_step_num,
     #                                                                       param.num_timesteps_prop,
     #                                                                               density_mat, propagator)
-    # # pol_i_z = np.real(pol_i_z)
-    # # pol_s_z = np.real(pol_s_z)
 
     # Call F2PY code to calculate dynamics
-    start = time.time()
-    pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies = fortran.f2py_dynamics.main(param.time_step_num,
-                                                                                      param.time_step,
-                param.freq_rotor, param.gtensor, param.hyperfine_coupling, param.hyperfine_angles_1,
-                param.orientation_se, param.electron_frequency, param.microwave_frequency, param.freq_nuclear_1,
-                                microwave_amplitude, param.t1_nuc, param.t1_elec, param.t2_nuc, param.t2_elec,
-                param.temperature, param.num_timesteps_prop)
-    end = time.time() - start
-    print('main() time taken', end)
+    # start = time.time()
+    # pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies = fortran.f2py_dynamics.main(param.time_step_num,
+    #                                                                                   param.time_step,
+    #             param.freq_rotor, param.gtensor, param.hyperfine_coupling, param.hyperfine_angles_1,
+    #             param.orientation_se, param.electron_frequency, param.microwave_frequency, param.freq_nuclear_1,
+    #                             microwave_amplitude, param.t1_nuc, param.t1_elec, param.t2_nuc, param.t2_elec,
+    #             param.temperature, param.num_timesteps_prop)
+    # end = time.time() - start
+    # print('main() time taken', end)
 
     return pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies
 
@@ -168,7 +140,7 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
     """
 
     # Pre-allocate hamiltonian
-    hamiltonian = np.zeros((int(param.time_step_num), 2 ** 2, 2 ** 2,), dtype=np.complex)
+    hamiltonian = np.zeros((int(param.time_step_num), 2 ** 2, 2 ** 2))
 
     # Calculate time independent electron g-anisotropy coefficients
     c0, c1, c2, c3, c4 = fn.anisotropy_coefficients(param.orientation_se)
@@ -206,15 +178,12 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin
 
         # Transform density matrix (2^N x 2^N to 4^N x 1)
         density_mat_liouville = np.reshape(density_mat, [4 ** 2, 1])
-        print(density_mat_liouville.shape)
 
         # Propagate density matrix
         density_mat = np.matmul(propagator_strobe, density_mat_liouville)
-        print(density_mat.shape)
 
         # Transform density matrix (4^N x 1 to 2^N x 2^N)
         density_mat = np.reshape(density_mat, [2 ** 2, 2 ** 2])
-        print(density_mat.shape)
 
     return pol_i_z, pol_s_z
 
@@ -251,8 +220,8 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
     identity_mat = 0.5 * np.eye(4 ** 2)
 
     # Transform spin matrices into time dependent Hilbert space basis
-    spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t, spin2_i_m_t = \
-            fn.basis_transform(eigvectors, eigvectors_inv, spin2_all)
+    spin2_s_z_t, spin2_s_x_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_x_t, spin2_i_p_t, spin2_i_m_t = \
+        fn.basis_transform(eigvectors, eigvectors_inv, spin2_all)
 
     # Transform spin matrices into time dependent Liouville space basis
     spin2_i_p_tl = np.kron(spin2_i_p_t, np.transpose(spin2_i_m_t)) - identity_mat + 0.5 * (
@@ -276,6 +245,80 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
     relax_t2_nuc = (1 / param.t2_nuc) * (np.kron(spin2_i_z_t, np.transpose(spin2_i_z_t)) - 0.5 * identity_mat)
     relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
     relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
+
+    return relax_mat
+
+
+def calculate_relaxation_mat_mance(eigvectors, eigvectors_inv, spin2_all):
+    """ Calculate time dependent Liouville space relaxation matrix from Mance paper.
+    """
+
+    # Transform spin matrices into time dependent Hilbert space basis
+    spin2_s_z_t, spin2_s_x_t,  spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_x_t, spin2_i_p_t, spin2_i_m_t = \
+        fn.basis_transform(eigvectors, eigvectors_inv, sp.spin2_all)
+
+    Bf = param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature))
+    Bfn = param.freq_nuclear_1 * (sc.Planck / (sc.Boltzmann * param.temperature))
+
+    R1 = np.zeros((2 ** 2, 2 ** 2))
+    R2 = R1
+    W2 = R1
+
+    Rfull = np.zeros((4 ** 2, 4 ** 2))
+
+    # Calculate T2 relaxation matrix using circular shift
+    t2val_v2 = np.zeros(4)
+    for a in range(1, 4):
+        t2val_v2[a] = (((spin2_s_z_t[a, a])) * 2) * (1/param.t2_elec) + \
+                      (((spin2_i_z_t[a, a])) * 2) * (1/param.t2_nuc)
+
+    t2val_v2 = np.array([0, 1E6, 1.001E6, 1E6])
+    relmatt2_test = np.concatenate((t2val_v2, np.roll(t2val_v2, 1),
+                                    np.roll(t2val_v2, 2), np.roll(t2val_v2, 3)))
+    relmatt2 = np.diagflat(relmatt2_test)
+    # print('t2val_v2 \n', t2val_v2)
+    # print('spin2_s_z_t \n', spin2_s_z_t)
+    # print('spin2_i_z_t \n', spin2_i_z_t)
+    # print('sp.spin2_i_z \n', sp.spin2_i_z)
+    # print('sp.spin2_s_z \n', sp.spin2_s_z)
+
+    # Calculate T1 relaxation matrix
+    for a in range(0, 4):
+        for b in range(0, 4):
+
+            ep = spin2_s_z_t[a, a] - spin2_s_z_t[b, b]
+            epn = spin2_i_z_t[a, a] - spin2_i_z_t[b, b]
+
+            Ef = np.exp(-ep * Bf / 2 - epn * Bfn / 2) / (
+                        np.exp(ep * Bf / 2 + epn * Bfn / 2) + np.exp(-ep * Bf / 2 - epn * Bfn / 2))
+
+            R1[a, b] = (1 / param.t1_elec) * (spin2_s_x_t[a, b] * spin2_s_x_t[b, a] + spin2_s_z_t[a, b] *
+                                              spin2_s_z_t[b, a]) + (1 / param.t1_nuc) * (
+                        spin2_i_x_t[a, b] * spin2_i_x_t[b, a] + spin2_i_z_t[a, b] * spin2_i_z_t[b, a])
+
+            R1[a, b] = R1[a, b] * Ef
+
+            Rfull[a, b] = 1
+
+    # Set diagonals equal to zero
+    for a in range(0, 4):
+        R1[a, a] = 0
+
+    for a in range(0, 4):
+        for b in range(0, 4):
+            if abs(a - b) > 0:
+                R1[a, a] = R1[a, a] - R1[b, a]
+
+    #
+    for a in range(0, 4):
+        for b in range(0, 4):
+
+            II = (a - 1) * 4 + a
+            JJ = (b - 1) * 4 + b
+
+            Rfull[II, JJ] = R1[a, b]
+
+    relax_mat = -1*relmatt2 + Rfull
 
     return relax_mat
 
