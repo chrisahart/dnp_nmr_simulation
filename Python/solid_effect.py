@@ -88,6 +88,22 @@ def dynamics(microwave_amplitude):
     energies = np.real(eigvals)
     # print('energies \n', energies[0, :])
     # print('eigvectors \n', eigvectors)
+
+    # Test sorting eigenvalues and eigenvectors into descending order as in eigenshuffle
+    indices = np.argsort(-eigvals[0])
+    # print('indices', indices)
+    # print('before energies[0]', energies[0])
+
+    energies_temp = np.copy(energies)
+    eigvectors_temp = np.copy(eigvectors)
+
+    for count2 in range(0, param.time_step_num):
+        for count3 in range(0, 4):
+            energies[count2, count3] = energies_temp[count2, indices[count3]]
+            eigvectors[count2, :, count3] = eigvectors_temp[count2, :, indices[count3]]
+
+    print('after energies[0]', energies[0])
+    # print('energies[0]', energies[0])
     eigvectors_inv = np.linalg.inv(eigvectors)
 
     # Calculate microwave Hamiltonian
@@ -259,46 +275,26 @@ def calculate_relaxation_mat_mance(eigvectors, eigvectors_inv, spin2_all):
 
     Bf = param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature))
     Bfn = param.freq_nuclear_1 * (sc.Planck / (sc.Boltzmann * param.temperature))
-
     R1 = np.zeros((2 ** 2, 2 ** 2))
-    R2 = R1
-    W2 = R1
-
-    Rfull = np.zeros((4 ** 2, 4 ** 2))
-
-    # Calculate T2 relaxation matrix using circular shift
-    t2val_v2 = np.zeros(4)
-    for a in range(1, 4):
-        t2val_v2[a] = (((spin2_s_z_t[a, a])) * 2) * (1/param.t2_elec) + \
-                      (((spin2_i_z_t[a, a])) * 2) * (1/param.t2_nuc)
-
-    t2val_v2 = np.array([0, 1E6, 1.001E6, 1E6])
-    relmatt2_test = np.concatenate((t2val_v2, np.roll(t2val_v2, 1),
-                                    np.roll(t2val_v2, 2), np.roll(t2val_v2, 3)))
-    relmatt2 = np.diagflat(relmatt2_test)
-    # print('t2val_v2 \n', t2val_v2)
-    # print('spin2_s_z_t \n', spin2_s_z_t)
-    # print('spin2_i_z_t \n', spin2_i_z_t)
-    # print('sp.spin2_i_z \n', sp.spin2_i_z)
-    # print('sp.spin2_s_z \n', sp.spin2_s_z)
+    relax_mat_t1 = np.zeros((4 ** 2, 4 ** 2))
 
     # Calculate T1 relaxation matrix
     for a in range(0, 4):
         for b in range(0, 4):
 
-            ep = spin2_s_z_t[a, a] - spin2_s_z_t[b, b]
-            epn = spin2_i_z_t[a, a] - spin2_i_z_t[b, b]
+            ep = spin2_s_z_t[b, b] - spin2_s_z_t[a, a]
+            epn = spin2_i_z_t[b, b] - spin2_i_z_t[a, a]
 
-            Ef = np.exp(-ep * Bf / 2 - epn * Bfn / 2) / (
-                        np.exp(ep * Bf / 2 + epn * Bfn / 2) + np.exp(-ep * Bf / 2 - epn * Bfn / 2))
+            Ef = np.exp(-ep * Bf / 2 - epn * Bfn / 2) / \
+                 (np.exp(ep * Bf / 2 + epn * Bfn / 2) + np.exp(-ep * Bf / 2 - epn * Bfn / 2))
 
-            R1[a, b] = (1 / param.t1_elec) * (spin2_s_x_t[a, b] * spin2_s_x_t[b, a] + spin2_s_z_t[a, b] *
-                                              spin2_s_z_t[b, a]) + (1 / param.t1_nuc) * (
-                        spin2_i_x_t[a, b] * spin2_i_x_t[b, a] + spin2_i_z_t[a, b] * spin2_i_z_t[b, a])
+            R1[a, b] = (1 / param.t1_elec) * (spin2_s_x_t[b, a] * spin2_s_x_t[a, b] +
+                                              spin2_s_z_t[b, a] * spin2_s_z_t[a, b]) + \
+                       (1 / param.t1_nuc) * (spin2_i_x_t[b, a] * spin2_i_x_t[a, b] +
+                                             spin2_i_z_t[b, a] * spin2_i_z_t[a, b])
 
+            R1[a, b] = spin2_s_x_t[b, a] * spin2_s_x_t[a, b] + spin2_s_z_t[b, a] * spin2_s_z_t[a, b]
             R1[a, b] = R1[a, b] * Ef
-
-            Rfull[a, b] = 1
 
     # Set diagonals equal to zero
     for a in range(0, 4):
@@ -306,19 +302,34 @@ def calculate_relaxation_mat_mance(eigvectors, eigvectors_inv, spin2_all):
 
     for a in range(0, 4):
         for b in range(0, 4):
-            if abs(a - b) > 0:
-                R1[a, a] = R1[a, a] - R1[b, a]
+            if abs((a+1) - (b+1)) > 0:
+                R1[b, b] = R1[b, b] - R1[a, b]
 
     #
     for a in range(0, 4):
         for b in range(0, 4):
 
-            II = (a - 1) * 4 + a
-            JJ = (b - 1) * 4 + b
+            c = (a - 1) * 4 + a
+            d = (b - 1) * 4 + b
 
-            Rfull[II, JJ] = R1[a, b]
+            relax_mat_t1[d, c] = R1[b, a]
 
-    relax_mat = -1*relmatt2 + Rfull
+    # print('spin2_s_x_t', spin2_s_x_t)
+    # print('spin2_s_z_t', spin2_s_z_t)
+    # print('spin2_i_z_t', spin2_i_z_t)
+    # print('R1', R1)
+    #print('relax_mat_t1', relax_mat_t1)
+
+    # Calculate T2 relaxation matrix using circular shift of spin matrices
+    relax_t2 = np.zeros(4)
+    for a in range(1, 4):
+        relax_t2[a] = ((abs(spin2_s_z_t[a, a] - spin2_s_z_t[a - 1, a - 1])) ** 2) * (1 / param.t2_elec) + \
+                        ((abs(spin2_i_z_t[a, a] - spin2_i_z_t[a - 1, a - 1])) ** 2) * (1 / param.t2_nuc)
+    relax_mat_t2 = np.diagflat(np.concatenate((relax_t2, np.roll(relax_t2, 1),
+                                                np.roll(relax_t2, 2), np.roll(relax_t2, 3))))
+
+    # Relaxation matrix as sum of t1 and t2 matrices
+    relax_mat = -1*relax_mat_t2 + relax_mat_t1
 
     return relax_mat
 

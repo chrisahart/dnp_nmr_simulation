@@ -188,23 +188,27 @@ for i=1:4
         ep=Szt(i,i)-Szt(j,j);
         epn=Izt(i,i)-Izt(j,j);
         Ef=exp(-ep*Bf/2-epn*Bfn/2)/(exp(ep*Bf/2+epn*Bfn/2)+exp(-ep*Bf/2-epn*Bfn/2));
+%         
+%         R1(i,j)=(1/t1e)*(Sxt(i,j)*Sxt(j,i)+Szt(i,j)*Szt(j,i))+ ...
+%                 (1/t1n)*(Ixt(i,j)*Ixt(j,i)+Izt(i,j)*Izt(j,i));
+            
+        R1(i,j)=Sxt(i,j)*Sxt(j,i)+Szt(i,j)*Szt(j,i);
         
-        R1(i,j)=(1/t1e)*(Sxt(i,j)*Sxt(j,i)+Szt(i,j)*Szt(j,i))+(1/t1n)*(Ixt(i,j)*Ixt(j,i)+Izt(i,j)*Izt(j,i));
-        R1(i,j)=R1(i,j)*Ef;
+        %R1(i,j)=R1(i,j)*Ef;
     end
 end
 
-for i=1:4
-    R1(i,i)=0;
-end
+% for i=1:4
+%     R1(i,i)=0;
+% end
 
-for i=1:4
-    for j=1:4
-    if (abs(i-j)>0)
-        R1(i,i)=R1(i,i)-R1(j,i);
-    end
-    end
-end
+% for i=1:4
+%     for j=1:4
+%     if (abs(i-j)>0)
+%         R1(i,i)=R1(i,i)-R1(j,i);
+%     end
+%     end
+% end
 % W1=expm(R1*trstep);   
 
 Rfull=zeros(16,16);
@@ -236,9 +240,7 @@ relmatt2=diag(relmatt2_temp);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-    %Rtot=-1*relmatt2+Rfull;
-    %Rtot=Rfull;
-    Rtot=-1*relmatt2;
+    Rtot=-1*relmatt2+Rfull;
    
     Lhamilt=kron((hamilt),eye(4))-kron(eye(4),(hamilt).');
  

@@ -35,7 +35,7 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
                                 kron_n_a(2 ** num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
-        # relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
+        #relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
         relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], spin_all)
 
         # Calculate Liouville space eigenvectors
