@@ -104,7 +104,7 @@ def dynamics(microwave_amplitude):
 
     # Calculate Liouville space propagator with relaxation
     propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
-                                         microwave_hamiltonian_init, calculate_relaxation_mat_mance, spin2_all)
+                                         microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all)
     # propagator = fortran.f2py_dynamics.liouville_propagator(param.time_step_num, param.time_step,
     #                                                         param.electron_frequency, param.freq_nuclear_1,
     #                                                         param.microwave_amplitude, param.t1_nuc,

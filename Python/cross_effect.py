@@ -111,7 +111,7 @@ def dynamics(microwave_amplitude):
 
     # Calculate Liouville space propagator with relaxation
     propagator = fn.liouville_propagator(3, energies, eigvectors, eigvectors_inv,
-                                         microwave_hamiltonian_init, calculate_relaxation_mat_mance, spin3_all)
+                                         microwave_hamiltonian_init, calculate_relaxation_mat, spin3_all)
 
     # Propagate density matrix for single rotor period, calculating polarisations
     pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator,
@@ -231,9 +231,9 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
     identity_mat = 0.5 * np.eye(4 ** 3)
 
     # Transform spin matrices into time dependent Hilbert space basis
-    spin3_s1_z_t, spin3_s1_p_t, spin3_s1_m_t, spin3_s2_z_t, spin3_s2_p_t, spin3_s2_m_t, \
-        spin3_i_z_t, spin3_i_p_t, spin3_i_m_t = \
-            fn.basis_transform(eigvectors, eigvectors_inv, spin3_all)
+    spin3_s1_z_t, spin3_s1_x_t, spin3_s1_p_t, spin3_s1_m_t, spin3_s2_z_t, spin3_s2_x_t, spin3_s2_p_t, spin3_s2_m_t, \
+    spin3_i_z_t, spin3_i_x_t, spin3_i_p_t, spin3_i_m_t = \
+        fn.basis_transform(eigvectors, eigvectors_inv, spin3_all)
 
     # Transform spin matrices into time dependent Liouville space basis
     spin3_i_p_tl = np.kron(spin3_i_p_t, np.transpose(spin3_i_m_t)) - identity_mat + 0.5 * (

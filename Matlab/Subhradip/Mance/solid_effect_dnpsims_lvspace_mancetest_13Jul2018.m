@@ -34,7 +34,7 @@ tr = 1/wr;
 nsteps = 10000;
 trstep = tr/nsteps;
 tarray=0:trstep:tr;
-hzz_max=5e6;
+hzz_max=3e6;
 %rho0 = Sz;
 beta_en=0;
 gamma_en=0;
@@ -256,7 +256,7 @@ for kk=1:nsteps
 end
 
 
-final_time=100;
+final_time=40;
 nrot=round(final_time/tr);
 iznew=zeros(1,nrot);
 sznew=iznew;

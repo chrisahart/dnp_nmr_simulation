@@ -242,10 +242,15 @@ contains
             hamiltonian_liouville = kron_real(total_hamiltonian, identity_size4) - &
                     kron_real(identity_size4, transpose(total_hamiltonian))
 
-            ! Calculate Louville space relaxation matrix
-            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
-                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
-                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
+            ! Calculate Louville space relaxation matrix using origonal theory
+!            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
+!                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
+!                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
+
+            ! Calculate Louville space relaxation matrix using Mance theory
+            call calculate_relaxation_mat_mance(eig_vector(count, :, :), eig_vector_inv(count, :, :), sizeL, sizeH, &
+                    spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
+                    t1_elec, t1_nuc, t2_elec, t2_nuc, relax_mat)
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron_real(eig_vector(count, :, :), eig_vector(count, :, :))
@@ -319,6 +324,110 @@ contains
         relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
 
     end subroutine calculate_relaxation_mat
+
+    subroutine calculate_relaxation_mat_mance(eig_vector, eig_vector_inv, sizeL, sizeH, &
+            spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
+            t1_elec, t1_nuc, t2_elec, t2_nuc, relax_mat)
+
+        ! Calculate Louville space relaxation matrix using Mance theory
+
+        use functions
+        implicit none
+
+        integer, intent(in) :: sizeH, sizeL
+        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
+        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, spin2_s_x, spin2_i_x
+        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
+        real(kind = 8), intent(in) :: t1_elec, t1_nuc, t2_nuc, t2_elec
+
+        real(kind = 8), dimension(sizeL, sizeL), intent(out) :: relax_mat
+
+        real(kind = 8), dimension(sizeL, sizeL) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
+        real(kind = 8), dimension(sizeL, sizeL) :: relax_t2_elec, relax_t2_nuc, relax_t1
+        real(kind = 8), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
+        real(kind = 8), dimension(sizeH, sizeH) :: spin2_i_m_t, spin2_s_x_t, spin2_i_x_t
+
+        real(kind = 8), dimension(sizeL, sizeL) :: relax_mat_t2, relax_mat_t1
+        real(kind=8) :: relax_values_t2(4)
+        integer :: count, count2
+
+        ! Transform spin matrices into time dependent Hilbert space basis
+        spin2_s_z_t = matmul(eig_vector_inv, matmul(spin2_s_z, eig_vector))
+        spin2_s_x_t = matmul(eig_vector_inv, matmul(spin2_s_x, eig_vector))
+        spin2_s_p_t = matmul(eig_vector_inv, matmul(spin2_s_p, eig_vector))
+        spin2_s_m_t = matmul(eig_vector_inv, matmul(spin2_s_m, eig_vector))
+        spin2_i_z_t = matmul(eig_vector_inv, matmul(spin2_i_z, eig_vector))
+        spin2_i_x_t = matmul(eig_vector_inv, matmul(spin2_i_x, eig_vector))
+        spin2_i_p_t = matmul(eig_vector_inv, matmul(spin2_i_p, eig_vector))
+        spin2_i_m_t = matmul(eig_vector_inv, matmul(spin2_i_m, eig_vector))
+
+        ! Matlab column major, Python row major (as in C), Fortran column major
+
+        ! Calculate T1 relaxation matrix using Boltzmann factors
+        do count = 1, 4
+            do count2 = 1, 4
+
+                diff_elec = spin2_s_z_t(count, count) - spin2_s_z_t(count2, count2)
+                diff_nuc = spin2_i_z_t(count, count) - spin2_i_z_t(count2, count2)
+
+                boltzmann_factor = exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2) / &
+                                   (exp(diff_elec * boltzmann_elec / 2 + diff_nuc * boltzmann_nuc / 2) + &
+                                    exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2))
+
+                relax_values_t1(count, count2) = &
+                        (1 / t1_elec) * (spin2_s_x_t(count, count2) * spin2_s_x_t(count2, count) + &
+                                spin2_s_z_t(count, count2) * spin2_s_z_t(count2, count)) + &
+                        (1 / t1_nuc) * (spin2_i_x_t(count, count2) * spin2_i_x_t(count2, count) + &
+                                spin2_i_z_t(count, count2) * spin2_i_z_t(count2, count))
+
+                relax_values_t1(count, count2) = relax_values_t1(count, count2) * boltzmann_factor
+
+            end do
+        end do
+
+!        ! Set diagonals equal to zero
+!        do count = 1, 4
+!            relax_values_t1(count, count) = 0
+!        end do
+!
+!        ! Set diagonal elements
+!        do count = 1, 4
+!            do count2 = 1, 4
+!                if (abs(a - b) > 0) then
+!                    relax_values_t1[b, b] = relax_values_t1[b, b] - relax_values_t1[a, b]
+!                end if
+!            end do
+!        end do
+!
+!        ! Transform to 16 by 16 matrix
+!        do count = 1, 4
+!            do count2 = 1, 4
+!                c = a * 4 + a
+!                d = b * 4 + b
+!                relax_mat_t1[d, c] = relax_values_t1[b, a]
+!            end do
+!        end do
+
+        ! Calculate T2 relaxation matrix using circular shift of spin matrices
+        do count = 2, 4
+            relax_values_t2(count) = &
+                        ((abs(spin2_s_z_t(count, count) - spin2_s_z_t(count - 1, count - 1))) ** 2) * (1 / t2_elec) + &
+                        ((abs(spin2_i_z_t(count, count) - spin2_i_z_t(count - 1, count - 1))) ** 2) * (1 / t2_nuc)
+        end do
+
+        ! Transform to 16 by 16 matrix
+        relax_mat_t2 = 0
+        do count = 1, 4
+            do count2 = 1, 4
+                relax_mat_t2(count2+4*(count-1), count2+4*(count-1)) = relax_values_t2(count2)
+            end do
+            relax_values_t2 = cshift(relax_values_t2, SHIFT=-1)
+        end do
+
+        ! Relaxation matrix as sum of t1 and t2 matrices
+        relax_mat = -1*relax_mat_t2 + relax_mat_t1
+
+    end subroutine calculate_relaxation_mat_mance
 
     subroutine calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, sizeH, sizeL, &
                 pol_i_z, pol_s_z)
