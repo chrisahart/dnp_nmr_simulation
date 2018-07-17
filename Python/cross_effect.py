@@ -33,26 +33,26 @@ def main():
                                               ', total elapsed time ', (time.time() - start), ' s.'))
 
     # # Dynamically assign and create output directory
-    # directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
-    #
-    # # Save data and copy parameters file
-    # np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_elec1.csv'), pol_elec1, fmt='%.8f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_elec2.csv'), pol_elec2, fmt='%.8f', newline='\n')
-    #
-    # # High precision required for sub rotor dynamics (negligible change in file size)
-    # np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_s1_z_rot.csv'), pol_s1_z_rot, fmt='%.12f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_s2_z_rot.csv'), pol_s2_z_rot, fmt='%.12f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
-    #
-    # # Create a copy of parameters file
-    # copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
-    #
-    # # Call plotting function
-    # cross_effect_plotting.plot_all(directory)
+    directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # Save data and copy parameters file
+    np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_elec1.csv'), pol_elec1, fmt='%.8f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_elec2.csv'), pol_elec2, fmt='%.8f', newline='\n')
+
+    # High precision required for sub rotor dynamics (negligible change in file size)
+    np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_s1_z_rot.csv'), pol_s1_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_s2_z_rot.csv'), pol_s2_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
+
+    # Create a copy of parameters file
+    copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
+
+    # Call plotting function
+    cross_effect_plotting.plot_all(directory)
 
 
 def dynamics(microwave_amplitude):
@@ -91,15 +91,27 @@ def dynamics(microwave_amplitude):
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
-    energies = np.real(eigvals)
+    energies = np.copy(eigvals)
+
+    # Determine indices for sorting eigenvalues and eigenvectors into descending order at zero time
+    indices = np.argsort(-eigvals[0])
+
+    # Sort eigenvalues and eigenvectors at zero time
+    eigvectors_temp = np.copy(eigvectors)
+    for count2 in range(0, param.time_step_num):
+        for count3 in range(0, 2 ** 3):
+            energies[count2, count3] = eigvals[count2, indices[count3]]
+            eigvectors[count2, :, count3] = eigvectors_temp[count2, :, indices[count3]]
+
+    # Calculate inverse eigenvectors
     eigvectors_inv = np.linalg.inv(eigvectors)
 
     # Calculate microwave Hamiltonian
     microwave_hamiltonian_init = microwave_amplitude * (spin3_s1_x + spin3_s2_x)
 
     # Calculate Liouville space propagator with relaxation
-    propagator = liouville_propagator(3, energies, eigvectors, eigvectors_inv,
-                                         microwave_hamiltonian_init, spin3_all)
+    propagator = fn.liouville_propagator(3, energies, eigvectors, eigvectors_inv,
+                                         microwave_hamiltonian_init, calculate_relaxation_mat_mance, spin3_all)
 
     # Propagate density matrix for single rotor period, calculating polarisations
     pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator,
@@ -122,7 +134,7 @@ def calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z,
     """
 
     # Pre-allocate hamiltonian
-    hamiltonian = np.zeros((int(param.time_step_num), 2 ** 3, 2 ** 3,), dtype=np.complex)
+    hamiltonian = np.zeros((int(param.time_step_num), 2 ** 3, 2 ** 3,))
 
     # Calculate time independent electron g-anisotropy coefficients for electron 1 and 2
     c0_1, c1_1, c2_1, c3_1, c4_1 = fn.anisotropy_coefficients(param.orientation_ce_1)
@@ -212,89 +224,6 @@ def calculate_polarisation_sub_rotor(density_mat, propagator, spin3_s1_z, spin3_
     return pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot
 
 
-def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
-                         microwave_hamiltonian_init, spin3_all):
-    """ Calculate Liouville space propagator.
-     """
-
-    # Pre-allocate propagator
-    propagator = np.zeros((int(param.time_step_num), 4 ** num_spins, 4 ** num_spins), dtype=np.complex)
-
-    # Calculate variables for Liouville space relaxation
-    p_e = np.tanh(0.5 * param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature)))
-    p_n = np.tanh(0.5 * param.freq_nuclear_1 * (sc.Planck / (sc.Boltzmann * param.temperature)))
-    gnp = 0.5 * (1 - p_n) * (1 / (1 * param.t1_nuc))
-    gnm = 0.5 * (1 + p_n) * (1 / (1 * param.t1_nuc))
-    gep = 0.5 * (1 - p_e) * (1 / (1 * param.t1_elec))
-    gem = 0.5 * (1 + p_e) * (1 / (1 * param.t1_elec))
-
-    for count in range(0, int(param.time_step_num)):
-
-        # Transform microwave Hamiltonian into time dependent basis
-        microwave_hamiltonian = np.matmul(eigvectors_inv[count], np.matmul(microwave_hamiltonian_init,
-                                                                           eigvectors[count]))
-
-        # Calculate total Hamiltonian
-        total_hamiltonian = np.diag(energies[count]) + microwave_hamiltonian
-
-        # Transform Hilbert space Hamiltonian into Liouville space
-        hamiltonian_liouville = fn.kron_a_n(total_hamiltonian, 2 ** num_spins) - \
-                                fn.kron_n_a(2 ** num_spins, np.transpose(total_hamiltonian))
-
-        # Calculate time dependent Liouville space relaxation matrix
-        identity_mat = 0.5 * np.eye(4 ** 3)
-
-        # Transform spin matrices into time dependent Hilbert space basis
-        spin3_s1_z_t, spin3_s1_p_t, spin3_s1_m_t, spin3_s2_z_t, spin3_s2_p_t, spin3_s2_m_t, \
-            spin3_i_z_t, spin3_i_p_t, spin3_i_m_t = \
-            fn.basis_transform(eigvectors[count], eigvectors_inv[count], spin3_all)
-
-        # Transform spin matrices into time dependent Liouville space basis
-        spin3_i_p_tl = np.kron(spin3_i_p_t, np.transpose(spin3_i_m_t)) - identity_mat + 0.5 * (
-                fn.kron_a_n(spin3_i_z_t, 2 ** 3) +
-                fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
-
-        spin3_i_m_tl = np.kron(spin3_i_m_t, np.transpose(spin3_i_p_t)) - identity_mat - 0.5 * (
-                fn.kron_a_n(spin3_i_z_t, 2 ** 3) +
-                fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
-
-        spin3_s1_p_tl = np.kron(spin3_s1_p_t, np.transpose(spin3_s1_m_t)) - identity_mat + 0.5 * (
-                fn.kron_a_n(spin3_s1_z_t, 2 ** 3) +
-                fn.kron_n_a(2 ** 3, np.transpose(spin3_s1_z_t)))
-
-        spin3_s1_m_tl = np.kron(spin3_s1_m_t, np.transpose(spin3_s1_p_t)) - identity_mat - 0.5 * (
-                fn.kron_a_n(spin3_s1_z_t, 2 ** 3) +
-                fn.kron_n_a(2 ** 3, np.transpose(spin3_s1_z_t)))
-
-        spin3_s2_p_tl = np.kron(spin3_s2_p_t, np.transpose(spin3_s2_m_t)) - identity_mat + 0.5 * (
-                fn.kron_a_n(spin3_s2_z_t, 2 ** 3) +
-                fn.kron_n_a(2 ** 3, np.transpose(spin3_s2_z_t)))
-
-        spin3_s2_m_tl = np.kron(spin3_s2_m_t, np.transpose(spin3_s2_p_t)) - identity_mat - 0.5 * (
-                fn.kron_a_n(spin3_s2_z_t, 2 ** 3) +
-                fn.kron_n_a(2 ** 3, np.transpose(spin3_s2_z_t)))
-
-        # Calculate relaxation matrices
-        relax_t2_s1 = (2 / param.t2_elec) * (np.kron(spin3_s1_z_t, np.transpose(spin3_s1_z_t)) - 0.5 * identity_mat)
-        relax_t2_s2 = (2 / param.t2_elec) * (np.kron(spin3_s2_z_t, np.transpose(spin3_s2_z_t)) - 0.5 * identity_mat)
-        relax_t2_i1 = (2 / param.t2_nuc) * (np.kron(spin3_i_z_t, np.transpose(spin3_i_z_t)) - 0.5 * identity_mat)
-        relax_t1 = gep * spin3_s1_p_tl + gem * spin3_s1_m_tl + \
-                   gep * spin3_s2_p_tl + gem * spin3_s2_m_tl + \
-                   gnp * spin3_i_p_tl + gnm * spin3_i_m_tl
-        relax_mat = relax_t2_s1 + relax_t2_s2 + relax_t2_i1 + relax_t1
-
-        # Calculate Liouville space eigenvectors
-        eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
-        eigvectors_inv_liouville = np.kron(eigvectors_inv[count], eigvectors_inv[count])
-
-        # Calculate Liouville space propagator
-        liouvillian = hamiltonian_liouville + 1j * relax_mat
-        propagator[count, :] = np.matmul(eigvectors_inv_liouville,
-                                         np.matmul(la.expm(-1j * liouvillian * param.time_step), eigvectors_liouville))
-
-    return propagator
-
-
 def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spin3_all):
     """ Calculate time dependent Liouville space relaxation matrix.
     """
@@ -339,6 +268,75 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
                gep * spin3_s2_p_tl + gem * spin3_s2_m_tl + \
                gnp * spin3_i_p_tl + gnm * spin3_i_m_tl
     relax_mat = relax_t2_s1 + relax_t2_s2 + relax_t2_i1 + relax_t1
+
+    return relax_mat
+
+
+def calculate_relaxation_mat_mance(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spin3_all):
+    """ Calculate time dependent Liouville space relaxation matrix from Mance paper.
+    """
+
+    # Transform spin matrices into time dependent Hilbert space basis
+    spin3_s1_z_t, spin3_s1_x_t, spin3_s1_p_t, spin3_s1_m_t, spin3_s2_z_t, spin3_s2_x_t, spin3_s2_p_t, spin3_s2_m_t, \
+        spin3_i_z_t, spin3_i_x_t, spin3_i_p_t, spin3_i_m_t = \
+        fn.basis_transform(eigvectors, eigvectors_inv, spin3_all)
+
+    # Calculate Boltzmann factors and pre-allocate variables
+    boltzmann_elec = param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature))
+    boltzmann_nuc = param.freq_nuclear_1 * (sc.Planck / (sc.Boltzmann * param.temperature))
+    relax_values_t1 = np.zeros((2 ** 3, 2 ** 3))
+    relax_mat_t1 = np.zeros((4 ** 3, 4 ** 3))
+
+    # Calculate T1 relaxation matrix
+    for a in range(0, 2 ** 3):
+        for b in range(0, 2 ** 3):
+
+            # Calculate Boltzmann factors
+            diff_elec = spin3_s1_z_t[b, b] - spin3_s1_z_t[a, a] + spin3_s2_z_t[b, b] - spin3_s2_z_t[a, a]
+            diff_nuc = spin3_i_z_t[b, b] - spin3_i_z_t[a, a]
+            boltzmann_factor = np.exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2) / \
+                               (np.exp(diff_elec * boltzmann_elec / 2 + diff_nuc * boltzmann_nuc / 2) +
+                                np.exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2))
+
+            # Calculate initial relaxation matrix
+            relax_values_t1[b, a] = (1 / param.t1_elec) * (spin3_s1_x_t[b, a] * spin3_s1_x_t[a, b] +
+                                                           spin3_s2_x_t[b, a] * spin3_s2_x_t[a, b] +
+                                                           spin3_s1_z_t[b, a] * spin3_s1_z_t[a, b] +
+                                                           spin3_s2_z_t[b, a] * spin3_s2_z_t[a, b]) + \
+                                    (1 / param.t1_nuc) * (spin3_i_x_t[b, a] * spin3_i_x_t[a, b] +
+                                                          spin3_i_z_t[b, a] * spin3_i_z_t[a, b])
+            relax_values_t1[b, a] = relax_values_t1[b, a] * boltzmann_factor
+
+    # Set diagonal elements
+    np.fill_diagonal(relax_values_t1, 0)
+    for a in range(0, 2 ** 3):
+        for b in range(0, 2 ** 3):
+            if abs(a - b) > 0:
+                relax_values_t1[b, b] = relax_values_t1[b, b] - relax_values_t1[a, b]
+
+    # Transform to 4 ** N by 4 ** N matrix
+    for a in range(0, 2 ** 3):
+        for b in range(0, 2 ** 3):
+            c = a * (2 ** 3) + a
+            d = b * (2 ** 3) + b
+            relax_mat_t1[d, c] = relax_values_t1[b, a]
+
+    # Calculate T2 relaxation matrix using circular shift of spin matrices
+    relax_values_t2 = np.zeros(2 ** 3)
+    for a in range(1, 2 ** 3):
+        relax_values_t2[a] = (((abs(spin3_s1_z_t[a, a] - spin3_s1_z_t[a - 1, a - 1])) ** 2) +
+                              ((abs(spin3_s2_z_t[a, a] - spin3_s2_z_t[a - 1, a - 1])) ** 2)) \
+                             * (1 / param.t2_elec) + \
+                             ((abs(spin3_i_z_t[a, a] - spin3_i_z_t[a - 1, a - 1])) ** 2) * (1 / param.t2_nuc)
+
+    # Transform to 4 ** N by 4 ** N matrix
+    relax_mat_t2 = np.diagflat(np.concatenate((relax_values_t2, np.roll(relax_values_t2, 1),
+                                               np.roll(relax_values_t2, 2), np.roll(relax_values_t2, 3),
+                                               np.roll(relax_values_t2, 4), np.roll(relax_values_t2, 5),
+                                               np.roll(relax_values_t2, 6), np.roll(relax_values_t2, 7))))
+
+    # Relaxation matrix as sum of t1 and t2 matrices
+    relax_mat = -1 * relax_mat_t2 + relax_mat_t1
 
     return relax_mat
 

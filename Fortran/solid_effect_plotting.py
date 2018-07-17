@@ -53,25 +53,25 @@ def plot_all(directory):
         fig_pol_elec_mw.savefig('{}{}'.format(directory, '/fig_pol_elec_mw.png'), dpi=save_dpi, bbox_inches='tight')
 
         # Plot nuclear enhancement against time
-        if param.microwave_amplitude.size >= 20:
-            fig_pol_nuc = plt.figure()
-            ax_pol_nuc = fig_pol_nuc.add_subplot(111)
-            ax_pol_nuc.plot(time_array, enhancement_nuc_time[0, :] / pol_nuc_max[0], 'k',
-                            label=param.microwave_amplitude[0]/1E6)
-            ax_pol_nuc.plot(time_array, enhancement_nuc_time[4, :] / pol_nuc_max[0], 'r',
-                            label=param.microwave_amplitude[4]/1E6)
-            ax_pol_nuc.plot(time_array, enhancement_nuc_time[9, :] / pol_nuc_max[0], 'g',
-                            label=param.microwave_amplitude[9]/1E6)
-            ax_pol_nuc.plot(time_array, enhancement_nuc_time[19, :] / pol_nuc_max[0], 'b',
-                            label=param.microwave_amplitude[19]/1E6)
-            ax_pol_nuc.legend(loc='upper right', title='Microwave amplitude')
-            ax_pol_nuc.set_xlim(time_array[0], time_array[-1])
-            ax_pol_nuc.set_ylim(ymin=0)
-            ax_pol_nuc.set_xlabel('Time (s)')
-            ax_pol_nuc.set_ylabel('Nuclear enhancement')
-            fig_pol_nuc.tight_layout()
-            fig_pol_nuc.savefig('{}{}'.format(directory, '/nuclear_enhancement_time.png'),
-                                dpi=save_dpi, bbox_inches='tight')
+        # if param.microwave_amplitude.size >= 20:
+        #     fig_pol_nuc = plt.figure()
+        #     ax_pol_nuc = fig_pol_nuc.add_subplot(111)
+        #     ax_pol_nuc.plot(time_array, enhancement_nuc_time[0, :] / pol_nuc_max[0], 'k',
+        #                     label=param.microwave_amplitude[0]/1E6)
+        #     ax_pol_nuc.plot(time_array, enhancement_nuc_time[4, :] / pol_nuc_max[0], 'r',
+        #                     label=param.microwave_amplitude[4]/1E6)
+        #     ax_pol_nuc.plot(time_array, enhancement_nuc_time[9, :] / pol_nuc_max[0], 'g',
+        #                     label=param.microwave_amplitude[9]/1E6)
+        #     ax_pol_nuc.plot(time_array, enhancement_nuc_time[19, :] / pol_nuc_max[0], 'b',
+        #                     label=param.microwave_amplitude[19]/1E6)
+        #     ax_pol_nuc.legend(loc='upper right', title='Microwave amplitude')
+        #     ax_pol_nuc.set_xlim(time_array[0], time_array[-1])
+        #     ax_pol_nuc.set_ylim(ymin=0)
+        #     ax_pol_nuc.set_xlabel('Time (s)')
+        #     ax_pol_nuc.set_ylabel('Nuclear enhancement')
+        #     fig_pol_nuc.tight_layout()
+        #     fig_pol_nuc.savefig('{}{}'.format(directory, '/nuclear_enhancement_time.png'),
+        #                         dpi=save_dpi, bbox_inches='tight')
 
     # Plot sub rotor dynamics if data files exist
     elif os.path.exists('{}'.format('out/pol_i_z_rot.out')):

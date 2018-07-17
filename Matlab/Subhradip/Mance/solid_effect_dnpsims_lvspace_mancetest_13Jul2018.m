@@ -106,9 +106,9 @@ for ii = 0:length(tarray)-2
         (sqrt(2)/4)*(sind(beta_en)^2)*cosd(2*(360*wr*ii*trstep+gamma_en))+(sqrt(2)/4)*(3*(cosd(beta_en)^2)-1))*IxSz;
     hhyp_zy=hzz_max*((sqrt(6)/4)*(sind(beta_en)^2)*sind(2*(360*wr*ii*trstep+gamma_en))-...
         (sqrt(3)/2)*sind(beta_en)*cosd(beta_en)*sind(1*(360*wr*ii*trstep+gamma_en)))*IySz;
-    hhyp=2*(hhyp_zz+hhyp_zx+0*hhyp_zy);
+    hhyp=2*(hhyp_zz+hhyp_zx);
     ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+c2*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
-    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+1*hhyp;
+    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+hhyp;
 end
 
 
@@ -188,27 +188,25 @@ for i=1:4
         ep=Szt(i,i)-Szt(j,j);
         epn=Izt(i,i)-Izt(j,j);
         Ef=exp(-ep*Bf/2-epn*Bfn/2)/(exp(ep*Bf/2+epn*Bfn/2)+exp(-ep*Bf/2-epn*Bfn/2));
-%         
-%         R1(i,j)=(1/t1e)*(Sxt(i,j)*Sxt(j,i)+Szt(i,j)*Szt(j,i))+ ...
-%                 (1/t1n)*(Ixt(i,j)*Ixt(j,i)+Izt(i,j)*Izt(j,i));
-            
-        R1(i,j)=Sxt(i,j)*Sxt(j,i)+Szt(i,j)*Szt(j,i);
         
-        %R1(i,j)=R1(i,j)*Ef;
+        R1(i,j)=(1/t1e)*(Sxt(i,j)*Sxt(j,i)+Szt(i,j)*Szt(j,i))+ ...
+                (1/t1n)*(Ixt(i,j)*Ixt(j,i)+Izt(i,j)*Izt(j,i));
+            
+        R1(i,j)=R1(i,j)*Ef;
     end
 end
 
-% for i=1:4
-%     R1(i,i)=0;
-% end
+for i=1:4
+    R1(i,i)=0;
+end
 
-% for i=1:4
-%     for j=1:4
-%     if (abs(i-j)>0)
-%         R1(i,i)=R1(i,i)-R1(j,i);
-%     end
-%     end
-% end
+for i=1:4
+    for j=1:4
+    if (abs(i-j)>0)
+        R1(i,i)=R1(i,i)-R1(j,i);
+    end
+    end
+end
 % W1=expm(R1*trstep);   
 
 Rfull=zeros(16,16);
