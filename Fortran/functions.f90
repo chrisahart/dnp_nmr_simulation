@@ -10,10 +10,12 @@ contains
         ! Calculates sorting indices of array A
         ! Iterative process so number of OMP threads must equal 1
 
+        use iso_fortran_env
         implicit none
 
-        real(kind = 8), dimension (:), intent(in) :: A
-        real(kind = 8) :: B(size(A)), temp(size(A))
+        integer, parameter :: wp = real64
+        real(wp), dimension (:), intent(in) :: A
+        real(wp) :: B(size(A)), temp(size(A))
         integer :: index(1), count
 
         temp =  A
@@ -29,10 +31,12 @@ contains
         ! Calculate trace of real matrix A
         ! Iterative process so number of OMP threads must equal 1
 
+        use iso_fortran_env
         implicit none
 
-        real(kind = 8), dimension (:, :), intent(in) :: A
-        real(kind = 8) :: C
+        integer, parameter :: wp = real64
+        real(wp), dimension (:, :), intent(in) :: A
+        real(wp) :: C
         integer :: i
         C = 0
 
@@ -46,10 +50,12 @@ contains
         ! Calculate trace of complex matrix A
         ! Iterative process so number of OMP threads must equal 1
 
+        use iso_fortran_env
         implicit none
 
-        complex(kind=8), dimension (:, :), intent(in) :: A
-        complex(kind=8) :: C
+        integer, parameter :: wp = real64
+        complex(wp), dimension (:, :), intent(in) :: A
+        complex(wp) :: C
         integer :: i
         C = 0
 
@@ -63,10 +69,12 @@ contains
         ! Calculate Kronecker product of real matrices A and B, adapted from Rosetta Code
         ! Iterative process so number of OMP threads must equal 1
 
+        use iso_fortran_env
         implicit none
 
-        real(kind = 8), intent(in) :: A(:, :), B(:, :)
-        real(kind = 8) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
+        integer, parameter :: wp = real64
+        real(wp), intent(in) :: A(:, :), B(:, :)
+        real(wp) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
         integer :: R, RA, RB, C, CA, CB, I, J
 
         R = 0
@@ -90,10 +98,12 @@ contains
         ! Calculate Kronecker product of complex matrices A and B, adapted from Rosetta Code
         ! Iterative process so number of OMP threads must equal 1
 
+        use iso_fortran_env
         implicit none
 
-        complex(kind = 8), intent(in) :: A(:, :), B(:, :)
-        complex(kind = 8) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
+        integer, parameter :: wp = real64
+        complex(wp), intent(in) :: A(:, :), B(:, :)
+        complex(wp) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
         integer :: R, RA, RB, C, CA, CB, I, J
 
         R = 0
@@ -118,12 +128,14 @@ contains
         ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
+        use iso_fortran_env
         implicit none
 
-        real(kind=8), dimension(:, :, :), intent(in) :: A
-        real(kind=8), dimension(size(A, 1), size(A, 2), size(A, 3)) :: B
-        real(kind=8), dimension(size(A, 2), size(A, 3)) :: temp
-        real(kind=8) :: work(size(A, 2)*2)
+        integer, parameter :: wp = real64
+        real(wp), dimension(:, :, :), intent(in) :: A
+        real(wp), dimension(size(A, 1), size(A, 2), size(A, 3)) :: B
+        real(wp), dimension(size(A, 2), size(A, 3)) :: temp
+        real(wp) :: work(size(A, 2)*2)
 
         integer :: count
         integer :: ipiv(4), info
@@ -145,12 +157,14 @@ contains
         ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
+        use iso_fortran_env
         implicit none
 
-        complex(kind=8), dimension(:, :, :), intent(in) :: A
-        complex(kind=8), dimension(size(A, 1), size(A, 2), size(A, 3)) :: B
-        complex(kind=8), dimension(size(A, 2), size(A, 3)) :: temp
-        complex(kind=8) :: work(size(A, 2)*2)
+        integer, parameter :: wp = real64
+        complex(wp), dimension(:, :, :), intent(in) :: A
+        complex(wp), dimension(size(A, 1), size(A, 2), size(A, 3)) :: B
+        complex(wp), dimension(size(A, 2), size(A, 3)) :: temp
+        complex(wp) :: work(size(A, 2)*2)
 
         integer :: count
         integer :: ipiv(4), info
@@ -170,19 +184,21 @@ contains
     function expm_complex(A) result(B)
         ! Calculate matrix exponential of complex matrix A using Expokit
 
+        use iso_fortran_env
         implicit none
 
-        complex(kind=8), dimension(:, :), intent(in) :: A
-        complex(kind=8), dimension(size(A, 1), size(A, 2)) :: B
+        integer, parameter :: wp = real64
+        complex(wp), dimension(:, :), intent(in) :: A
+        complex(wp), dimension(size(A, 1), size(A, 2)) :: B
 
         integer, parameter :: ideg = 2 ! Pade approximation, 6 is reccomended but 2 appears to be stable
-        complex(kind=8) :: t = 1.D0
-        complex(kind=8), dimension(4 * size(A, 1) * size(A, 2) + ideg + 1) :: wsp
+        complex(wp) :: t = 1._wp
+        complex(wp), dimension(4 * size(A, 1) * size(A, 2) + ideg + 1) :: wsp
         integer, dimension(size(A, 1)) :: iwsp
         integer :: iexp, ns, iflag
 
         call ZGPADM(ideg, size(A, 1), t, A, size(A, 1), wsp, size(wsp, 1), iwsp, iexp, ns, iflag)
-        B = reshape(wsp(iexp : iexp + size(A, 1) * size(A, 1) - 1), (/ size(A, 1), size(A, 2)/))
+        B = reshape(wsp(iexp : iexp + size(A, 1) * size(A, 1) - 1), [size(A, 1), size(A, 2)])
 
     end function expm_complex
 
@@ -191,17 +207,19 @@ contains
         ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
+        use iso_fortran_env
         implicit none
 
-        real(kind=8), dimension(:, :, :), intent(in) :: A
-        real(kind=8), dimension(size(A, 1), size(A, 2)), intent(out) :: eig_val
-        real(kind=8), dimension(size(A, 1), size(A, 2), size(A, 3)), intent(out) :: eig_vect
+        integer, parameter :: wp = real64
+        real(wp), dimension(:, :, :), intent(in) :: A
+        real(wp), dimension(size(A, 1), size(A, 2)), intent(out) :: eig_val
+        real(wp), dimension(size(A, 1), size(A, 2), size(A, 3)), intent(out) :: eig_vect
 
-        real(kind=8) :: dummy_vect(size(A, 2), size(A, 2)), dummy_val(size(A, 2)), work(size(A, 2)*4)
+        real(wp) :: dummy_vect(size(A, 2), size(A, 2)), dummy_val(size(A, 2)), work(size(A, 2)*4)
         integer :: info, count
 
-        real(kind=8), dimension(size(A, 2), size(A, 2)) :: test1, temp2
-        real(kind=8), dimension(size(A, 2)) :: temp1
+        real(wp), dimension(size(A, 2), size(A, 2)) :: test1, temp2
+        real(wp), dimension(size(A, 2)) :: temp1
 
         !!$omp parallel do default(private) &
         !!$omp& shared(A, eig_val, eig_vect)
@@ -220,18 +238,20 @@ contains
         ! Calculate eigenvalues and eigenvectors of 3D complex matrix A using LAPACK.
         ! Independent processes so number of OMP threads can take any value
 
+        use iso_fortran_env
         implicit none
 
-        complex(kind=8), dimension(:, :, :), intent(in) :: A
-        complex(kind=8), dimension(size(A, 1), size(A, 2)), intent(out) :: eig_val
-        complex(kind=8), dimension(size(A, 1), size(A, 2), size(A, 3)), intent(out) :: eig_vect
+        integer, parameter :: wp = real64
+        complex(wp), dimension(:, :, :), intent(in) :: A
+        complex(wp), dimension(size(A, 1), size(A, 2)), intent(out) :: eig_val
+        complex(wp), dimension(size(A, 1), size(A, 2), size(A, 3)), intent(out) :: eig_vect
 
-        complex(kind=8) :: dummy(size(A, 2),size(A, 2)), work(size(A, 2)*2)
-        complex(kind=8) :: Rwork(size(A, 2)*2)
+        complex(wp) :: dummy(size(A, 2),size(A, 2)), work(size(A, 2)*2)
+        complex(wp) :: Rwork(size(A, 2)*2)
         integer :: info, count
 
-        complex(kind=8), dimension(size(A, 2), size(A, 2)) :: test1, temp2
-        complex(kind=8), dimension(size(A, 2)) :: temp1
+        complex(wp), dimension(size(A, 2), size(A, 2)) :: test1, temp2
+        complex(wp), dimension(size(A, 2)) :: temp1
 
         !!$omp parallel do default(private) &
         !!$omp& shared(A, eig_val, eig_vect)

@@ -13,28 +13,30 @@ contains
 
         use omp_lib
         use functions
+        use iso_fortran_env
         implicit none
 
         integer, parameter :: sizeH = 2 ** (2), sizeL = 4 ** (2) ! Change (value) to change number of spins
+        integer, parameter :: wp = real64
 
         integer, intent(in):: time_num, time_num_prop
-        real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
-        real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
-        real(kind=8), intent(in) :: time_step, freq_rotor, microwave_amplitude
-        real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
+        real(wp), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
+        real(wp), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
+        real(wp), intent(in) :: time_step, freq_rotor, microwave_amplitude
+        real(wp), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
 
-        real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
-        real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
-        real(kind=8), dimension(time_num, sizeH), intent(out) :: energies
+        real(wp), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
+        real(wp), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
+        real(wp), dimension(time_num, sizeH), intent(out) :: energies
 
-        complex(kind=8), dimension(time_num, sizeL, sizeL)  :: propagator
-        real(kind = 8), dimension(sizeH, sizeH) :: density_mat
-        real(kind = 8) :: eig_vector(time_num, sizeH, sizeH), eig_vector_inv(time_num, sizeH, sizeH)
-        real(kind = 8) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH), temp(4)
-        real(kind = 8), dimension(time_num, sizeH, sizeH) :: hamiltonian
+        complex(wp), dimension(time_num, sizeL, sizeL)  :: propagator
+        real(wp), dimension(sizeH, sizeH) :: density_mat
+        real(wp) :: eig_vector(time_num, sizeH, sizeH), eig_vector_inv(time_num, sizeH, sizeH)
+        real(wp) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH), temp(4)
+        real(wp), dimension(time_num, sizeH, sizeH) :: hamiltonian
         integer :: indices(4),  count1, count2, index(1)
 
-        !real(kind = 8) :: wtime
+        !real(wp) :: wtime
 
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
@@ -84,34 +86,36 @@ contains
 
         use omp_lib
         use interactions
+        use iso_fortran_env
         use functions
         implicit none
 
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
+        integer, parameter :: wp = real64
+        real(wp), parameter :: PI = 4._wp * ATAN(1._wp), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
 
         integer, intent(in):: time_num, sizeH, sizeL
-        real(kind=8), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
-        real(kind=8), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
-        real(kind=8), intent(in) :: time_step, freq_rotor, temperature
-        real(kind=8), dimension(time_num, sizeH, sizeH), intent(out) :: hamiltonian
-        real(kind=8), intent(out) :: density_mat(sizeH, sizeH)
+        real(wp), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
+        real(wp), intent(in) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
+        real(wp), intent(in) :: time_step, freq_rotor, temperature
+        real(wp), dimension(time_num, sizeH, sizeH), intent(out) :: hamiltonian
+        real(wp), intent(out) :: density_mat(sizeH, sizeH)
 
         integer :: count
-        real(kind=8) :: c0, c1, c2, c3, c4
-        real(kind=8) :: hyperfine_zx, hyperfine_zz, ganisotropy
-        real(kind=8), dimension(2, 2) :: spin_x, spin_z, identity_spin1
+        real(wp) :: c0, c1, c2, c3, c4
+        real(wp) :: hyperfine_zx, hyperfine_zz, ganisotropy
+        real(wp), dimension(2, 2) :: spin_x, spin_z, identity_spin1
 
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, hyperfine_total
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z
-        real(kind=8), dimension(sizeH, sizeH) :: hamiltonian_ideal, boltzmann_factors_mat
-        real(kind=8), dimension(sizeH) :: boltzmann_factors
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, hyperfine_total
+        real(wp), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z
+        real(wp), dimension(sizeH, sizeH) :: hamiltonian_ideal, boltzmann_factors_mat
+        real(wp), dimension(sizeH) :: boltzmann_factors
 
         ! Identity matrix
-        identity_spin1 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_spin1)))
+        identity_spin1 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_spin1)))
 
         ! Pauli matrices
-        spin_x = 0.5D0 * (reshape((/ 0.D0, 1.D0, 1.D0, 0.D0/), shape(spin_x), order = (/2, 1/)))
-        spin_z = 0.5D0 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
+        spin_x = 0.5_wp * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin_x), order = [2, 1]))
+        spin_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 matrices for S operator
         spin2_s_x = kron_real(spin_x, identity_spin1)
@@ -133,11 +137,11 @@ contains
             ! Calculate time dependent hyperfine
             call hyperfine(hyperfine_coupling, hyperfine_angles, freq_rotor, (count - 1) * time_step, &
                     hyperfine_zz, hyperfine_zx)
-            hyperfine_total = 2.D0 * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z) + &
-                              2.D0 * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
+            hyperfine_total = 2._wp * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z) + &
+                              2._wp * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
 
             ! Calculate time dependent electron g-anisotropy
-            call anisotropy(c0, c1, c2, c3, c4, freq_rotor, electron_frequency, (count - 1.D0) * time_step, &
+            call anisotropy(c0, c1, c2, c3, c4, freq_rotor, electron_frequency, (count - 1) * time_step, &
                     gtensor, ganisotropy)
 
             ! Calculate time dependent hamiltonian
@@ -156,7 +160,7 @@ contains
             boltzmann_factors(count) = exp(-(Planck * hamiltonian_ideal(count, count)) / (Boltzmann * temperature))
             boltzmann_factors_mat(count, count) = boltzmann_factors(count)
         end do
-        density_mat = (1/sum(boltzmann_factors)) * boltzmann_factors_mat
+        density_mat = (1._wp / sum(boltzmann_factors)) * boltzmann_factors_mat
 
     end subroutine calculate_hamiltonian
 
@@ -168,46 +172,48 @@ contains
         ! Independent processes so number of OMP threads can take any value
 
         use omp_lib
+        use iso_fortran_env
         use functions
         implicit none
 
-        complex(kind=8), parameter :: i = (0, 1.D0)
-        real(kind=8), parameter :: Planck = 6.62607004D-34, Boltzmann = 1.38064852D-23
+        integer, parameter :: wp = real64
+        complex(wp), parameter :: i = (0, 1._wp)
+        real(wp), parameter :: Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
 
         integer, intent(in):: time_num, sizeH, sizeL
-        real(kind=8), dimension(time_num, sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
-        real(kind=8), dimension(time_num, sizeH), intent(in) :: energies
-        real(kind=8), intent(in) :: electron_frequency, nuclear_frequency, microwave_amplitude, time_step
-        real(kind=8), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
-        complex(kind=8), intent(out) :: propagator(time_num, sizeL, sizeL)
+        real(wp), dimension(time_num, sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
+        real(wp), dimension(time_num, sizeH), intent(in) :: energies
+        real(wp), intent(in) :: electron_frequency, nuclear_frequency, microwave_amplitude, time_step
+        real(wp), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
+        complex(wp), intent(out) :: propagator(time_num, sizeL, sizeL)
 
         integer :: count, count2
-        real(kind=8), dimension(2, 2) :: spin_x, spin_z, identity_size2
-        complex(kind=8), dimension(2, 2) :: identity_size2_complex, spin_y
-        real(kind=8) :: p_e, p_n, gnp, gnm, gep, gem, boltzmann_elec, boltzmann_nuc
+        real(wp), dimension(2, 2) :: spin_x, spin_z, identity_size2
+        complex(wp), dimension(2, 2) :: identity_size2_complex, spin_y
+        real(wp) :: p_e, p_n, gnp, gnm, gep, gem, boltzmann_elec, boltzmann_nuc
 
-        real(kind=8), dimension(sizeL, sizeL) :: identity_size16, hamiltonian_liouville, relax_mat
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, total_hamiltonian
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
-        real(kind=8), dimension(sizeH, sizeH) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
-        real(kind=8), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z, identity_size4
+        real(wp), dimension(sizeL, sizeL) :: identity_size16, hamiltonian_liouville, relax_mat
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, total_hamiltonian
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
+        real(wp), dimension(sizeH, sizeH) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
+        real(wp), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z, identity_size4
 
-        complex(kind=8), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
-        complex(kind=8), dimension(sizeL, sizeL) :: liouvillian, mat_exp
-        complex(kind=8), dimension(sizeH, sizeH) :: identity_size4_complex, spin2_s_y, spin2_i_y
+        complex(wp), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
+        complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
+        complex(wp), dimension(sizeH, sizeH) :: identity_size4_complex, spin2_s_y, spin2_i_y
 
         ! Identity matrix
-        identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
-        identity_size2_complex = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
+        identity_size2 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
+        identity_size2_complex = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
         identity_size4 = kron_real(identity_size2, identity_size2)
         identity_size4_complex = kron_complex(identity_size2_complex, identity_size2_complex)
         identity_size16 = kron_real(kron_real(identity_size2, identity_size2), &
                 kron_real(identity_size2, identity_size2))
 
         ! Pauli matrices
-        spin_x = 0.5 * (reshape((/ 0.D0, 1.D0, 1.D0, 0.D0/), shape(spin_x), order = (/2, 1/)))
-        spin_y = 0.5 * i * (reshape((/ 0.D0, -1.D0, 1.D0, 0.D0/), shape(spin_y), order = (/2, 1/)))
-        spin_z = 0.5 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
+        spin_x = 0.5 * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin_x), order = [2, 1]))
+        spin_y = 0.5 * i * (reshape([0._wp, -1._wp, 1._wp, 0._wp], shape(spin_y), order = [2, 1]))
+        spin_z = 0.5 * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 matrices for S operator
         spin2_s_x = kron_real(spin_x, identity_size2)
@@ -224,12 +230,12 @@ contains
         spin2_i_m = spin2_i_x - real(i * spin2_s_y)
 
         ! Calculate variables for origonal Liouville space relaxation
-        p_e = tanh(0.5D0 * electron_frequency * (Planck / (Boltzmann * temperature)))
-        p_n = tanh(0.5D0 * nuclear_frequency * (Planck / (Boltzmann * temperature)))
-        gnp = 0.5D0 * (1.D0 - p_n) * (1.D0 / (1.D0 * t1_nuc))
-        gnm = 0.5D0 * (1.D0 + p_n) * (1.D0 / (1.D0 * t1_nuc))
-        gep = 0.5D0 * (1.D0 - p_e) * (1.D0 / (1.D0 * t1_elec))
-        gem = 0.5D0 * (1.D0 + p_e) * (1.D0 / (1.D0 * t1_elec))
+        p_e = tanh(0.5_wp * electron_frequency * (Planck / (Boltzmann * temperature)))
+        p_n = tanh(0.5_wp * nuclear_frequency * (Planck / (Boltzmann * temperature)))
+        gnp = 0.5_wp * (1._wp - p_n) * (1._wp / (1._wp * t1_nuc))
+        gnm = 0.5_wp * (1._wp + p_n) * (1._wp / (1._wp * t1_nuc))
+        gep = 0.5_wp * (1._wp - p_e) * (1._wp / (1._wp * t1_elec))
+        gem = 0.5_wp * (1._wp + p_e) * (1._wp / (1._wp * t1_elec))
 
         ! Calculate variables for Mance Liouville space relaxation
         boltzmann_elec = electron_frequency * (Planck / (Boltzmann * temperature))
@@ -237,7 +243,7 @@ contains
 
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
-        
+
         !$omp parallel do default(private) &
         !$omp& shared(eig_vector, eig_vector_inv, identity_size4, identity_size16, sizeL, sizeH) &
         !$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t1_elec, t2_elec, t2_nuc) &
@@ -269,8 +275,8 @@ contains
 
             ! Calculate Louville space relaxation matrix using Mance theory
             call calculate_relaxation_mat_mance(eig_vector(count, :, :), eig_vector_inv(count, :, :), sizeL, sizeH, &
-            spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
-            t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
+                spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
+                t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron_real(eig_vector(count, :, :), eig_vector(count, :, :))
@@ -293,22 +299,24 @@ contains
         ! Calculate Louville space relaxation matrix
 
         use functions
+        use iso_fortran_env
         implicit none
 
+        integer, parameter :: wp = real64
         integer, intent(in) :: sizeH, sizeL
-        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
-        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, identity_size4
-        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
-        real(kind=8), dimension(sizeL, sizeL), intent(in) :: identity_size16
-        real(kind = 8), intent(in) :: t2_nuc, t2_elec
-        real(kind = 8), intent(in) :: gnp, gnm, gep, gem
+        real(wp), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
+        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, identity_size4
+        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
+        real(wp), dimension(sizeL, sizeL), intent(in) :: identity_size16
+        real(wp), intent(in) :: t2_nuc, t2_elec
+        real(wp), intent(in) :: gnp, gnm, gep, gem
 
-        real(kind = 8), dimension(sizeL, sizeL), intent(out) :: relax_mat
+        real(wp), dimension(sizeL, sizeL), intent(out) :: relax_mat
 
-        real(kind = 8), dimension(sizeL, sizeL) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
-        real(kind = 8), dimension(sizeL, sizeL) :: relax_t2_elec, relax_t2_nuc, relax_t1
-        real(kind = 8), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
-        real(kind = 8), dimension(sizeH, sizeH) :: spin2_i_m_t
+        real(wp), dimension(sizeL, sizeL) :: spin2_i_p_tl, spin2_i_m_tl, spin2_s_p_tl, spin2_s_m_tl
+        real(wp), dimension(sizeL, sizeL) :: relax_t2_elec, relax_t2_nuc, relax_t1
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
+        real(wp), dimension(sizeH, sizeH) :: spin2_i_m_t
 
         ! Transform spin matrices into time dependent Hilbert space basis
         spin2_s_z_t = matmul(eig_vector_inv, matmul(spin2_s_z, eig_vector))
@@ -319,27 +327,27 @@ contains
         spin2_i_m_t = matmul(eig_vector_inv, matmul(spin2_i_m, eig_vector))
 
         ! Transform spin matrices into time dependent Liouville space basis
-        spin2_i_p_tl = kron_real(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * (&
+        spin2_i_p_tl = kron_real(spin2_i_p_t, transpose(spin2_i_m_t)) - 0.5_wp * identity_size16 + 0.5_wp * (&
                 kron_real(spin2_i_z_t, identity_size4) + &
                         kron_real(identity_size4, transpose(spin2_i_z_t)))
 
-        spin2_i_m_tl = kron_real(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * (&
+        spin2_i_m_tl = kron_real(spin2_i_m_t, transpose(spin2_i_p_t)) - 0.5_wp * identity_size16 - 0.5_wp * (&
                 kron_real(spin2_i_z_t, identity_size4) + &
                         kron_real(identity_size4, transpose(spin2_i_z_t)))
 
-        spin2_s_p_tl = kron_real(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5D0 * identity_size16 + 0.5D0 * (&
+        spin2_s_p_tl = kron_real(spin2_s_p_t, transpose(spin2_s_m_t)) - 0.5_wp * identity_size16 + 0.5_wp * (&
                 kron_real(spin2_s_z_t, identity_size4) + &
                         kron_real(identity_size4, transpose(spin2_s_z_t)))
 
-        spin2_s_m_tl = kron_real(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5D0 * identity_size16 - 0.5D0 * (&
+        spin2_s_m_tl = kron_real(spin2_s_m_t, transpose(spin2_s_p_t)) - 0.5_wp * identity_size16 - 0.5_wp * (&
                 kron_real(spin2_s_z_t, identity_size4) + &
                         kron_real(identity_size4, transpose(spin2_s_z_t)))
 
         ! Calculate time dependent Liouville space relaxation matrix
-        relax_t2_elec = (1.D0 / t2_elec) * (kron_real(spin2_s_z_t, transpose(spin2_s_z_t)) - &
-                0.5D0 * 0.5D0 * identity_size16)
-        relax_t2_nuc = (1.D0 / t2_nuc) * (kron_real(spin2_i_z_t, transpose(spin2_i_z_t)) - &
-                0.5D0 * 0.5D0 * identity_size16)
+        relax_t2_elec = (1._wp / t2_elec) * (kron_real(spin2_s_z_t, transpose(spin2_s_z_t)) - &
+                0.5_wp * 0.5_wp * identity_size16)
+        relax_t2_nuc = (1._wp / t2_nuc) * (kron_real(spin2_i_z_t, transpose(spin2_i_z_t)) - &
+                0.5_wp * 0.5_wp * identity_size16)
         relax_t1 = gep * spin2_s_p_tl + gem * spin2_s_m_tl + gnp * spin2_i_p_tl + gnm * spin2_i_m_tl
         relax_mat = relax_t2_elec + relax_t2_nuc + relax_t1
 
@@ -352,21 +360,23 @@ contains
         ! Calculate Louville space relaxation matrix using Mance theory
 
         use functions
+        use iso_fortran_env
         implicit none
 
+        integer, parameter :: wp = real64
         integer, intent(in) :: sizeH, sizeL
-        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
-        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, spin2_s_x, spin2_i_x
-        real(kind = 8), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
-        real(kind = 8), intent(in) :: t1_elec, t1_nuc, t2_nuc, t2_elec, boltzmann_elec, boltzmann_nuc
+        real(wp), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
+        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, spin2_s_x, spin2_i_x
+        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
+        real(wp), intent(in) :: t1_elec, t1_nuc, t2_nuc, t2_elec, boltzmann_elec, boltzmann_nuc
 
-        real(kind = 8), dimension(sizeL, sizeL), intent(out) :: relax_mat
+        real(wp), dimension(sizeL, sizeL), intent(out) :: relax_mat
 
-        real(kind = 8), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
-        real(kind = 8), dimension(sizeH, sizeH) :: spin2_i_m_t, spin2_s_x_t, spin2_i_x_t
-        real(kind = 8), dimension(sizeL, sizeL) :: relax_mat_t2, relax_mat_t1
-        real(kind = 8), dimension(sizeH, sizeH) :: relax_values_t1
-        real(kind=8) :: relax_values_t2(4), diff_elec, diff_nuc, boltzmann_factor
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
+        real(wp), dimension(sizeH, sizeH) :: spin2_i_m_t, spin2_s_x_t, spin2_i_x_t
+        real(wp), dimension(sizeL, sizeL) :: relax_mat_t2, relax_mat_t1
+        real(wp), dimension(sizeH, sizeH) :: relax_values_t1
+        real(wp) :: relax_values_t2(4), diff_elec, diff_nuc, boltzmann_factor
         integer :: count, count2, count3, count4
 
         ! Transform spin matrices into time dependent Hilbert space basis
@@ -386,14 +396,14 @@ contains
                 diff_elec = spin2_s_z_t(count, count) - spin2_s_z_t(count2, count2)
                 diff_nuc = spin2_i_z_t(count, count) - spin2_i_z_t(count2, count2)
 
-                boltzmann_factor = exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2) / &
-                                   (exp(diff_elec * boltzmann_elec / 2 + diff_nuc * boltzmann_nuc / 2) + &
-                                    exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2))
+                boltzmann_factor = exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2._wp) / &
+                                   (exp(diff_elec * boltzmann_elec / 2 + diff_nuc * boltzmann_nuc / 2._wp) + &
+                                    exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2._wp))
 
                 relax_values_t1(count, count2) = &
-                        (1 / t1_elec) * (spin2_s_x_t(count, count2) * spin2_s_x_t(count2, count) + &
+                        (1._wp / t1_elec) * (spin2_s_x_t(count, count2) * spin2_s_x_t(count2, count) + &
                                 spin2_s_z_t(count, count2) * spin2_s_z_t(count2, count)) + &
-                        (1 / t1_nuc) * (spin2_i_x_t(count, count2) * spin2_i_x_t(count2, count) + &
+                        (1._wp / t1_nuc) * (spin2_i_x_t(count, count2) * spin2_i_x_t(count2, count) + &
                                 spin2_i_z_t(count, count2) * spin2_i_z_t(count2, count))
 
                 relax_values_t1(count, count2) = relax_values_t1(count, count2) * boltzmann_factor
@@ -402,7 +412,7 @@ contains
 
         ! Set diagonals equal to zero
         do count = 1, sizeH
-            relax_values_t1(count, count) = 0
+            relax_values_t1(count, count) = 0._wp
         end do
 
         ! Set diagonal elements
@@ -427,8 +437,8 @@ contains
         ! Calculate T2 relaxation matrix using circular shift of spin matrices
         do count = 2, sizeH
             relax_values_t2(count) = &
-                        ((abs(spin2_s_z_t(count, count) - spin2_s_z_t(count - 1, count - 1))) ** 2) * (1 / t2_elec) + &
-                        ((abs(spin2_i_z_t(count, count) - spin2_i_z_t(count - 1, count - 1))) ** 2) * (1 / t2_nuc)
+                ((abs(spin2_s_z_t(count, count) - spin2_s_z_t(count - 1, count - 1))) ** 2._wp) * (1._wp / t2_elec) + &
+                ((abs(spin2_i_z_t(count, count) - spin2_i_z_t(count - 1, count - 1))) ** 2._wp) * (1._wp / t2_nuc)
         end do
 
         ! Transform to 16 by 16 matrix
@@ -441,7 +451,7 @@ contains
         end do
 
         ! Relaxation matrix as sum of t1 and t2 matrices
-        relax_mat = -1*relax_mat_t2 + relax_mat_t1
+        relax_mat = -1._wp*relax_mat_t2 + relax_mat_t1
 
     end subroutine calculate_relaxation_mat_mance
 
@@ -453,27 +463,29 @@ contains
 
         use omp_lib
         use functions
+        use iso_fortran_env
         implicit none
 
+        integer, parameter :: wp = real64
         integer, intent(in) :: time_num_prop, time_num, sizeH, sizeL
-        complex(kind=8), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
-        real(kind=8), dimension(sizeH, sizeH), intent(in) :: density_mat
-        real(kind=8), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
+        complex(wp), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
+        real(wp), dimension(sizeH, sizeH), intent(in) :: density_mat
+        real(wp), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
 
         integer :: count
-        complex(kind=8), dimension(2, 2) :: spin_z, identity_size2
+        complex(wp), dimension(2, 2) :: spin_z, identity_size2
 
-        complex(kind=8), dimension(sizeL, 1) :: density_mat_liouville, temp
-        complex(kind=8), dimension(sizeL, sizeL) :: identity_size16, propagator_strobe
-        complex(kind=8), dimension(sizeH, sizeH) :: spin2_s_z, spin2_i_z, density_mat_time
+        complex(wp), dimension(sizeL, 1) :: density_mat_liouville, temp
+        complex(wp), dimension(sizeL, sizeL) :: identity_size16, propagator_strobe
+        complex(wp), dimension(sizeH, sizeH) :: spin2_s_z, spin2_i_z, density_mat_time
 
         ! Calculate matrices specific to polarisation calculation
-        identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
+        identity_size2 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
         identity_size16 = kron_complex(kron_complex(identity_size2, identity_size2), &
                           kron_complex(identity_size2, identity_size2))
 
         ! Calculate matrices specific to polarisation calculation
-        spin_z = 0.5D0 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
+        spin_z = 0.5_wp * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
@@ -493,13 +505,13 @@ contains
             pol_s_z(count) = real(trace_complex(matmul(density_mat_time, spin2_s_z)))
 
             ! Transform density matrix (2^N x 2^N to 4^N x 1)
-            density_mat_liouville = reshape(density_mat_time, (/sizeL, 1/))
+            density_mat_liouville = reshape(density_mat_time, [sizeL, 1])
 
             ! Propagate density matrix
             temp = matmul(propagator_strobe, density_mat_liouville)
 
             ! Transform density matrix (4^N x 1 to 2^N x 2^N)
-            density_mat_time = reshape(temp, (/sizeH, sizeH/))
+            density_mat_time = reshape(temp, [sizeH, sizeH])
 
         end do
 
@@ -513,22 +525,24 @@ contains
 
         use omp_lib
         use functions
+        use iso_fortran_env
         implicit none
 
+        integer, parameter :: wp = real64
         integer, intent(in) :: time_num, sizeH, sizeL
-        complex(kind=8), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
-        real(kind=8), dimension(sizeH, sizeH), intent(in) :: density_mat
-        real(kind=8), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
+        complex(wp), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
+        real(wp), dimension(sizeH, sizeH), intent(in) :: density_mat
+        real(wp), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
 
         integer :: count
-        complex(kind=8), dimension(2, 2) :: spin_z, identity_size2
+        complex(wp), dimension(2, 2) :: spin_z, identity_size2
 
-        complex(kind=8), dimension(sizeL, 1) :: density_mat_liouville, temp
-        complex(kind=8), dimension(sizeH, sizeH) :: spin2_s_z, spin2_i_z, density_mat_time
+        complex(wp), dimension(sizeL, 1) :: density_mat_liouville, temp
+        complex(wp), dimension(sizeH, sizeH) :: spin2_s_z, spin2_i_z, density_mat_time
 
         ! Calculate matrices specific to polarisation calculation
-        identity_size2 = transpose(reshape((/ 1.D0, 0.D0, 0.D0, 1.D0/), shape(identity_size2)))
-        spin_z = 0.5D0 * (reshape((/ 1.D0, 0.D0, 0.D0, -1.D0/), shape(spin_z), order = (/2, 1/)))
+        identity_size2 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
+        spin_z = 0.5_wp * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
@@ -542,13 +556,13 @@ contains
             pol_s_z_rot(count) = real(trace_complex(matmul(density_mat_time, spin2_s_z)))
 
             ! Transform density matrix (2^N x 2^N to 4^N x 1)
-            density_mat_liouville = reshape(density_mat_time, (/sizeL, 1/))
+            density_mat_liouville = reshape(density_mat_time, [sizeL, 1])
 
             ! Propagate density matrix
             temp = matmul(propagator(count, :, :), density_mat_liouville)
 
             ! Transform density matrix (4^N x 1 to 2^N x 2^N)
-            density_mat_time = reshape(temp, (/sizeH, sizeH/))
+            density_mat_time = reshape(temp, [sizeH, sizeH])
 
         end do
 
