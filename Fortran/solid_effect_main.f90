@@ -25,12 +25,12 @@ program solid_effect_main
     electron_frequency = 28.025D9 * b_field                                   ! Electron frequency
     microwave_frequency = 264D9                                               ! Microwave frequency
     freq_rotor = 3D3                                                          ! Rotor frequency
-    orientation_se = (/253.6D0, 105.1D0, 123.8D0   /) * rad                   ! G anisotropy angles for electron 1 (SE)
-    orientation_ce_1 = (/253.6D0, 105.1D0, 123.8D0   /) * rad                 ! G anisotropy angles for electron 1 (CE)
-    orientation_ce_2 = orientation_ce_1 + (/102.D0, 104.D0, 124.D0/) * rad    ! G anisotropy angles for electron 2 (CE)
-    gtensor = (/(2.00614D0 / 2.D0), (2.00194D0 / 2.D0), (2.00988D0 / 2.D0)/)  ! G tensor principal values
+    orientation_se = [253.6D0, 105.1D0, 123.8D0] * rad                        ! G anisotropy angles for electron 1 (SE)
+    orientation_ce_1 = [253.6D0, 105.1D0, 123.8D0] * rad                      ! G anisotropy angles for electron 1 (CE)
+    orientation_ce_2 = orientation_ce_1 + [102.D0, 104.D0, 124.D0] * rad      ! G anisotropy angles for electron 2 (CE)
+    gtensor = [(2.00614D0 / 2.D0), (2.00194D0 / 2.D0), (2.00988D0 / 2.D0)]    ! G tensor principal values
     hyperfine_coupling = 3D6                                                  ! Hyperfine coupling amplitude
-    hyperfine_angles = (/0.D0, 0.D0, 0.D0 /)                                  ! Hyperfine angles for e1-n
+    hyperfine_angles = [0.D0, 0.D0, 0.D0]                                     ! Hyperfine angles for e1-n
     t1_elec = 0.3D-3                                                          ! Electron spin-lattice relaxation T1 (s)
     t1_nuc = 10.D0                                                            ! Nuclear spin-lattice relaxation T1 (s)
     t2_elec = 1D-6                                                            ! T2 electron
@@ -48,7 +48,7 @@ program solid_effect_main
     allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num))
 
     ! Manually set number of OMP threads
-    call omp_set_num_threads(8)
+    call omp_set_num_threads(1)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()

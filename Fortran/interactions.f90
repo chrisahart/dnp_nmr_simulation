@@ -58,10 +58,12 @@ contains
         gy = electron_frequency * gtensor(2)
         gz = electron_frequency * gtensor(3)
 
-        ganisotropy = c0 + c1 * cos(2.D0 * PI * freq_rotor * time) + &
-                c2 * sin(2.D0 * PI * freq_rotor * time) + &
-                c3 * cos(4.D0 * PI * freq_rotor * time) + &
-                c4 * sin(4.D0 * PI * freq_rotor * time)
+        ganisotropy = 2.642D11 - 1D8 * cos(2.D0 * PI * freq_rotor * time) - 2D8 * sin(2.D0 * PI * freq_rotor * time)
+
+        !        ganisotropy = c0 + c1 * cos(2.D0 * PI * freq_rotor * time) + &
+!                        c2 * sin(2.D0 * PI * freq_rotor * time) + &
+!                        c3 * cos(4.D0 * PI * freq_rotor * time) + &
+!                        c4 * sin(4.D0 * PI * freq_rotor * time)
 
     end subroutine anisotropy
 

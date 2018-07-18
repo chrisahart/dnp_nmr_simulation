@@ -14,6 +14,7 @@ trstep = tr/nsteps;
 
 xbup=0+tr/2:tr:final_time-tr/2;
 xrot=(0+trstep/2:trstep:tr-trstep/2).*1e6;
+xrot=linspace(0, 360, 10000);
 
 figure;
 subplot(3,1,1)
