@@ -36,7 +36,7 @@ contains
 
         c0 = 1.D0 / 3.D0 * (gx + gy + gz)
         c1 = 2.D0 * 2.D0 ** (1.D0 / 2.D0) / 3.D0 * (gx * r11 * r31 + gy * r12 * r32 + gz * r13 * r33)
-        c2 = 2.D0 ** (1.D0 / 2.D0) / 3.D0 * (gx * r21 * r31 + gy * r22 * r32 + gz * r23 * r33)
+        c2 = 2 * 2.D0 ** 0.5D0 / 3.D0 * (gx * r21 * r31 + gy * r22 * r32 + gz * r23 * r33)
         c3 = 1.D0 / 3.D0 * (gx * (r11 ** 2.D0 - r21 ** 2.D0) + gy * (r12 ** 2.D0 - r22 ** 2.D0) + &
                 gz * (r13 ** 2 - r23 ** 2))
         c4 = 2.D0 / 3.D0 * (gx * r11 * r21 + gy * r22 * r12 + gz * r13 * r23)
@@ -58,12 +58,10 @@ contains
         gy = electron_frequency * gtensor(2)
         gz = electron_frequency * gtensor(3)
 
-        ganisotropy = 2.642D11 - 1D8 * cos(2.D0 * PI * freq_rotor * time) - 2D8 * sin(2.D0 * PI * freq_rotor * time)
-
-        !        ganisotropy = c0 + c1 * cos(2.D0 * PI * freq_rotor * time) + &
-!                        c2 * sin(2.D0 * PI * freq_rotor * time) + &
-!                        c3 * cos(4.D0 * PI * freq_rotor * time) + &
-!                        c4 * sin(4.D0 * PI * freq_rotor * time)
+                ganisotropy = c0 + c1 * cos(2.D0 * PI * freq_rotor * time) + &
+                        c2 * sin(2.D0 * PI * freq_rotor * time) + &
+                        c3 * cos(4.D0 * PI * freq_rotor * time) + &
+                        c4 * sin(4.D0 * PI * freq_rotor * time)
 
     end subroutine anisotropy
 

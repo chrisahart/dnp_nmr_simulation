@@ -30,9 +30,11 @@ contains
         complex(kind=8), dimension(time_num, sizeL, sizeL)  :: propagator
         real(kind = 8), dimension(sizeH, sizeH) :: density_mat
         real(kind = 8) :: eig_vector(time_num, sizeH, sizeH), eig_vector_inv(time_num, sizeH, sizeH)
-        real(kind = 8) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH)
+        real(kind = 8) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH), temp(4)
         real(kind = 8), dimension(time_num, sizeH, sizeH) :: hamiltonian
-        integer :: indices(4), count1, count2
+        integer :: indices(4),  count1, count2, index(1)
+
+        !real(kind = 8) :: wtime
 
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
@@ -42,19 +44,20 @@ contains
         ! Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
         call eig_real(hamiltonian, eigvals, eig_vector)
 
-         ! Determine indices for sorting eigenvalues and eigenvectors into descending order at zero time
-         indices = [4, 2, 3, 1]
-
-         ! Sort eigenvalues and eigenvectors at zero time
-         eigvectors_temp = eig_vector
-         do count1 = 1, time_num
-            do count2 = 1, 4
+        ! Sort eigenvalues and eigenvectors at zero time (only adds around 1ms to total duration)
+        !wtime = omp_get_wtime()
+        indices = argsort(eigvals(1, :))
+        eigvectors_temp = eig_vector
+        do count1 = 1, time_num
+            do count2 = 1, sizeH
                 energies(count1, count2) = eigvals(count1, indices(count2))
                 eig_vector(count1, :, count2) = eigvectors_temp(count1, :, indices(count2))
             end do
         end do
+        !wtime = omp_get_wtime () - wtime
+        !write(6, *) 'Elapsed time:', sngl(wtime)
 
-         ! Calculate inverse eigenvectors
+        ! Calculate inverse eigenvectors
         eig_vector_inv = inverse_real(eig_vector)
 
         ! Calculate Liouville space propagator with relaxation
@@ -134,45 +137,26 @@ contains
                               2.D0 * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
 
             ! Calculate time dependent electron g-anisotropy
-            call anisotropy(c0, c1, c2, c3, c4, freq_rotor, electron_frequency, (count - 1) * time_step, &
+            call anisotropy(c0, c1, c2, c3, c4, freq_rotor, electron_frequency, (count - 1.D0) * time_step, &
                     gtensor, ganisotropy)
 
             ! Calculate time dependent hamiltonian
-!            hamiltonian(count, :, :) = (ganisotropy - microwave_frequency) * spin2_s_z !+ &
-                                        !nuclear_frequency * spin2_i_z !+ &
-                                        !hyperfine_total
-
-            hamiltonian(count, :, :) = (ganisotropy - microwave_frequency) * spin2_s_z
+            hamiltonian(count, :, :) = (ganisotropy - microwave_frequency) * spin2_s_z + &
+                                        nuclear_frequency * spin2_i_z + &
+                                        hyperfine_total
 
         end do
         !$omp end parallel do
-
-!        write(6,*) 'c0', c0
-!        write(6,*) 'c1', c1
-        write(6,*) 'c2', c2
-!        write(6,*) 'c3', c3
-!        write(6,*) 'c4', c4
-
-!        write(6,*) 'ganisotropy', ganisotropy
-!        write(6,*) 'microwave_frequency', microwave_frequency
-        write(6,*) 'hamiltonian', hamiltonian(1, 1:4, 1)
-        write(6,*) 'hamiltonian', hamiltonian(2, 1:4, 1)
-        write(6,*) 'hamiltonian', hamiltonian(3, 1:4, 1)
-        write(6,*) 'hamiltonian', hamiltonian(4, 1:4, 1)
 
         ! Calculate idealised Hamiltonian (must calculate density matrix outside of rotating frame)
         hamiltonian_ideal = electron_frequency * spin2_s_z + nuclear_frequency * spin2_i_z
 
         ! Calculate initial Zeeman basis density matrix from Boltzmann factors
-        !$omp parallel do default(private) &
-        !$omp& shared(boltzmann_factors, boltzmann_factors_mat, hamiltonian_ideal, temperature)
         do count = 1, sizeH
             boltzmann_factors(count) = exp(-(Planck * hamiltonian_ideal(count, count)) / (Boltzmann * temperature))
             boltzmann_factors_mat(count, count) = boltzmann_factors(count)
         end do
-        !$omp end parallel do
         density_mat = (1/sum(boltzmann_factors)) * boltzmann_factors_mat
-
 
     end subroutine calculate_hamiltonian
 
@@ -279,14 +263,14 @@ contains
                     kron_real(identity_size4, transpose(total_hamiltonian))
 
             ! Calculate Louville space relaxation matrix using origonal theory
-            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
-                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
-                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
+!            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
+!                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
+!                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
 
             ! Calculate Louville space relaxation matrix using Mance theory
-!            call calculate_relaxation_mat_mance(eig_vector(count, :, :), eig_vector_inv(count, :, :), sizeL, sizeH, &
-!            spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
-!            t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
+            call calculate_relaxation_mat_mance(eig_vector(count, :, :), eig_vector_inv(count, :, :), sizeL, sizeH, &
+            spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
+            t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron_real(eig_vector(count, :, :), eig_vector(count, :, :))

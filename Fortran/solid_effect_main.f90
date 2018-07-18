@@ -4,8 +4,11 @@ program solid_effect_main
 
     use omp_lib
     use solid_effect_dynamics
+    use iso_fortran_env
     implicit none
 
+    integer, parameter :: wp = real64
+    integer, parameter :: r15 = selected_real_kind(15)
     real(kind = 8), parameter :: PI = 4.D0 * DATAN(1.D0)
     real(kind = 8), parameter :: rad = PI / 180.D0
     integer, parameter :: sizeH = 2 ** (2)
@@ -48,7 +51,7 @@ program solid_effect_main
     allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num))
 
     ! Manually set number of OMP threads
-    call omp_set_num_threads(1)
+    call omp_set_num_threads(8)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()

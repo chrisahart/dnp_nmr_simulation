@@ -5,11 +5,30 @@ module functions
 
 contains
 
+    function argsort(A) result(B)
+
+        ! Calculates sorting indices of array A
+        ! Iterative process so number of OMP threads must equal 1
+
+        implicit none
+
+        real(kind = 8), dimension (:), intent(in) :: A
+        real(kind = 8) :: B(size(A)), temp(size(A))
+        integer :: index(1), count
+
+        temp =  A
+        do count = 1, size(A)
+            index = maxloc(temp)
+            B(count) = index(1)
+            temp(index) = -1E10
+        end do
+
+    end function argsort
+
     function trace_real(A) result(C)
         ! Calculate trace of real matrix A
         ! Iterative process so number of OMP threads must equal 1
 
-        use omp_lib
         implicit none
 
         real(kind = 8), dimension (:, :), intent(in) :: A
@@ -27,7 +46,6 @@ contains
         ! Calculate trace of complex matrix A
         ! Iterative process so number of OMP threads must equal 1
 
-        use omp_lib
         implicit none
 
         complex(kind=8), dimension (:, :), intent(in) :: A
@@ -45,7 +63,6 @@ contains
         ! Calculate Kronecker product of real matrices A and B, adapted from Rosetta Code
         ! Iterative process so number of OMP threads must equal 1
 
-        use omp_lib
         implicit none
 
         real(kind = 8), intent(in) :: A(:, :), B(:, :)
@@ -73,7 +90,6 @@ contains
         ! Calculate Kronecker product of complex matrices A and B, adapted from Rosetta Code
         ! Iterative process so number of OMP threads must equal 1
 
-        use omp_lib
         implicit none
 
         complex(kind = 8), intent(in) :: A(:, :), B(:, :)
@@ -204,7 +220,6 @@ contains
         ! Calculate eigenvalues and eigenvectors of 3D complex matrix A using LAPACK.
         ! Independent processes so number of OMP threads can take any value
 
-        use omp_lib
         implicit none
 
         complex(kind=8), dimension(:, :, :), intent(in) :: A

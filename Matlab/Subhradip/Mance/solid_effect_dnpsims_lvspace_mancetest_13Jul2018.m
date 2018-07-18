@@ -107,11 +107,8 @@ for ii = 0:length(tarray)-2
     hhyp_zy=hzz_max*((sqrt(6)/4)*(sind(beta_en)^2)*sind(2*(360*wr*ii*trstep+gamma_en))-...
         (sqrt(3)/2)*sind(beta_en)*cosd(beta_en)*sind(1*(360*wr*ii*trstep+gamma_en)))*IySz;
     hhyp=2*(hhyp_zz+hhyp_zx);
-    %ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+0*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
-    
-    ganisohamil=2.642E11-1E8*cosd(360*wr*ii*trstep)-2E8*sind(360*wr*ii*trstep);
-    %ganisohamil=2.642E11 - 1E8;
-    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz; %+wn*Iz+hhyp;
+    ganisohamil=c0+c1*cosd(360*wr*ii*trstep)+c2*sind(360*wr*ii*trstep)+c3*cosd(360*wr*ii*trstep*2)+c4*sind(360*wr*ii*trstep*2);
+    hamil(:,:,ii+1) = (ganisohamil-wme)*Sz+wn*Iz+hhyp;
     
 end
 
@@ -292,7 +289,8 @@ for ii=1:nsteps
 end
 
 xbup=0+tr/2:tr:final_time-tr/2;
-xrot=(0+trstep/2:trstep:tr-trstep/2).*1e6;
+%xrot=(0+trstep/2:trstep:tr-trstep/2).*1e6;
+xrot=linspace(0, 360, 10000);
 
 figure;
 subplot(3,1,1)
