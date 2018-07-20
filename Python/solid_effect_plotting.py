@@ -24,7 +24,6 @@ def plot_all(directory):
             pol_elec_max[count] = abs(pol_elec[count, -1])
 
         enhancement_nuc = pol_nuc_max / pol_nuc_max[0]
-        enhancement_elec = pol_elec_max / pol_elec_max[0]
 
         # Plot nuclear enhancement against microwave amplitude
         fig_pol_nuc_mw = plt.figure()
@@ -37,18 +36,6 @@ def plot_all(directory):
         ax_pol_nuc_mw.set_ylabel('Nuclear enhancement')
         fig_pol_nuc_mw.tight_layout()
         fig_pol_nuc_mw.savefig('{}{}'.format(directory, '/microwave_nuclear.png'), dpi=save_dpi, bbox_inches='tight')
-
-        # Plot electron enhancement against microwave amplitude
-        fig_pol_elec_mw = plt.figure()
-        ax_pol_elec_mw = fig_pol_elec_mw.add_subplot(111)
-        ax_pol_elec_mw.plot(param.microwave_amplitude / 1E6, enhancement_elec,
-                            'kx', param.microwave_amplitude / 1E6, enhancement_elec, 'k')
-        ax_pol_elec_mw.set_xlim(0, param.microwave_amplitude[-1] / 1E6)
-        ax_pol_elec_mw.set_ylim(ymin=0)
-        ax_pol_elec_mw.set_xlabel('Microwave amplitude / MHz')
-        ax_pol_elec_mw.set_ylabel('Electron enhancement')
-        fig_pol_elec_mw.tight_layout()
-        fig_pol_elec_mw.savefig('{}{}'.format(directory, '/microwave_electron.png'), dpi=save_dpi, bbox_inches='tight')
 
     # Plot sub rotor dynamics if data files exist
     elif os.path.exists('{}{}'.format(directory, '/pol_i_z_rot.csv')):
@@ -104,11 +91,13 @@ def plot_all(directory):
 
         # Plot electron polarisation
         subfig2_x1.plot(time_array, pol_elec_time / pol_elec_time[0], 'b')
-        subfig2_x1.set_ylim(0, 1)
+        #subfig2_x1.plot(time_array, pol_elec_time, 'b')
+        #subfig2_x1.set_ylim(0, 1)
         subfig2_x1.set_ylabel('Elec. pol. / thermal')
 
         # Plot nuclear polarisation
         subfig2_x2.plot(time_array, enhancement_nuc_time / enhancement_nuc_time[0], 'r')
+        #subfig2_x2.plot(time_array, enhancement_nuc_time, 'r')
         subfig2_x2.set_ylim(ymin=0)
         subfig2_x2.set_ylabel('Nuc. pol. / thermal')
 

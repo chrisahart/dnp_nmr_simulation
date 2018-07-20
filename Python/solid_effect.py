@@ -119,8 +119,11 @@ def dynamics(microwave_amplitude):
 
     # Calculate stroboscopic propagator (product of all operators within rotor period)
     propagator_strobe = np.eye(4 ** 2)
+    print('propagator_strobe', propagator_strobe[1, 1])
     for count in range(0, int(param.time_step_num)):
         propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
+        print('propagator[count, :])', propagator[count, 1, 1])
+    print('propagator_strobe', propagator_strobe[1, 1])
 
     # Propagate density matrix stroboscopically, calculating polarisations
     pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin2_i_z)
@@ -167,6 +170,8 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
                                 param.freq_nuclear_1 * spin2_i_z + \
                                 hyperfine_total
 
+        print('hamiltonian', count, hamiltonian[count, 1, 1])
+
     return hamiltonian
 
 
@@ -176,6 +181,7 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin
 
     pol_i_z = np.zeros(param.num_timesteps_prop)
     pol_s_z = np.zeros(param.num_timesteps_prop)
+
 
     for count in range(0, param.num_timesteps_prop):
 

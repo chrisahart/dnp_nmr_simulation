@@ -119,6 +119,7 @@ def anisotropy(c0, c1, c2, c3, c4, time):
                    c3 * np.cos(2 * np.pi * param.freq_rotor * time * 2) + \
                    c4 * np.sin(2 * np.pi * param.freq_rotor * time * 2)
 
+
     return g_anisotropy
 
 

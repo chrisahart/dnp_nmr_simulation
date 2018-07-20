@@ -9,6 +9,6 @@ rm interactions.mod
 rm solid_effect_dynamics.mod
 rm solid_effect.exe
 
-:: python solid_effect_plotting.py
+python solid_effect_plotting.py
 
 PAUSE

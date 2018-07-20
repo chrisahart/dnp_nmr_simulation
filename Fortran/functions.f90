@@ -15,8 +15,8 @@ contains
 
         integer, parameter :: wp = real64
         real(wp), dimension (:), intent(in) :: A
-        real(wp) :: B(size(A)), temp(size(A))
-        integer :: index(1), count
+        real(wp) :: temp(size(A))
+        integer :: index(1), count, B(size(A))
 
         temp =  A
         do count = 1, size(A)
@@ -191,7 +191,7 @@ contains
         complex(wp), dimension(:, :), intent(in) :: A
         complex(wp), dimension(size(A, 1), size(A, 2)) :: B
 
-        integer, parameter :: ideg = 2 ! Pade approximation, 6 is reccomended but 2 appears to be stable
+        integer, parameter :: ideg = 6 ! Pade approximation, 6 is reccomended but 2 appears to be stable
         complex(wp) :: t = 1._wp
         complex(wp), dimension(4 * size(A, 1) * size(A, 2) + ideg + 1) :: wsp
         integer, dimension(size(A, 1)) :: iwsp

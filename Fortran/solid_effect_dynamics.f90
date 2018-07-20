@@ -32,9 +32,9 @@ contains
         complex(wp), dimension(time_num, sizeL, sizeL)  :: propagator
         real(wp), dimension(sizeH, sizeH) :: density_mat
         real(wp) :: eig_vector(time_num, sizeH, sizeH), eig_vector_inv(time_num, sizeH, sizeH)
-        real(wp) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH), temp(4)
+        real(wp) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH)
         real(wp), dimension(time_num, sizeH, sizeH) :: hamiltonian
-        integer :: indices(4),  count1, count2, index(1)
+        integer :: indices(4),  count1, count2
 
         !real(wp) :: wtime
 
@@ -91,7 +91,7 @@ contains
         implicit none
 
         integer, parameter :: wp = real64
-        real(wp), parameter :: PI = 4._wp * ATAN(1._wp), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
+        real(wp), parameter :: pi = 4._wp * atan(1._wp), Planck = 6.62607004E-34_wp, Boltzmann = 1.38064852E-23_wp
 
         integer, intent(in):: time_num, sizeH, sizeL
         real(wp), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
@@ -105,7 +105,7 @@ contains
         real(wp) :: hyperfine_zx, hyperfine_zz, ganisotropy
         real(wp), dimension(2, 2) :: spin_x, spin_z, identity_spin1
 
-        real(wp), dimension(sizeH, sizeH) :: spin2_s_x, spin2_s_z, hyperfine_total
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_z, hyperfine_total
         real(wp), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z
         real(wp), dimension(sizeH, sizeH) :: hamiltonian_ideal, boltzmann_factors_mat
         real(wp), dimension(sizeH) :: boltzmann_factors
@@ -117,11 +117,8 @@ contains
         spin_x = 0.5_wp * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin_x), order = [2, 1]))
         spin_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
-        ! 4x4 matrices for S operator
-        spin2_s_x = kron_real(spin_x, identity_spin1)
+        ! 4x4 spin matrices constructed using Kronecker products
         spin2_s_z = kron_real(spin_z, identity_spin1)
-
-        ! 4x4 matrices for I operator
         spin2_i_x = kron_real(identity_spin1, spin_x)
         spin2_i_z = kron_real(identity_spin1, spin_z)
 
@@ -137,8 +134,8 @@ contains
             ! Calculate time dependent hyperfine
             call hyperfine(hyperfine_coupling, hyperfine_angles, freq_rotor, (count - 1) * time_step, &
                     hyperfine_zz, hyperfine_zx)
-            hyperfine_total = 2._wp * hyperfine_zx * MATMUL(spin2_i_x, spin2_s_z) + &
-                              2._wp * hyperfine_zz * MATMUL(spin2_i_z, spin2_s_z)
+            hyperfine_total = 2._wp * hyperfine_zx * matmul(spin2_i_x, spin2_s_z) + &
+                              2._wp * hyperfine_zz * matmul(spin2_i_z, spin2_s_z)
 
             ! Calculate time dependent electron g-anisotropy
             call anisotropy(c0, c1, c2, c3, c4, freq_rotor, electron_frequency, (count - 1) * time_step, &
@@ -148,6 +145,8 @@ contains
             hamiltonian(count, :, :) = (ganisotropy - microwave_frequency) * spin2_s_z + &
                                         nuclear_frequency * spin2_i_z + &
                                         hyperfine_total
+
+
 
         end do
         !$omp end parallel do
@@ -178,7 +177,7 @@ contains
 
         integer, parameter :: wp = real64
         complex(wp), parameter :: i = (0, 1._wp)
-        real(wp), parameter :: Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
+        real(wp), parameter :: Planck = 6.62607004E-34_wp, Boltzmann = 1.38064852E-23_wp
 
         integer, intent(in):: time_num, sizeH, sizeL
         real(wp), dimension(time_num, sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
@@ -200,13 +199,12 @@ contains
 
         complex(wp), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
         complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
-        complex(wp), dimension(sizeH, sizeH) :: identity_size4_complex, spin2_s_y, spin2_i_y
+        complex(wp), dimension(sizeH, sizeH) :: spin2_s_y, spin2_i_y
 
         ! Identity matrix
         identity_size2 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
         identity_size2_complex = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
         identity_size4 = kron_real(identity_size2, identity_size2)
-        identity_size4_complex = kron_complex(identity_size2_complex, identity_size2_complex)
         identity_size16 = kron_real(kron_real(identity_size2, identity_size2), &
                 kron_real(identity_size2, identity_size2))
 
@@ -269,14 +267,14 @@ contains
                     kron_real(identity_size4, transpose(total_hamiltonian))
 
             ! Calculate Louville space relaxation matrix using origonal theory
-!            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
-!                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
-!                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
+            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size4, &
+                    identity_size16, sizeL, sizeH, spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, &
+                    t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
 
             ! Calculate Louville space relaxation matrix using Mance theory
-            call calculate_relaxation_mat_mance(eig_vector(count, :, :), eig_vector_inv(count, :, :), sizeL, sizeH, &
-                spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
-                t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
+!            call calculate_relaxation_mat_mance(eig_vector(count, :, :), eig_vector_inv(count, :, :), sizeL, sizeH, &
+!                spin2_s_z, spin2_s_x, spin2_i_z, spin2_i_x, &
+!                t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
 
             ! Calculate Liouville space eigenvectors
             eigvectors_liouville = kron_real(eig_vector(count, :, :), eig_vector(count, :, :))
@@ -354,7 +352,7 @@ contains
     end subroutine calculate_relaxation_mat
 
     subroutine calculate_relaxation_mat_mance(eig_vector, eig_vector_inv, sizeL, sizeH, &
-            spin2_s_z, spin2_s_x, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_x, spin2_i_p, spin2_i_m, &
+            spin2_s_z, spin2_s_x, spin2_i_z, spin2_i_x, &
             t1_elec, t1_nuc, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc, relax_mat)
 
         ! Calculate Louville space relaxation matrix using Mance theory
@@ -367,27 +365,20 @@ contains
         integer, intent(in) :: sizeH, sizeL
         real(wp), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
         real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, spin2_s_x, spin2_i_x
-        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
         real(wp), intent(in) :: t1_elec, t1_nuc, t2_nuc, t2_elec, boltzmann_elec, boltzmann_nuc
 
         real(wp), dimension(sizeL, sizeL), intent(out) :: relax_mat
 
-        real(wp), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_s_p_t, spin2_s_m_t, spin2_i_z_t, spin2_i_p_t
-        real(wp), dimension(sizeH, sizeH) :: spin2_i_m_t, spin2_s_x_t, spin2_i_x_t
+        real(wp), dimension(sizeH, sizeH) :: spin2_s_z_t, spin2_i_z_t, spin2_s_x_t, spin2_i_x_t, relax_values_t1
         real(wp), dimension(sizeL, sizeL) :: relax_mat_t2, relax_mat_t1
-        real(wp), dimension(sizeH, sizeH) :: relax_values_t1
         real(wp) :: relax_values_t2(4), diff_elec, diff_nuc, boltzmann_factor
         integer :: count, count2, count3, count4
 
         ! Transform spin matrices into time dependent Hilbert space basis
         spin2_s_z_t = matmul(eig_vector_inv, matmul(spin2_s_z, eig_vector))
         spin2_s_x_t = matmul(eig_vector_inv, matmul(spin2_s_x, eig_vector))
-        spin2_s_p_t = matmul(eig_vector_inv, matmul(spin2_s_p, eig_vector))
-        spin2_s_m_t = matmul(eig_vector_inv, matmul(spin2_s_m, eig_vector))
         spin2_i_z_t = matmul(eig_vector_inv, matmul(spin2_i_z, eig_vector))
         spin2_i_x_t = matmul(eig_vector_inv, matmul(spin2_i_x, eig_vector))
-        spin2_i_p_t = matmul(eig_vector_inv, matmul(spin2_i_p, eig_vector))
-        spin2_i_m_t = matmul(eig_vector_inv, matmul(spin2_i_m, eig_vector))
 
         ! Calculate T1 relaxation matrix using Boltzmann factors
         do count = 1, sizeH
@@ -396,9 +387,9 @@ contains
                 diff_elec = spin2_s_z_t(count, count) - spin2_s_z_t(count2, count2)
                 diff_nuc = spin2_i_z_t(count, count) - spin2_i_z_t(count2, count2)
 
-                boltzmann_factor = exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2._wp) / &
-                                   (exp(diff_elec * boltzmann_elec / 2 + diff_nuc * boltzmann_nuc / 2._wp) + &
-                                    exp(-diff_elec * boltzmann_elec / 2 - diff_nuc * boltzmann_nuc / 2._wp))
+                boltzmann_factor = exp(-diff_elec * boltzmann_elec / 2._wp - diff_nuc * boltzmann_nuc / 2._wp) / &
+                                   (exp(diff_elec * boltzmann_elec / 2._wp + diff_nuc * boltzmann_nuc / 2._wp) + &
+                                    exp(-diff_elec * boltzmann_elec / 2._wp - diff_nuc * boltzmann_nuc / 2._wp))
 
                 relax_values_t1(count, count2) = &
                         (1._wp / t1_elec) * (spin2_s_x_t(count, count2) * spin2_s_x_t(count2, count) + &
@@ -445,9 +436,9 @@ contains
         relax_mat_t2 = 0
         do count = 1, sizeH
             do count2 = 1, sizeH
-                relax_mat_t2(count2+sizeH*(count-1), count2+sizeH*(count-1)) = relax_values_t2(count2)
+                relax_mat_t2(count2 + sizeH * (count - 1), count2 + sizeH * (count - 1)) = relax_values_t2(count2)
             end do
-            relax_values_t2 = cshift(relax_values_t2, shift=-1)
+            relax_values_t2 = cshift(relax_values_t2, shift = -1)
         end do
 
         ! Relaxation matrix as sum of t1 and t2 matrices
@@ -491,11 +482,23 @@ contains
 
         density_mat_time = density_mat
         propagator_strobe = identity_size16
+        write(6, *) 'propagator_strobe', propagator_strobe(2, 2)
+
+        open(1, file = 'test.out', status = 'replace')
+
 
         ! Calculate stroboscopic propagator (product of all operators within rotor period)
         do count = 1, time_num
             propagator_strobe = matmul(propagator_strobe, propagator(count, :, :))
+
+            write(1, *)  propagator(count, 2, 2)
+
         end do
+
+        close(1, status = 'keep')
+
+        write(6, *) 'propagator_strobe', propagator_strobe(2, 2)
+
 
         ! Propogate density matrix using stroboscopic propagator
         do count = 1, time_num_prop
