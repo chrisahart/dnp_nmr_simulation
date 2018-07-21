@@ -10,7 +10,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), intent(in) :: electron_frequency, gtensor(3), orientation_se(3)
         real(wp) :: gx, gy, gz, ca, cb, cg, sa, sb, sg, r11, r12, r13, r21, r22, r23, r31, r32, r33
         real(wp), intent(out) :: c0, c1, c2, c3, c4
@@ -51,7 +51,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), parameter :: PI = 4._wp * ATAN(1._wp)
         real(wp), intent(in) :: freq_rotor, time, gtensor(3), electron_frequency
         real(wp), intent(in) :: c0, c1, c2, c3, c4
@@ -75,7 +75,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), parameter :: PI = 4._wp * ATAN(1._wp)
         real(wp), intent(in) :: hyperfine_coupling, freq_rotor, time, hyperfine_angles(3)
         real(wp), intent(out) :: hyperfine_zz, hyperfine_zx

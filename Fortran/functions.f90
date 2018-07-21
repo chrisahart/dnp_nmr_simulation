@@ -5,24 +5,42 @@ module functions
 
 contains
 
-    function argsort(A) result(B)
+    function eye(A) result(B)
+        ! Creates A x A identit matrix
+        ! Independent processes so number of OMP threads can take any value
 
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        integer, intent(in) :: A
+        real(wp) :: B(A, A)
+        integer :: count
+
+        B = 0._wp
+        do count = 1, A
+            B(count, count) = 1._wp
+        end do
+
+    end function eye
+
+    function argsort(A) result(B)
         ! Calculates sorting indices of array A
         ! Iterative process so number of OMP threads must equal 1
 
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), dimension (:), intent(in) :: A
         real(wp) :: temp(size(A))
-        integer :: index(1), count, B(size(A))
+        integer(wp) :: index(1), B(size(A)), count
 
         temp =  A
         do count = 1, size(A)
             index = maxloc(temp)
             B(count) = index(1)
-            temp(index) = -1E10
+            temp(index) = -1E10_wp
         end do
 
     end function argsort
@@ -34,7 +52,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), dimension (:, :), intent(in) :: A
         real(wp) :: C
         integer :: i
@@ -53,7 +71,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         complex(wp), dimension (:, :), intent(in) :: A
         complex(wp) :: C
         integer :: i
@@ -72,12 +90,12 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), intent(in) :: A(:, :), B(:, :)
         real(wp) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
         integer :: R, RA, RB, C, CA, CB, I, J
 
-        R = 0
+        R = 0.
         RA = size(A, DIM = 1)
         CA = size(A, DIM = 2)
         RB = size(B, DIM = 1)
@@ -101,7 +119,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         complex(wp), intent(in) :: A(:, :), B(:, :)
         complex(wp) :: AB(size(A, 1) * size(B, 1), size(A, 2) * size(B, 2) )
         integer :: R, RA, RB, C, CA, CB, I, J
@@ -131,21 +149,21 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), dimension(:, :, :), intent(in) :: A
         real(wp), dimension(size(A, 1), size(A, 2), size(A, 3)) :: B
         real(wp), dimension(size(A, 2), size(A, 3)) :: temp
         real(wp) :: work(size(A, 2)*2)
 
         integer :: count
-        integer :: ipiv(4), info
+        integer :: ipiv(size(A, 2)), info
 
         !!$omp parallel do default(private) &
         !!$omp& shared(A, B)
         do count = 1, size(A, 1)
             temp = A(count, :, :)
             call DGETRF(size(A, 2), size(A, 2), temp, size(A, 2), ipiv, info)
-            call DGETRI(size(A, 2), temp, size(A, 2), ipiv, work, size(A, 1)*2, info)
+            call DGETRI(size(A, 2), temp, size(A, 2), ipiv, work, size(A, 2)*2, info)
             B(count, :, :) = temp
         end do
         !!$omp end parallel do
@@ -160,7 +178,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         complex(wp), dimension(:, :, :), intent(in) :: A
         complex(wp), dimension(size(A, 1), size(A, 2), size(A, 3)) :: B
         complex(wp), dimension(size(A, 2), size(A, 3)) :: temp
@@ -187,7 +205,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         complex(wp), dimension(:, :), intent(in) :: A
         complex(wp), dimension(size(A, 1), size(A, 2)) :: B
 
@@ -210,7 +228,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), dimension(:, :, :), intent(in) :: A
         real(wp), dimension(size(A, 1), size(A, 2)), intent(out) :: eig_val
         real(wp), dimension(size(A, 1), size(A, 2), size(A, 3)), intent(out) :: eig_vect
@@ -241,7 +259,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         complex(wp), dimension(:, :, :), intent(in) :: A
         complex(wp), dimension(size(A, 1), size(A, 2)), intent(out) :: eig_val
         complex(wp), dimension(size(A, 1), size(A, 2), size(A, 3)), intent(out) :: eig_vect

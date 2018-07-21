@@ -21,7 +21,7 @@ t1_nuc = 10                                                         # Nuclear sp
 t2_elec = 1e-6                                                      # T2 electron
 t2_nuc = 1e-3                                                       # T2 nucleus
 microwave_amplitude = np.array([0.85]) * 1E6                        # Microwave field amplitude np.arange(1, 10, 5)
-#microwave_amplitude = np.arange(1, 150, 5)
+#microwave_amplitude = np.arange(1, 40, 1) * 1E6
 
 # System variables
 time_step_num = int(1E4)                                            # Number of timesteps within rotor period

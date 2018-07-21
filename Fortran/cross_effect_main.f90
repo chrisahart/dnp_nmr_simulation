@@ -1,18 +1,19 @@
-program solid_effect_main
+program cross_effect_main
 
-    ! Call dynamics module to calculate dynamics for solid effect MAS DNP NMR.
+    ! Call dynamics module to calculate dynamics for cross effect MAS DNP NMR.
 
     use omp_lib
-    use solid_effect_dynamics
+    use cross_effect_dynamics
     use iso_fortran_env
     implicit none
 
     integer, parameter :: wp = selected_real_kind(15, 307)
     real(wp), parameter :: pi = 4._wp * atan(1._wp)
     real(wp), parameter :: rad = pi / 180._wp
-    integer, parameter :: sizeH = 2 ** (2)
+    integer, parameter :: sizeH = 2 ** (4)
 
-    real(wp), allocatable :: energies(:, :), pol_i_z(:), pol_s_z(:), pol_i_z_rot(:), pol_s_z_rot(:), pol_iz_final(:)
+    real(wp), allocatable :: energies(:, :), pol_i_z(:), pol_s1_z(:), pol_i_z_rot(:), pol_s1_z_rot(:), pol_iz_final(:)
+    real(wp), allocatable :: pol_s2_z(:), pol_s2_z_rot(:)
     real(wp), dimension(3) :: gtensor, hyperfine_angles, orientation_se, orientation_ce_1, orientation_ce_2
     real(wp) :: hyperfine_coupling, electron_frequency, nuclear_frequency, microwave_frequency
     real(wp) :: time_step, freq_rotor, b_field, temperature
@@ -46,8 +47,9 @@ program solid_effect_main
     time_num_prop = num_periods * int(freq_rotor)                              ! Number of timesteps to propagate system
 
     ! Allocate output variables based on input parameters
-    allocate (energies(time_num, sizeH), pol_i_z(time_num_prop), pol_s_z(time_num_prop))
-    allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num), pol_iz_final(size(microwave_amplitude)))
+    allocate (energies(time_num, sizeH), pol_i_z(time_num_prop), pol_s1_z(time_num_prop), pol_s2_z(time_num_prop))
+    allocate (pol_i_z_rot(time_num), pol_s1_z_rot(time_num), pol_s2_z_rot(time_num))
+    allocate (pol_iz_final(size(microwave_amplitude)))
 
     ! Manually set number of OMP threads
     call omp_set_num_threads(8)
@@ -56,16 +58,16 @@ program solid_effect_main
     wtime = omp_get_wtime()
 
     !!$omp parallel do default(private) &
-    !!$omp& shared(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, orientation_se) &
-    !!$omp& shared(electron_frequency, microwave_frequency, nuclear_frequency, microwave_amplitude, t1_nuc, t1_elec) &
-    !!$omp& shared(t2_nuc, t2_elec, temperature, time_num_prop, pol_iz_final)
+    !!$omp& shared(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, orientation_ce_1 &
+    !!$omp& shared(orientation_ce_2, electron_frequency, microwave_frequency, nuclear_frequency, microwave_amplitude &
+    !!$omp& shared(t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, time_num_prop, pol_iz_final)
     do count = 1, size(microwave_amplitude)
 
         ! Call main() to calculate SE dynamics
         call main(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, &
-                orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
+                orientation_ce_1, orientation_ce_2, electron_frequency, microwave_frequency, nuclear_frequency, &
                  microwave_amplitude(count), t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, time_num_prop, &
-                pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies)
+                pol_i_z, pol_s1_z, pol_s2_z, pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot, energies)
 
         pol_iz_final(count) = pol_i_z(time_num_prop)
         write(6, *) 'Finished loop', count, 'of',  size(microwave_amplitude), '.'
@@ -78,29 +80,41 @@ program solid_effect_main
 
     ! Open output files
     open(1, file = 'out/pol_i_z.out', status = 'replace')
-    open(2, file = 'out/pol_s_z.out', status = 'replace')
-    open(3, file = 'out/pol_i_z_rot.out', status = 'replace')
-    open(4, file = 'out/pol_s_z_rot.out', status = 'replace')
-    open(5, file = 'out/microwave_amplitude.out', status = 'replace')
-    open(7, file = 'out/num_periods.out', status = 'replace')
-    open(8, file = 'out/pol_iz_final.out', status = 'replace')
-    open(9, file = 'out/energies_1.out', status = 'replace')
-    open(10, file = 'out/energies_2.out', status = 'replace')
-    open(11, file = 'out/energies_3.out', status = 'replace')
-    open(12, file = 'out/energies_4.out', status = 'replace')
+    open(2, file = 'out/pol_s1_z.out', status = 'replace')
+    open(3, file = 'out/pol_s2_z.out', status = 'replace')
+    open(4, file = 'out/pol_i_z_rot.out', status = 'replace')
+    open(5, file = 'out/pol_s1_z_rot.out', status = 'replace')
+    open(7, file = 'out/pol_s2_z_rot.out', status = 'replace')
+    open(8, file = 'out/microwave_amplitude.out', status = 'replace')
+    open(9, file = 'out/num_periods.out', status = 'replace')
+    open(10, file = 'out/pol_iz_final.out', status = 'replace')
+    open(11, file = 'out/energies_1.out', status = 'replace')
+    open(12, file = 'out/energies_2.out', status = 'replace')
+    open(13, file = 'out/energies_3.out', status = 'replace')
+    open(14, file = 'out/energies_4.out', status = 'replace')
+    open(15, file = 'out/energies_5.out', status = 'replace')
+    open(16, file = 'out/energies_6.out', status = 'replace')
+    open(17, file = 'out/energies_7.out', status = 'replace')
+    open(18, file = 'out/energies_8.out', status = 'replace')
 
     ! Write to output files
     write(1, *) pol_i_z
-    write(2, *) pol_s_z
-    write(3, *) pol_i_z_rot
-    write(4, *) pol_s_z_rot
-    write(5, *) microwave_amplitude
-    write(7, *) num_periods
-    write(8, *) pol_iz_final
-    write(9, *) energies(:, 1)
-    write(10, *) energies(:, 2)
-    write(11, *) energies(:, 3)
-    write(12, *) energies(:, 4)
+    write(2, *) pol_s1_z
+    write(3, *) pol_s2_z
+    write(4, *) pol_i_z_rot
+    write(5, *) pol_s1_z_rot
+    write(7, *) pol_s2_z_rot
+    write(8, *) microwave_amplitude
+    write(9, *) num_periods
+    write(10, *) pol_iz_final
+    write(11, *) energies(:, 1)
+    write(12, *) energies(:, 2)
+    write(13, *) energies(:, 3)
+    write(14, *) energies(:, 4)
+    write(15, *) energies(:, 5)
+    write(16, *) energies(:, 6)
+    write(17, *) energies(:, 7)
+    write(18, *) energies(:, 8)
 
     ! Close output files
     close(1, status = 'keep')
@@ -114,7 +128,10 @@ program solid_effect_main
     close(10, status = 'keep')
     close(11, status = 'keep')
     close(12, status = 'keep')
+    close(13, status = 'keep')
+    close(14, status = 'keep')
+    close(15, status = 'keep')
 
     write(6,*) 'Finished saving data, end of program.'
 
-end program solid_effect_main
+end program cross_effect_main

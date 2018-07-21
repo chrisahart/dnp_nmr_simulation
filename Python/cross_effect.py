@@ -152,21 +152,21 @@ def calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z,
         ganisotropy_2 = fn.anisotropy(c0_2, c1_2, c2_2, c3_2, c4_2, count * param.time_step)
 
         # Calculate time dependent dipolar between electron 1 and 2
-        S20 = 2 * np.matmul(spin3_s1_z, spin3_s2_z) - \
-                 0.5 * (np.matmul(spin3_s1_p, spin3_s2_m) + np.matmul(spin3_s1_m, spin3_s2_p))
-        b_ee = 0
-        g_ee = 0
-        test = 23e6 * (+0.5 * ((np.sin(b_ee)) ** 2) * np.cos(2 * 2 * np.pi * param.freq_rotor *
-                                                            count * param.time_step_num + g_ee) -
-                       np.sqrt(2) * np.sin(b_ee) * np.cos(b_ee) * np.cos(2 * np.pi * param.freq_rotor *
-                                                                       count * param.time_step_num + g_ee))
-        dipolar = test * S20
+        # S20 = 2 * np.matmul(spin3_s1_z, spin3_s2_z) - \
+        #          0.5 * (np.matmul(spin3_s1_p, spin3_s2_m) + np.matmul(spin3_s1_m, spin3_s2_p))
+        # b_ee = 0
+        # g_ee = 0
+        # test = 23e6 * (+0.5 * ((np.sin(b_ee)) ** 2) * np.cos(2 * 2 * np.pi * param.freq_rotor *
+        #                                                     count * param.time_step_num + g_ee) -
+        #                np.sqrt(2) * np.sin(b_ee) * np.cos(b_ee) * np.cos(2 * np.pi * param.freq_rotor *
+        #                                                                count * param.time_step_num + g_ee))
+        # dipolar = 0  # test * S20
 
         # Calculate time dependent hamiltonian
         hamiltonian[count, :] = (ganisotropy_1 - param.microwave_frequency) * spin3_s1_z + \
                                 (ganisotropy_2 - param.microwave_frequency) * spin3_s2_z + \
                                 param.freq_nuclear_1 * spin3_i_z + \
-                                hyperfine_total + dipolar
+                                hyperfine_total
 
     return hamiltonian
 

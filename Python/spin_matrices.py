@@ -34,7 +34,6 @@ spin3_s1_z = np.kron(np.kron(spin1_z, np.identity(2)), np.identity(2))
 spin3_s1_p = np.real(spin3_s1_x + 1j * spin3_s1_y)
 spin3_s1_m = np.real(spin3_s1_x - 1j * spin3_s1_y)
 
-
 # 8x8 Matrix operators for S2 operator
 spin3_s2_x = np.kron(np.identity(2), np.kron(spin1_x, np.identity(2)))
 spin3_s2_y = np.kron(np.identity(2), np.kron(spin1_y, np.identity(2)))

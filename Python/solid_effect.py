@@ -31,6 +31,8 @@ def main():
         print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
                                               ', total elapsed time ', (time.time() - start), ' s.'))
 
+        print('pol_nuc[-1]', pol_nuc[count, -1])
+
     # Dynamically assign and create output directory
     directory = '{}{:.2f}'.format('out/solid_effect/mw_', param.microwave_amplitude[-1] / 1E6)
     if not os.path.exists(directory):
@@ -74,13 +76,12 @@ def dynamics(microwave_amplitude):
 
     # Construct intrinsic Hilbert space Hamiltonian
     hamiltonian = calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z)
-    # energies, eigvectors, eigvectors_inv, density_mat = fortran.f2py_dynamics.calculate_hamiltonian(
-    # param.time_step_num,
-    #                                                                                 param.time_step, param.freq_rotor,
-    #                                                          param.gtensor,
-    #                                                          param.hyperfine_coupling, param.hyperfine_angles_1,
-    #                                                          param.orientation_se, param.electron_frequency,
-    #                                                          param.microwave_frequency, param.freq_nuclear_1)
+
+    # Calculate thermal density matrix and intrinsic Hilbert space Hamiltonian using F2PY
+    # hamiltonian, density_mat = fortran.solid_effect_dynamics.calculate_hamiltonian(
+    #     param.time_step_num, param.time_step, param.freq_rotor, param.gtensor, param.temperature,
+    #     param.hyperfine_coupling, param.hyperfine_angles_1, param.orientation_se, param.electron_frequency,
+    #     param.microwave_frequency, param.freq_nuclear_1, 4, 16)
 
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
@@ -105,42 +106,38 @@ def dynamics(microwave_amplitude):
     # Calculate Liouville space propagator with relaxation
     propagator = fn.liouville_propagator(2, energies, eigvectors, eigvectors_inv,
                                          microwave_hamiltonian_init, calculate_relaxation_mat, spin2_all)
-    # propagator = fortran.f2py_dynamics.liouville_propagator(param.time_step_num, param.time_step,
-    #                                                         param.electron_frequency, param.freq_nuclear_1,
-    #                                                         param.microwave_amplitude, param.t1_nuc,
-    #                                                         param.t1_elec, param.t2_nuc, param.t2_elec,
-    #                                                         param.temperature, eigvectors,
-    #                                                         eigvectors_inv, energies)
+
+    # Calculate Liouville space propagator with relaxation using F2PY
+    # propagator = fortran.solid_effect_dynamics.liouville_propagator(
+    #     param.time_step_num, param.time_step, param.electron_frequency, param.freq_nuclear_1,
+    #     param.microwave_amplitude, param.t1_nuc, param.t1_elec, param.t2_nuc, param.t2_elec, param.temperature,
+    #     4, 16, eigvectors, eigvectors_inv, energies)
 
     # Propagate density matrix for single rotor period, calculating polarisations
     pol_i_z_rot, pol_s_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator, spin2_s_z, spin2_i_z)
-    # pol_i_z_rot, pol_s_z_rot = fortran.f2py_dynamics.calculate_polarisation_sub_rotor(param.time_step_num,
-    #                                                                       density_mat, propagator)
+
+    # Propagate density matrix for single rotor period, calculating polarisations using F2PY
+    # pol_i_z_rot, pol_s_z_rot = fortran.solid_effect_dynamics.calculate_polarisation_sub_rotor(
+    #     param.time_step_num, density_mat, propagator, 4, 16)
 
     # Calculate stroboscopic propagator (product of all operators within rotor period)
     propagator_strobe = np.eye(4 ** 2)
-    print('propagator_strobe', propagator_strobe[1, 1])
     for count in range(0, int(param.time_step_num)):
         propagator_strobe = np.matmul(propagator_strobe, propagator[count, :])
-        print('propagator[count, :])', propagator[count, 1, 1])
-    print('propagator_strobe', propagator_strobe[1, 1])
 
     # Propagate density matrix stroboscopically, calculating polarisations
     pol_i_z, pol_s_z = calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin2_i_z)
-    # pol_i_z, pol_s_z = fortran.f2py_dynamics.calculate_polarisation_rotor(param.time_step_num,
-    #                                                                       param.num_timesteps_prop,
-    #                                                                               density_mat, propagator)
+
+    # Propagate density matrix stroboscopically, calculating polarisations
+    # pol_i_z, pol_s_z = fortran.solid_effect_dynamics.calculate_polarisation_rotor(
+    #     param.time_step_num, param.num_timesteps_prop, density_mat, propagator, 4, 16)
 
     # Call F2PY code to calculate dynamics
-    # start = time.time()
-    # pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies = fortran.f2py_dynamics.main(param.time_step_num,
-    #                                                                                   param.time_step,
-    #             param.freq_rotor, param.gtensor, param.hyperfine_coupling, param.hyperfine_angles_1,
-    #             param.orientation_se, param.electron_frequency, param.microwave_frequency, param.freq_nuclear_1,
-    #                             microwave_amplitude, param.t1_nuc, param.t1_elec, param.t2_nuc, param.t2_elec,
-    #             param.temperature, param.num_timesteps_prop)
-    # end = time.time() - start
-    # print('main() time taken', end)
+    # pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies = fortran.solid_effect_dynamics.main(
+    #     param.time_step_num, param.time_step, param.freq_rotor, param.gtensor, param.hyperfine_coupling,
+    #     param.hyperfine_angles_1, param.orientation_se, param.electron_frequency, param.microwave_frequency,
+    #     param.freq_nuclear_1, microwave_amplitude, param.t1_nuc, param.t1_elec, param.t2_nuc, param.t2_elec,
+    #     param.temperature, param.num_timesteps_prop)
 
     return pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies
 
@@ -170,7 +167,7 @@ def calculate_hamiltonian(spin2_s_z, spin2_i_x, spin2_i_z):
                                 param.freq_nuclear_1 * spin2_i_z + \
                                 hyperfine_total
 
-        print('hamiltonian', count, hamiltonian[count, 1, 1])
+        # print('hamiltonian', count, hamiltonian[count, 1, 1])
 
     return hamiltonian
 
@@ -181,7 +178,6 @@ def calculate_polarisation_rotor(density_mat, propagator_strobe, spin2_s_z, spin
 
     pol_i_z = np.zeros(param.num_timesteps_prop)
     pol_s_z = np.zeros(param.num_timesteps_prop)
-
 
     for count in range(0, param.num_timesteps_prop):
 

@@ -1,0 +1,1 @@
+dict(real = dict(wp='double'), complex = dict(wp='complex_double'), integer = dict(wp='int'))

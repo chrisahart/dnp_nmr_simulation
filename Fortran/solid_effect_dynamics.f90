@@ -17,7 +17,7 @@ contains
         implicit none
 
         integer, parameter :: sizeH = 2 ** (2), sizeL = 4 ** (2) ! Change (value) to change number of spins
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
 
         integer, intent(in):: time_num, time_num_prop
         real(wp), dimension(3), intent(in) :: gtensor, hyperfine_angles, orientation_se
@@ -34,7 +34,8 @@ contains
         real(wp) :: eig_vector(time_num, sizeH, sizeH), eig_vector_inv(time_num, sizeH, sizeH)
         real(wp) :: eigvals(time_num, sizeH), eigvectors_temp(time_num, sizeH, sizeH)
         real(wp), dimension(time_num, sizeH, sizeH) :: hamiltonian
-        integer :: indices(4),  count1, count2
+        integer :: count1, count2
+        integer(wp) :: indices(sizeH)
 
         !real(wp) :: wtime
 
@@ -61,6 +62,8 @@ contains
 
         ! Calculate inverse eigenvectors
         eig_vector_inv = inverse_real(eig_vector)
+
+        write(6, *) 'eig_vector_inv', eig_vector_inv(1, :, :)
 
         ! Calculate Liouville space propagator with relaxation
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
@@ -90,7 +93,7 @@ contains
         use functions
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         real(wp), parameter :: pi = 4._wp * atan(1._wp), Planck = 6.62607004E-34_wp, Boltzmann = 1.38064852E-23_wp
 
         integer, intent(in):: time_num, sizeH, sizeL
@@ -103,7 +106,7 @@ contains
         integer :: count
         real(wp) :: c0, c1, c2, c3, c4
         real(wp) :: hyperfine_zx, hyperfine_zz, ganisotropy
-        real(wp), dimension(2, 2) :: spin_x, spin_z, identity_spin1
+        real(wp), dimension(2, 2) :: spin_x, spin_z, identity_size2
 
         real(wp), dimension(sizeH, sizeH) :: spin2_s_z, hyperfine_total
         real(wp), dimension(sizeH, sizeH) :: spin2_i_x, spin2_i_z
@@ -111,16 +114,16 @@ contains
         real(wp), dimension(sizeH) :: boltzmann_factors
 
         ! Identity matrix
-        identity_spin1 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_spin1)))
+        identity_size2 = eye(2)
 
         ! Pauli matrices
         spin_x = 0.5_wp * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin_x), order = [2, 1]))
         spin_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 spin matrices constructed using Kronecker products
-        spin2_s_z = kron_real(spin_z, identity_spin1)
-        spin2_i_x = kron_real(identity_spin1, spin_x)
-        spin2_i_z = kron_real(identity_spin1, spin_z)
+        spin2_s_z = kron_real(spin_z, identity_size2)
+        spin2_i_x = kron_real(identity_size2, spin_x)
+        spin2_i_z = kron_real(identity_size2, spin_z)
 
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)
@@ -175,13 +178,13 @@ contains
         use functions
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         complex(wp), parameter :: i = (0, 1._wp)
         real(wp), parameter :: Planck = 6.62607004E-34_wp, Boltzmann = 1.38064852E-23_wp
 
         integer, intent(in):: time_num, sizeH, sizeL
-        real(wp), dimension(time_num, sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
-        real(wp), dimension(time_num, sizeH), intent(in) :: energies
+        real(wp), dimension(:, :, :), intent(in) :: eig_vector, eig_vector_inv
+        real(wp), dimension(:, :), intent(in) :: energies
         real(wp), intent(in) :: electron_frequency, nuclear_frequency, microwave_amplitude, time_step
         real(wp), intent(in) :: t1_nuc, t1_elec, t2_nuc, t2_elec, temperature
         complex(wp), intent(out) :: propagator(time_num, sizeL, sizeL)
@@ -202,11 +205,10 @@ contains
         complex(wp), dimension(sizeH, sizeH) :: spin2_s_y, spin2_i_y
 
         ! Identity matrix
-        identity_size2 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
-        identity_size2_complex = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
-        identity_size4 = kron_real(identity_size2, identity_size2)
-        identity_size16 = kron_real(kron_real(identity_size2, identity_size2), &
-                kron_real(identity_size2, identity_size2))
+        identity_size2 = eye(2)
+        identity_size2_complex = eye(2)
+        identity_size4 = eye(4)
+        identity_size16 = eye(16)
 
         ! Pauli matrices
         spin_x = 0.5 * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin_x), order = [2, 1]))
@@ -224,8 +226,8 @@ contains
         spin2_i_x = kron_real(identity_size2, spin_x)
         spin2_i_y = kron_complex(identity_size2_complex, spin_y)
         spin2_i_z = kron_real(identity_size2, spin_z)
-        spin2_i_p = spin2_i_x + real(i * spin2_s_y)
-        spin2_i_m = spin2_i_x - real(i * spin2_s_y)
+        spin2_i_p = spin2_i_x + real(i * spin2_i_y)
+        spin2_i_m = spin2_i_x - real(i * spin2_i_y)
 
         ! Calculate variables for origonal Liouville space relaxation
         p_e = tanh(0.5_wp * electron_frequency * (Planck / (Boltzmann * temperature)))
@@ -251,10 +253,10 @@ contains
 
             ! Transform microwave Hamiltonian into time dependent basis
             microwave_hamiltonian = matmul(eig_vector_inv(count, :, :), matmul(microwave_hamiltonian_init, &
-                    eig_vector(count, :, :)))
+                                            eig_vector(count, :, :)))
 
             ! Calculate total Hamiltonian
-            energy_mat = identity_size4
+            energy_mat = 0._wp
             do count2 = 1, sizeH
                 energy_mat(count2, count2) = energies(count, count2)
             end do
@@ -300,12 +302,12 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         integer, intent(in) :: sizeH, sizeL
-        real(wp), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
-        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, identity_size4
-        real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
-        real(wp), dimension(sizeL, sizeL), intent(in) :: identity_size16
+        real(wp), dimension(:, :), intent(in) :: eig_vector, eig_vector_inv
+        real(wp), dimension(:, :), intent(in) :: spin2_s_z, spin2_i_z, identity_size4
+        real(wp), dimension(:, :), intent(in) :: spin2_s_p, spin2_s_m, spin2_i_p, spin2_i_m
+        real(wp), dimension(:, :), intent(in) :: identity_size16
         real(wp), intent(in) :: t2_nuc, t2_elec
         real(wp), intent(in) :: gnp, gnm, gep, gem
 
@@ -361,7 +363,7 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         integer, intent(in) :: sizeH, sizeL
         real(wp), dimension(sizeH, sizeH), intent(in) :: eig_vector, eig_vector_inv
         real(wp), dimension(sizeH, sizeH), intent(in) :: spin2_s_z, spin2_i_z, spin2_s_x, spin2_i_x
@@ -457,10 +459,10 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         integer, intent(in) :: time_num_prop, time_num, sizeH, sizeL
-        complex(wp), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
-        real(wp), dimension(sizeH, sizeH), intent(in) :: density_mat
+        complex(wp), dimension(:, :, :), intent(in) :: propagator
+        real(wp), dimension(:, :), intent(in) :: density_mat
         real(wp), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s_z
 
         integer :: count
@@ -476,28 +478,28 @@ contains
                           kron_complex(identity_size2, identity_size2))
 
         ! Calculate matrices specific to polarisation calculation
-        spin_z = 0.5_wp * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
+        spin_z = 0.5_wp * (reshape([1._wp, 0._wp,  0._wp, -1._wp], shape(spin_z), order = [2, 1]))
         spin2_s_z = kron_complex(spin_z, identity_size2)
         spin2_i_z = kron_complex(identity_size2, spin_z)
 
         density_mat_time = density_mat
         propagator_strobe = identity_size16
-        write(6, *) 'propagator_strobe', propagator_strobe(2, 2)
+!        write(6, *) 'propagator_strobe', propagator_strobe(2, 2)
 
-        open(1, file = 'test.out', status = 'replace')
+!        open(1, file = 'test.out', status = 'replace')
 
 
         ! Calculate stroboscopic propagator (product of all operators within rotor period)
         do count = 1, time_num
             propagator_strobe = matmul(propagator_strobe, propagator(count, :, :))
 
-            write(1, *)  propagator(count, 2, 2)
+!            write(1, *)  propagator(count, 2, 2)
 
         end do
 
-        close(1, status = 'keep')
-
-        write(6, *) 'propagator_strobe', propagator_strobe(2, 2)
+!        close(1, status = 'keep')
+!
+!        write(6, *) 'propagator_strobe', propagator_strobe(2, 2)
 
 
         ! Propogate density matrix using stroboscopic propagator
@@ -531,10 +533,10 @@ contains
         use iso_fortran_env
         implicit none
 
-        integer, parameter :: wp = real64
+        integer, parameter :: wp = selected_real_kind(15, 307)
         integer, intent(in) :: time_num, sizeH, sizeL
-        complex(wp), dimension(time_num, sizeL, sizeL), intent(in) :: propagator
-        real(wp), dimension(sizeH, sizeH), intent(in) :: density_mat
+        complex(wp), dimension(:, :, :), intent(in) :: propagator
+        real(wp), dimension(:, :), intent(in) :: density_mat
         real(wp), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s_z_rot
 
         integer :: count

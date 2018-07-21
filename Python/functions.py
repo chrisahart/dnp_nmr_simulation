@@ -3,6 +3,7 @@ import parameters as param
 import spin_matrices as sp
 from scipy import constants as sc
 from scipy import linalg as la
+import f2py_dynamics as fortran
 
 
 def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
@@ -37,6 +38,11 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
         # Calculate time dependent Liouville space relaxation matrix
         relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
 
+        # Calculate time dependent Liouville space relaxation matrix using F2PY
+        # relax_mat = fortran.solid_effect_dynamics.calculate_relaxation_mat(
+        #     eigvectors[count], eigvectors_inv[count], np.eye(4), np.eye(16), 16, 4, sp.spin2_s_z, sp.spin2_s_p,
+        #     sp.spin2_s_m, sp.spin2_i_z, sp.spin2_i_p, sp.spin2_i_m, param.t2_elec, param.t2_nuc, gnp, gnm, gep, gem)
+
         # Calculate Liouville space eigenvectors
         eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
         eigvectors_inv_liouville = np.kron(eigvectors_inv[count], eigvectors_inv[count])
@@ -44,7 +50,13 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
         # Calculate Liouville space propagator
         liouvillian = hamiltonian_liouville + 1j * relax_mat
         propagator[count, :] = np.matmul(eigvectors_inv_liouville,
-                                         np.matmul(la.expm(-1j * liouvillian * param.time_step), eigvectors_liouville))
+                                         np.matmul(la.expm(-1j * liouvillian * param.time_step),
+                                                   eigvectors_liouville))
+
+        # Calculate Liouville space propagator using F2PY
+        # liouvillian = hamiltonian_liouville + 1j * relax_mat
+        # propagator[count, :] = np.matmul(eigvectors_inv_liouville, np.matmul(
+        #     fortran.functions.expm_complex(-1j * liouvillian * param.time_step),eigvectors_liouville))
 
     return propagator
 
