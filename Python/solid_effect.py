@@ -31,8 +31,6 @@ def main():
         print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
                                               ', total elapsed time ', (time.time() - start), ' s.'))
 
-        print('pol_nuc[-1]', pol_nuc[count, -1])
-
     # Dynamically assign and create output directory
     directory = '{}{:.2f}'.format('out/solid_effect/mw_', param.microwave_amplitude[-1] / 1E6)
     if not os.path.exists(directory):

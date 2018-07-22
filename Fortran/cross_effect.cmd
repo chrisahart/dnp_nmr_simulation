@@ -1,6 +1,6 @@
 :: Temporary makefile
 
-gfortran -o cross_effect expokit.o mataid.o functions.f90 interactions.f90 cross_effect_dynamics.f90 cross_effect_main.f90 -lgomp -fopenmp -llapack -lblas -O2 -fcheck=all -Wall
+gfortran -o cross_effect expokit.o mataid.o functions.f90 interactions.f90 cross_effect_dynamics.f90 cross_effect_main.f90 -lgomp -fopenmp -llapack -lblas -O2
 
 cross_effect.exe
 
