@@ -37,6 +37,8 @@ contains
         integer :: count1, count2
         integer(wp) :: indices(sizeH)
 
+        !real(wp) :: wtime
+
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
                 hyperfine_angles, orientation_se, electron_frequency, microwave_frequency, nuclear_frequency, &
@@ -46,6 +48,7 @@ contains
         call eig_real(hamiltonian, eigvals, eig_vector)
 
         ! Sort eigenvalues and eigenvectors at zero time (only adds around 1ms to total duration)
+        !wtime = omp_get_wtime()
         indices = argsort(eigvals(1, :))
         eigvectors_temp = eig_vector
         do count1 = 1, time_num
@@ -54,9 +57,13 @@ contains
                 eig_vector(count1, :, count2) = eigvectors_temp(count1, :, indices(count2))
             end do
         end do
+        !wtime = omp_get_wtime () - wtime
+        !write(6, *) 'Elapsed time:', sngl(wtime)
 
         ! Calculate inverse eigenvectors
         eig_vector_inv = inverse_real(eig_vector)
+
+        write(6, *) 'eig_vector_inv', eig_vector_inv(1, :, :)
 
         ! Calculate Liouville space propagator with relaxation
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &

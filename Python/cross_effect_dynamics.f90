@@ -1,6 +1,6 @@
 module cross_effect_dynamics
 
-    ! This module calculates dynamics for cross effect MAS DNP NMR.
+    ! This module calculates dynamics for solid effect MAS DNP NMR.
 
 contains
 
@@ -9,7 +9,7 @@ contains
                 t1_nuc,  t1_elec, t2_nuc, t2_elec, temperature, time_num_prop, &
                 pol_i_z, pol_s1_z, pol_s2_z, pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot, energies)
 
-        ! Call required functions to calculate dynamics for cross effect MAS DNP NMR
+        ! Call required functions to calculate dynamics for solid effect MAS DNP NMR
 
         use omp_lib
         use functions
@@ -37,6 +37,8 @@ contains
         integer :: count1, count2
         integer(wp) :: indices(sizeH)
 
+        !real(wp) :: wtime
+
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
                 hyperfine_angles, orientation_ce_1, orientation_ce_2, electron_frequency, microwave_frequency, &
@@ -46,6 +48,7 @@ contains
         call eig_real(hamiltonian, eigvals, eig_vector)
 
         ! Sort eigenvalues and eigenvectors at zero time (only adds around 1ms to total duration)
+        !wtime = omp_get_wtime()
         indices = argsort(eigvals(1, :))
         eigvectors_temp = eig_vector
         do count1 = 1, time_num
@@ -54,6 +57,8 @@ contains
                 eig_vector(count1, :, count2) = eigvectors_temp(count1, :, indices(count2))
             end do
         end do
+        !wtime = omp_get_wtime () - wtime
+        !write(6, *) 'Elapsed time:', sngl(wtime)
 
         ! Calculate inverse eigenvectors
         eig_vector_inv = inverse_real(eig_vector)
@@ -105,6 +110,8 @@ contains
         real(wp), dimension(sizeH, sizeH) :: spin3_i_x, spin3_i_z
         real(wp), dimension(sizeH, sizeH) :: hamiltonian_ideal, boltzmann_factors_mat
         real(wp), dimension(sizeH) :: boltzmann_factors
+
+        real(wp) :: test4(4, 4), test8(8, 8), test8_2(sizeH, sizeH)
 
         ! Identity matrix
         identity_size2 = eye(2)
@@ -329,9 +336,11 @@ contains
         spin3_s1_z_t = matmul(eig_vector_inv, matmul(spin3_s1_z, eig_vector))
         spin3_s1_p_t = matmul(eig_vector_inv, matmul(spin3_s1_p, eig_vector))
         spin3_s1_m_t = matmul(eig_vector_inv, matmul(spin3_s1_m, eig_vector))
+
         spin3_s2_z_t = matmul(eig_vector_inv, matmul(spin3_s2_z, eig_vector))
         spin3_s2_p_t = matmul(eig_vector_inv, matmul(spin3_s2_p, eig_vector))
         spin3_s2_m_t = matmul(eig_vector_inv, matmul(spin3_s2_m, eig_vector))
+
         spin3_i_z_t = matmul(eig_vector_inv, matmul(spin3_i_z, eig_vector))
         spin3_i_p_t = matmul(eig_vector_inv, matmul(spin3_i_p, eig_vector))
         spin3_i_m_t = matmul(eig_vector_inv, matmul(spin3_i_m, eig_vector))
@@ -339,14 +348,19 @@ contains
         ! Transform spin matrices into time dependent Liouville space basis
         spin3_i_p_tl = kron_real(spin3_i_p_t, transpose(spin3_i_m_t)) - 0.5_wp * identity_size64 + 0.5_wp * (&
                     kron_real(spin3_i_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_i_z_t)))
+
         spin3_i_m_tl = kron_real(spin3_i_m_t, transpose(spin3_i_p_t)) - 0.5_wp * identity_size64 - 0.5_wp * (&
                 kron_real(spin3_i_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_i_z_t)))
+
         spin3_s1_p_tl = kron_real(spin3_s1_p_t, transpose(spin3_s1_m_t)) - 0.5_wp * identity_size64 + 0.5_wp * (&
                 kron_real(spin3_s1_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s1_z_t)))
+
         spin3_s1_m_tl = kron_real(spin3_s1_m_t, transpose(spin3_s1_p_t)) - 0.5_wp * identity_size64 - 0.5_wp * (&
                 kron_real(spin3_s1_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s1_z_t)))
+
         spin3_s2_p_tl = kron_real(spin3_s2_p_t, transpose(spin3_s2_m_t)) - 0.5_wp * identity_size64 + 0.5_wp * (&
                 kron_real(spin3_s2_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s2_z_t)))
+
         spin3_s2_m_tl = kron_real(spin3_s2_m_t, transpose(spin3_s2_p_t)) - 0.5_wp * identity_size64 - 0.5_wp * (&
                 kron_real(spin3_s2_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s2_z_t)))
 
@@ -357,8 +371,9 @@ contains
                         0.5_wp * 0.5_wp * identity_size64)
         relax_t2_i1 = (2._wp / t2_nuc) * (kron_real(spin3_i_z_t, transpose(spin3_i_z_t)) - &
                         0.5_wp * 0.5_wp * identity_size64)
-        relax_t1 = gep * spin3_s1_p_tl + gem * spin3_s1_m_tl + gep * spin3_s2_p_tl + gem * spin3_s2_m_tl + &
-                   gnp * spin3_i_p_tl + gnm * spin3_i_m_tl
+        relax_t1 = gep * spin3_s1_p_tl + gem * spin3_s1_m_tl + &
+                    gep * spin3_s2_p_tl + gem * spin3_s2_m_tl + &
+                    gnp * spin3_i_p_tl + gnm * spin3_i_m_tl
         relax_mat = relax_t2_s1 + relax_t2_s2 + relax_t2_i1 + relax_t1
 
     end subroutine calculate_relaxation_mat
@@ -455,6 +470,10 @@ contains
                 ((abs(spin3_i_z_t(count, count) - spin3_i_z_t(count - 1, count - 1))) ** 2._wp) * (1._wp / t2_nuc)
         end do
 
+!        write(6, *) 'relax_values_t2 before', relax_values_t2
+        !relax_values_t2 = cshift(relax_values_t2, shift = -1)
+        !write(6, *) 'relax_values_t2 after', relax_values_t2
+
         ! Transform to 16 by 16 matrix
         relax_mat_t2 = 0
         do count = 1, sizeH
@@ -462,9 +481,27 @@ contains
                 relax_mat_t2(count2 + sizeH * (count - 1), count2 + sizeH * (count - 1)) = relax_values_t2(count2)
             end do
             relax_values_t2 = cshift(relax_values_t2, shift = -1)
+!            write(6, *) 'count', count
+!            write(6, *) 'relax_values_t2 after', relax_values_t2
         end do
 
+        ! Relaxation matrix as sum of t1 and t2 matrices
         relax_mat = -1._wp * relax_mat_t2 + relax_mat_t1
+        !relax_mat = relax_mat_t1
+
+!        write(6, *) 'relax_mat', relax_mat(9:12, 9:12)
+
+!        write(6, *) 'relax_mat_t2(1, 1)', relax_mat_t2(1, 1)
+!        write(6, *) 'relax_mat_t2(1, 1)', relax_mat_t2(1, 2)
+!        write(6, *) 'relax_mat_t2(2, 2)', relax_mat_t2(2, 2)
+!        write(6, *) 'relax_mat_t2(9, 9)', relax_mat_t2(9, 9)
+!        write(6, *) 'relax_mat_t2(10, 10)', relax_mat_t2(10, 10)
+!        write(6, *) 'relax_mat_t2(64, 64)', relax_mat_t2(63, 63)
+!        write(6, *) 'relax_mat_t2(64, 64)', relax_mat_t2(64, 64)
+
+
+!        write(6, *) 'relax_mat_t1(1, 1)', relax_mat_t1(1, 1)
+!        write(6, *) 'relax_mat_t1(2, 2)', relax_mat_t1(2, 2)
 
     end subroutine calculate_relaxation_mat_mance
 

@@ -9,6 +9,7 @@ import cross_effect_plotting
 from shutil import copyfile
 import os
 import matplotlib.pyplot as plt
+import f2py_cross_effect as fortran
 
 
 def main():
@@ -89,6 +90,12 @@ def dynamics(microwave_amplitude):
     hamiltonian = calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z,
                                         spin3_s1_m, spin3_s1_p, spin3_s2_m, spin3_s2_p)
 
+    # Calculate thermal density matrix and intrinsic Hilbert space Hamiltonian using F2PY
+    # hamiltonian, density_mat = fortran.cross_effect_dynamics.calculate_hamiltonian(
+    #     param.time_step_num, param.time_step, param.freq_rotor, param.gtensor, param.temperature,
+    #     param.hyperfine_coupling, param.hyperfine_angles_1, param.orientation_ce_1, param.orientation_ce_2,
+    #     param.electron_frequency, param.microwave_frequency, param.freq_nuclear_1, 8, 64)
+
     # Calculate eigenvalues and eigenvectors of intrinsic Hamiltonian
     eigvals, eigvectors = np.linalg.eig(hamiltonian)
     energies = np.copy(eigvals)
@@ -111,11 +118,21 @@ def dynamics(microwave_amplitude):
 
     # Calculate Liouville space propagator with relaxation
     propagator = fn.liouville_propagator(3, energies, eigvectors, eigvectors_inv,
-                                         microwave_hamiltonian_init, calculate_relaxation_mat, spin3_all)
+                                         microwave_hamiltonian_init, calculate_relaxation_mat_mance, spin3_all)
+
+    # Calculate Liouville space propagator with relaxation using F2PY
+    # propagator = fortran.cross_effect_dynamics.liouville_propagator(
+    #     param.time_step_num, param.time_step, param.electron_frequency, param.freq_nuclear_1,
+    #     param.microwave_amplitude, param.t1_nuc, param.t1_elec, param.t2_nuc, param.t2_elec, param.temperature,
+    #     8, 64, eigvectors, eigvectors_inv, energies)
 
     # Propagate density matrix for single rotor period, calculating polarisations
     pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot = calculate_polarisation_sub_rotor(density_mat, propagator,
-                                                                spin3_s1_z, spin3_s2_z, spin3_i_z)
+                                                                                spin3_s1_z, spin3_s2_z, spin3_i_z)
+
+    # Propagate density matrix for single rotor period, calculating polarisations using F2PY
+    # pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot = fortran.cross_effect_dynamics.calculate_polarisation_sub_rotor(
+    #     param.time_step_num, density_mat, propagator, 8, 64)
 
     # Calculate stroboscopic propagator (product of all operators within rotor period)
     for count in range(0, int(param.time_step_num)):
@@ -124,6 +141,10 @@ def dynamics(microwave_amplitude):
     # Propagate density matrix stroboscopically, calculating polarisations
     pol_i_z, pol_s1_z, pol_s2_z = calculate_polarisation_rotor(density_mat, propagator_strobe,
                                                                spin3_s1_z, spin3_s2_z, spin3_i_z)
+
+    # Propagate density matrix stroboscopically, calculating polarisations using F2PY
+    # pol_i_z, pol_s1_z, pol_s2_z = fortran.cross_effect_dynamics.calculate_polarisation_rotor(
+    #     param.time_step_num, param.num_timesteps_prop, density_mat, propagator, 8, 64)
 
     return pol_i_z, pol_s1_z, pol_s2_z, pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot, energies
 
@@ -232,17 +253,15 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
 
     # Transform spin matrices into time dependent Hilbert space basis
     spin3_s1_z_t, spin3_s1_x_t, spin3_s1_p_t, spin3_s1_m_t, spin3_s2_z_t, spin3_s2_x_t, spin3_s2_p_t, spin3_s2_m_t, \
-    spin3_i_z_t, spin3_i_x_t, spin3_i_p_t, spin3_i_m_t = \
+        spin3_i_z_t, spin3_i_x_t, spin3_i_p_t, spin3_i_m_t = \
         fn.basis_transform(eigvectors, eigvectors_inv, spin3_all)
 
     # Transform spin matrices into time dependent Liouville space basis
     spin3_i_p_tl = np.kron(spin3_i_p_t, np.transpose(spin3_i_m_t)) - identity_mat + 0.5 * (
-        fn.kron_a_n(spin3_i_z_t, 2 ** 3) +
-        fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
+        fn.kron_a_n(spin3_i_z_t, 2 ** 3) + fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
 
     spin3_i_m_tl = np.kron(spin3_i_m_t, np.transpose(spin3_i_p_t)) - identity_mat - 0.5 * (
-        fn.kron_a_n(spin3_i_z_t, 2 ** 3) +
-        fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
+        fn.kron_a_n(spin3_i_z_t, 2 ** 3) + fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
 
     spin3_s1_p_tl = np.kron(spin3_s1_p_t, np.transpose(spin3_s1_m_t)) - identity_mat + 0.5 * (
         fn.kron_a_n(spin3_s1_z_t, 2 ** 3) +
@@ -324,6 +343,7 @@ def calculate_relaxation_mat_mance(eigvectors, eigvectors_inv, gnp, gnm, gep, ge
     # Calculate T2 relaxation matrix using circular shift of spin matrices
     relax_values_t2 = np.zeros(2 ** 3)
     for a in range(1, 2 ** 3):
+        relax_values_t2[a] = a
         relax_values_t2[a] = (((abs(spin3_s1_z_t[a, a] - spin3_s1_z_t[a - 1, a - 1])) ** 2) +
                               ((abs(spin3_s2_z_t[a, a] - spin3_s2_z_t[a - 1, a - 1])) ** 2)) \
                              * (1 / param.t2_elec) + \
