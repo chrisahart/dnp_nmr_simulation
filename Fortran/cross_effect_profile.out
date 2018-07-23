@@ -1,0 +1,295 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 57.93      2.52     2.52        1     2.52     3.27  __cross_effect_dynamics_MOD_liouville_propagator
+ 12.41      3.06     0.54    40020     0.00     0.00  __functions_MOD_kron_real
+  8.51      3.43     0.37                             zgpadm_
+  5.52      3.67     0.24                             exp
+  4.83      3.88     0.21    10000     0.00     0.00  __cross_effect_dynamics_MOD_calculate_relaxation_mat_mance
+  4.60      4.08     0.20                             hypot
+  1.84      4.16     0.08        1     0.08     0.09  __cross_effect_dynamics_MOD_calculate_polarisation_rotor
+  1.15      4.21     0.05                             cabs
+  0.46      4.23     0.02        1     0.02     0.02  __functions_MOD_eig_real
+  0.46      4.25     0.02                             __cosl_internal
+  0.46      4.27     0.02                             _mcount_private
+  0.23      4.28     0.01   390000     0.00     0.00  __functions_MOD_trace_complex
+  0.23      4.29     0.01        2     0.01     1.70  __cross_effect_dynamics_MOD_main
+  0.23      4.30     0.01        1     0.01     0.01  __cross_effect_dynamics_MOD_calculate_hamiltonian
+  0.23      4.31     0.01                             __fentry__
+  0.23      4.32     0.01                             __logl_internal
+  0.23      4.33     0.01                             _hypot
+  0.23      4.34     0.01                             ldexp
+  0.23      4.35     0.01                             pow
+  0.00      4.35     0.00    20000     0.00     0.00  __interactions_MOD_anisotropy
+  0.00      4.35     0.00    10000     0.00     0.00  __functions_MOD_expm_complex
+  0.00      4.35     0.00    10000     0.00     0.00  __interactions_MOD_hyperfine
+  0.00      4.35     0.00       18     0.00     0.00  __functions_MOD_kron_complex
+  0.00      4.35     0.00        7     0.00     0.00  __functions_MOD_eye
+  0.00      4.35     0.00        2     0.00     0.00  __interactions_MOD_anisotropy_coefficients
+  0.00      4.35     0.00        1     0.00     0.00  __cross_effect_dynamics_MOD_calculate_polarisation_sub_rotor
+  0.00      4.35     0.00        1     0.00     0.00  __functions_MOD_argsort
+  0.00      4.35     0.00        1     0.00     0.00  __functions_MOD_inverse_real
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 4 byte(s) for 0.23% of 4.35 seconds
+
+index % time    self  children    called     name
+                0.01    1.70       1/2           MAIN__ [3]
+                0.01    1.70       1/2           main [4]
+[1]     78.2    0.01    3.39       2         __cross_effect_dynamics_MOD_main [1]
+                2.52    0.75       1/1           __cross_effect_dynamics_MOD_liouville_propagator [2]
+                0.08    0.01       1/1           __cross_effect_dynamics_MOD_calculate_polarisation_rotor [10]
+                0.02    0.00       1/1           __functions_MOD_eig_real [12]
+                0.01    0.00       1/1           __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.00    0.00       1/1           __cross_effect_dynamics_MOD_calculate_polarisation_sub_rotor [22]
+                0.00    0.00       1/1           __functions_MOD_argsort [171]
+                0.00    0.00       1/1           __functions_MOD_inverse_real [172]
+-----------------------------------------------
+                2.52    0.75       1/1           __cross_effect_dynamics_MOD_main [1]
+[2]     75.2    2.52    0.75       1         __cross_effect_dynamics_MOD_liouville_propagator [2]
+                0.54    0.00   40012/40020       __functions_MOD_kron_real [5]
+                0.21    0.00   10000/10000       __cross_effect_dynamics_MOD_calculate_relaxation_mat_mance [8]
+                0.00    0.00   10000/10000       __functions_MOD_expm_complex [166]
+                0.00    0.00       6/18          __functions_MOD_kron_complex [168]
+                0.00    0.00       4/7           __functions_MOD_eye [169]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]     39.1    0.00    1.70                 MAIN__ [3]
+                0.01    1.70       1/2           __cross_effect_dynamics_MOD_main [1]
+-----------------------------------------------
+                                                 <spontaneous>
+[4]     39.1    0.00    1.70                 main [4]
+                0.01    1.70       1/2           __cross_effect_dynamics_MOD_main [1]
+-----------------------------------------------
+                0.00    0.00       8/40020       __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.54    0.00   40012/40020       __cross_effect_dynamics_MOD_liouville_propagator [2]
+[5]     12.4    0.54    0.00   40020         __functions_MOD_kron_real [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      8.5    0.37    0.00                 zgpadm_ [6]
+-----------------------------------------------
+                                                 <spontaneous>
+[7]      5.5    0.24    0.00                 exp [7]
+-----------------------------------------------
+                0.21    0.00   10000/10000       __cross_effect_dynamics_MOD_liouville_propagator [2]
+[8]      4.8    0.21    0.00   10000         __cross_effect_dynamics_MOD_calculate_relaxation_mat_mance [8]
+-----------------------------------------------
+                                                 <spontaneous>
+[9]      4.6    0.20    0.00                 hypot [9]
+-----------------------------------------------
+                0.08    0.01       1/1           __cross_effect_dynamics_MOD_main [1]
+[10]     2.1    0.08    0.01       1         __cross_effect_dynamics_MOD_calculate_polarisation_rotor [10]
+                0.01    0.00  360000/390000      __functions_MOD_trace_complex [18]
+                0.00    0.00       6/18          __functions_MOD_kron_complex [168]
+                0.00    0.00       2/7           __functions_MOD_eye [169]
+-----------------------------------------------
+                                                 <spontaneous>
+[11]     1.1    0.05    0.00                 cabs [11]
+-----------------------------------------------
+                0.02    0.00       1/1           __cross_effect_dynamics_MOD_main [1]
+[12]     0.5    0.02    0.00       1         __functions_MOD_eig_real [12]
+-----------------------------------------------
+                                                 <spontaneous>
+[13]     0.5    0.02    0.00                 __cosl_internal [13]
+-----------------------------------------------
+                                                 <spontaneous>
+[14]     0.5    0.02    0.00                 _mcount_private [14]
+-----------------------------------------------
+                0.01    0.00       1/1           __cross_effect_dynamics_MOD_main [1]
+[15]     0.2    0.01    0.00       1         __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.00    0.00       8/40020       __functions_MOD_kron_real [5]
+                0.00    0.00   20000/20000       __interactions_MOD_anisotropy [165]
+                0.00    0.00   10000/10000       __interactions_MOD_hyperfine [167]
+                0.00    0.00       2/2           __interactions_MOD_anisotropy_coefficients [170]
+                0.00    0.00       1/7           __functions_MOD_eye [169]
+-----------------------------------------------
+                                                 <spontaneous>
+[16]     0.2    0.01    0.00                 ldexp [16]
+-----------------------------------------------
+                                                 <spontaneous>
+[17]     0.2    0.01    0.00                 pow [17]
+-----------------------------------------------
+                0.00    0.00   30000/390000      __cross_effect_dynamics_MOD_calculate_polarisation_sub_rotor [22]
+                0.01    0.00  360000/390000      __cross_effect_dynamics_MOD_calculate_polarisation_rotor [10]
+[18]     0.2    0.01    0.00  390000         __functions_MOD_trace_complex [18]
+-----------------------------------------------
+                                                 <spontaneous>
+[19]     0.2    0.01    0.00                 __fentry__ [19]
+-----------------------------------------------
+                                                 <spontaneous>
+[20]     0.2    0.01    0.00                 __logl_internal [20]
+-----------------------------------------------
+                                                 <spontaneous>
+[21]     0.2    0.01    0.00                 _hypot [21]
+-----------------------------------------------
+                0.00    0.00       1/1           __cross_effect_dynamics_MOD_main [1]
+[22]     0.0    0.00    0.00       1         __cross_effect_dynamics_MOD_calculate_polarisation_sub_rotor [22]
+                0.00    0.00   30000/390000      __functions_MOD_trace_complex [18]
+                0.00    0.00       6/18          __functions_MOD_kron_complex [168]
+-----------------------------------------------
+                0.00    0.00   20000/20000       __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+[165]    0.0    0.00    0.00   20000         __interactions_MOD_anisotropy [165]
+-----------------------------------------------
+                0.00    0.00   10000/10000       __cross_effect_dynamics_MOD_liouville_propagator [2]
+[166]    0.0    0.00    0.00   10000         __functions_MOD_expm_complex [166]
+-----------------------------------------------
+                0.00    0.00   10000/10000       __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+[167]    0.0    0.00    0.00   10000         __interactions_MOD_hyperfine [167]
+-----------------------------------------------
+                0.00    0.00       6/18          __cross_effect_dynamics_MOD_calculate_polarisation_sub_rotor [22]
+                0.00    0.00       6/18          __cross_effect_dynamics_MOD_calculate_polarisation_rotor [10]
+                0.00    0.00       6/18          __cross_effect_dynamics_MOD_liouville_propagator [2]
+[168]    0.0    0.00    0.00      18         __functions_MOD_kron_complex [168]
+-----------------------------------------------
+                0.00    0.00       1/7           __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.00    0.00       2/7           __cross_effect_dynamics_MOD_calculate_polarisation_rotor [10]
+                0.00    0.00       4/7           __cross_effect_dynamics_MOD_liouville_propagator [2]
+[169]    0.0    0.00    0.00       7         __functions_MOD_eye [169]
+-----------------------------------------------
+                0.00    0.00       2/2           __cross_effect_dynamics_MOD_calculate_hamiltonian [15]
+[170]    0.0    0.00    0.00       2         __interactions_MOD_anisotropy_coefficients [170]
+-----------------------------------------------
+                0.00    0.00       1/1           __cross_effect_dynamics_MOD_main [1]
+[171]    0.0    0.00    0.00       1         __functions_MOD_argsort [171]
+-----------------------------------------------
+                0.00    0.00       1/1           __cross_effect_dynamics_MOD_main [1]
+[172]    0.0    0.00    0.00       1         __functions_MOD_inverse_real [172]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+  [13] __cosl_internal       [166] __functions_MOD_expm_complex [21] _hypot
+  [15] __cross_effect_dynamics_MOD_calculate_hamiltonian [169] __functions_MOD_eye [14] _mcount_private
+  [10] __cross_effect_dynamics_MOD_calculate_polarisation_rotor [172] __functions_MOD_inverse_real [11] cabs
+  [22] __cross_effect_dynamics_MOD_calculate_polarisation_sub_rotor [168] __functions_MOD_kron_complex [7] exp
+   [8] __cross_effect_dynamics_MOD_calculate_relaxation_mat_mance [5] __functions_MOD_kron_real [9] hypot
+   [2] __cross_effect_dynamics_MOD_liouville_propagator [18] __functions_MOD_trace_complex [16] ldexp
+   [1] __cross_effect_dynamics_MOD_main [165] __interactions_MOD_anisotropy [17] pow
+  [19] __fentry__            [170] __interactions_MOD_anisotropy_coefficients [6] zgpadm_
+ [171] __functions_MOD_argsort [167] __interactions_MOD_hyperfine
+  [12] __functions_MOD_eig_real [20] __logl_internal
