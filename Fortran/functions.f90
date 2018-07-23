@@ -1,12 +1,11 @@
 module functions
 
-    ! This module contains an assortment of common Fortran functions and subroutines for 2D and 3D arrays.
-    ! OMP statements are included for all suitable do loops, however are disabled where performance is decreased.
+    ! This module contains an assortment of common Fortran functions and subroutines.
 
 contains
 
     function kron_rmat_eye(A) result(B)
-        ! Calculates np.kron(A, np.eye(a.shape[1]))
+        ! Calculates np.kron(A, np.eye(a.shape[1])) for real matrix A
         ! Independent processes so number of OMP threads can take any value
 
         use iso_fortran_env
@@ -23,9 +22,31 @@ contains
             temp(count, :, count, :) = A
         end do
 
-        B = reshape(temp, [4, 4])
+        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
 
     end function kron_rmat_eye
+
+    function kron_cmat_eye(A) result(B)
+        ! Calculates np.kron(A, np.eye(a.shape[1])) for complex matrix A
+        ! Independent processes so number of OMP threads can take any value
+
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        complex(wp), intent(in) :: A(:, :)
+        complex(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
+        complex(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        integer count
+
+        temp = 0
+        do count = 1, size(A, 1)
+            temp(count, :, count, :) = A
+        end do
+
+        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
+
+    end function kron_cmat_eye
 
     function kron_eye_rmat(A) result(B)
         ! Calculates np.kron(np.eye(a.shape[1]), A)
@@ -45,9 +66,31 @@ contains
             temp(:, count, :, count) = A
         end do
 
-        B = reshape(temp, [4, 4])
+        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
 
     end function kron_eye_rmat
+
+    function kron_eye_cmat(A) result(B)
+        ! Calculates np.kron(np.eye(a.shape[1]), A)
+        ! Independent processes so number of OMP threads can take any value
+
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        complex(wp), intent(in) :: A(:, :)
+        complex(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
+        complex(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        integer count
+
+        temp = 0
+        do count = 1, size(A, 1)
+            temp(:, count, :, count) = A
+        end do
+
+        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
+
+    end function kron_eye_cmat
 
     function eye(A) result(B)
         ! Creates A x A identit matrix
@@ -253,7 +296,7 @@ contains
         complex(wp), dimension(:, :), intent(in) :: A
         complex(wp), dimension(size(A, 1), size(A, 2)) :: B
 
-        integer, parameter :: ideg = 6 ! Pade approximation, 6 is reccomended but 2 appears to be stable
+        integer, parameter :: ideg = 4 ! Pade approximation, 6 is reccomended but 2 appears to be stable
         complex(wp) :: t = 1._wp
         complex(wp), dimension(4 * size(A, 1) * size(A, 2) + ideg + 1) :: wsp
         integer, dimension(size(A, 1)) :: iwsp

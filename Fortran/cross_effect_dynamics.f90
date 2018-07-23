@@ -106,12 +106,20 @@ contains
         real(wp), dimension(sizeH, sizeH) :: hamiltonian_ideal, boltzmann_factors_mat
         real(wp), dimension(sizeH) :: boltzmann_factors
 
+        real(wp) :: wtime
+
         ! Identity matrix
         identity_size2 = eye(2)
 
         ! Pauli matrices
         spin1_x = 0.5_wp * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin1_x), order = [2, 1]))
         spin1_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin1_z), order = [2, 1]))
+
+        ! 4x4 spin matrices constructed using Kronecker products
+!        spin3_s1_z = kron_rmat_eye(kron_rmat_eye(spin1_z))
+!        spin3_s2_z = kron_rmat_eye(kron_eye_rmat(spin1_z))
+!        spin3_i_x = kron_eye_rmat(kron_eye_rmat(spin1_x))
+!        spin3_i_z = kron_eye_rmat(kron_eye_rmat(spin1_z))
 
         ! 4x4 spin matrices constructed using Kronecker products
         spin3_s1_z = kron_real(kron_real(spin1_z, identity_size2), identity_size2)
