@@ -12,10 +12,11 @@ nr=3;
 nrot=round(final_time/(1/(nr*1000)));
 % iz3=zeros(length(a),nrot);
 % sz3=iz3;
-%mw_pwr=(1:5:200); %Please put the MW amplitude in MHz
+mw_pwr=(1:5:200); %Please put the MW amplitude in MHz
+%mw_pwr=(1:5:6); %Please put the MW amplitude in MHz
 wme=265.2e9;
 
-mw_pwr = 0.85E6;
+%mw_pwr = 0.85E6;
 
 % iz3_avg=zeros(length(wme),nrot);
 % sz3_avg=iz3_avg;

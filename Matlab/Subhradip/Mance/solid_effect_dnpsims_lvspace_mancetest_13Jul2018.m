@@ -112,13 +112,6 @@ for ii = 0:length(tarray)-2
     
 end
 
-%disp('c2', c2)
-
-disp(hamil(1:4, 1, 1))
-disp(hamil(1:4, 1, 2))
-disp(hamil(1:4, 1, 3))
-disp(hamil(1:4, 1, 4))
-
 Zp=exp((we+wn)*planck/(kb*T))+exp((-we+wn)*planck/(kb*T))+exp((we-wn)*planck/(kb*T))+exp(-(we+wn)*planck/(kb*T));
 %rho_zeeman=(1/Zp)*expm((-squeeze(hamil(:,:,1))-wme*Sz)*planck/(kb*T)); %%% Define zeeman rho0
 rho_zeeman=(1/Zp)*expm(-(we*Sz+wn*Iz)*planck/(kb*T)); %or define it this way
@@ -246,6 +239,22 @@ relmatt2=diag(relmatt2_temp);
 
 
     Rtot=-1*relmatt2+Rfull;
+
+% % Origonal relaxation
+%     LSzt=kron(Szt,Szt.');
+%     RSzt=kron(eye(2^nsp),eye(2^nsp));
+%     LIzt=kron(Izt,Izt.');
+%     RIzt=kron(eye(2^nsp),eye(2^nsp));
+%     
+%     LIpt=1.0*kron(Ipt,Imt.')-.5*eye(4^nsp)+.5*(kron(Izt,eye(2^nsp))+kron(eye(2^nsp),Izt.'));
+%     LImt=1.0*kron(Imt,Ipt.')-.5*eye(4^nsp)-.5*(kron(Izt,eye(2^nsp))+kron(eye(2^nsp),Izt.'));
+%     LSpt=1.0*kron(Spt,Smt.')-.5*eye(4^nsp)+.5*(kron(Szt,eye(2^nsp))+kron(eye(2^nsp),Szt.'));
+%     LSmt=1.0*kron(Smt,Spt.')-.5*eye(4^nsp)-.5*(kron(Szt,eye(2^nsp))+kron(eye(2^nsp),Szt.'));
+%     
+%     Rt2ematv3=(1/t2e)*(LSzt-.25*RSzt);
+%     Rt2nmatv3=(1/(t2n))*(LIzt-.25*RIzt);
+%     Rt1mat=gep*LSpt+gem*LSmt+gnp*LIpt+gnm*LImt;
+%     Rtot=1*Rt1mat+1*Rt2ematv3+1*Rt2nmatv3;
    
     Lhamilt=kron((hamilt),eye(4))-kron(eye(4),(hamilt).');
  
@@ -288,6 +297,8 @@ for ii=1:nsteps
         rho0t=reshape(rho0t,[4,4]); 
 end
 
+toc
+
 xbup=0+tr/2:tr:final_time-tr/2;
 %xrot=(0+trstep/2:trstep:tr-trstep/2).*1e6;
 xrot=linspace(0, 360, 10000);
@@ -308,4 +319,4 @@ subplot(2,1,2)
 plot(xbup,real(sznew/ps0));ylabel('P_s/P_{s0}')
 xlabel('Time(s)')
 
-toc
+%toc

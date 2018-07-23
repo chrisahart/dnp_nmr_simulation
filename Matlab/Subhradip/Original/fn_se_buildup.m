@@ -1,5 +1,5 @@
 function[iznew,sznew,ps0,pi0]=fn_se_buildup(a,b,g,nr,final_time,mw_pwr,wme,t1e,t1n)
-tic
+%tic
 spins = [1/2 1/2];
 nsp = length(spins);
 Sz=sop(spins,'ze'); % You need easyspin sop file. 
@@ -185,6 +185,6 @@ for jj=1:nrot
         rho0t=reshape(rho0t,[4,4]);
 end
 
-toc
+%toc
 
 end

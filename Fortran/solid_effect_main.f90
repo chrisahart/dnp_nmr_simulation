@@ -26,15 +26,15 @@ program solid_effect_main
     temperature = 100_wp                                                       ! Temperature
     nuclear_frequency = -400.9E6_wp                                               ! Nuclear frequency 1
     electron_frequency = 28.025E9_wp * b_field                                    ! Electron frequency
-    microwave_frequency = 264E9_wp  ! 265.2E9_wp !                                              ! Microwave frequency
+    microwave_frequency = 264E9_wp !265.2E9_wp !  ! !  !                                        ! Microwave frequency
     freq_rotor = 3E3_wp                                                           ! Rotor frequency
     orientation_se = [253.6_wp, 105.1_wp, 123.8_wp] * rad                      ! G anisotropy angles for electron 1 (SE)
     orientation_ce_1 = [253.6_wp, 105.1_wp, 123.8_wp] * rad                    ! G anisotropy angles for electron 1 (CE)
     orientation_ce_2 = orientation_ce_1 + [102._wp, 104._wp, 124._wp] * rad    ! G anisotropy angles for electron 2 (CE)
     gtensor = [(2.00614_wp / 2._wp), (2.00194_wp / 2._wp), (2.00988_wp / 2._wp)]        ! G tensor principal values
     hyperfine_coupling = 3E6_wp                                                   ! Hyperfine coupling amplitude
-    hyperfine_angles = [0._wp, 0._wp, 0._wp]     ![253.6, 105.1, 123.8] * rad!                               ! Hyperfine angles for e1-n
-    t1_elec = 0.3E-3_wp                                                           ! Electron spin-lattice relaxation T1 (s)
+    hyperfine_angles = [0._wp, 0._wp, 0._wp] ![253.6, 105.1, 123.8] * rad !Hyperfine angles for e1-n
+    t1_elec = 0.3E-3_wp                                                        ! Electron spin-lattice relaxation T1 (s)
     t1_nuc = 10._wp                                                            ! Nuclear spin-lattice relaxation T1 (s)
     t2_elec = 1E-6_wp                                                             ! T2 electron
     t2_nuc = 1E-3_wp                                                              ! T2 nucleus
@@ -50,7 +50,7 @@ program solid_effect_main
     allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num), pol_iz_final(size(microwave_amplitude)))
 
     ! Manually set number of OMP threads
-    call omp_set_num_threads(8)
+    !call omp_set_num_threads(8)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()
@@ -67,7 +67,7 @@ program solid_effect_main
                  microwave_amplitude(count), t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, time_num_prop, &
                 pol_i_z, pol_s_z, pol_i_z_rot, pol_s_z_rot, energies)
 
-        pol_iz_final(count) = pol_i_z(time_num_prop)
+        pol_iz_final(count) = abs(pol_i_z(time_num_prop))
         write(6, *) 'Finished loop', count, 'of',  size(microwave_amplitude), '.'
 
     end do

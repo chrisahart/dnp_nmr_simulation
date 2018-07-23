@@ -6,10 +6,12 @@ solid_effect.exe
 
 gprof solid_effect.exe > solid_effect_profile.out
 
-:: rm functions.mod
-:: rm interactions.mod
-:: rm solid_effect_dynamics.mod
-:: solid_effect.exe
-:: gmon.out
+gprof solid_effect.exe  | python gprof2dot.py | dot -Tpng -o solid_effect_profile.png
+
+rm functions.mod
+rm interactions.mod
+rm solid_effect_dynamics.mod
+rm solid_effect.exe
+rm gmon.out
 
 PAUSE
