@@ -6,6 +6,7 @@ from scipy import linalg as la
 import f2py_dynamics as fortran_se
 import matplotlib.pyplot as plt
 import f2py_cross_effect as fortran_ce
+import time
 
 
 def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
@@ -38,8 +39,8 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
         total_hamiltonian = np.diag(energies[count]) + microwave_hamiltonian
 
         # Transform Hilbert space Hamiltonian into Liouville space
-        hamiltonian_liouville = kron_a_n(total_hamiltonian, 2 ** num_spins) - \
-                                kron_n_a(2 ** num_spins, np.transpose(total_hamiltonian))
+        hamiltonian_liouville = kron_rmat_eye(total_hamiltonian) - \
+                                kron_eye_rmat(np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
         relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
@@ -144,7 +145,6 @@ def anisotropy(c0, c1, c2, c3, c4, time):
                    c3 * np.cos(2 * np.pi * param.freq_rotor * time * 2) + \
                    c4 * np.sin(2 * np.pi * param.freq_rotor * time * 2)
 
-
     return g_anisotropy
 
 
@@ -167,20 +167,50 @@ def hyperfine(hyperfine_angles, time):
     return hyperfine_zz, hyperfine_zx
 
 
-def kron_a_n(A, N):  # Simulates np.kron(A, np.eye(N))
+# def kron_rmat_eye(A, N):  # Simulates np.kron(A, np.eye(N))
+# 
+#     m, n = A.shape
+#     out = np.zeros((m, N, n, N), dtype=A.dtype)
+#     r = np.arange(N)
+#     out[:, r, :, r] = A
+#     out.shape = (m * N, n * N)
+#     return out
 
-    m, n = A.shape
-    out = np.zeros((m, N, n, N), dtype=A.dtype)
-    r = np.arange(N)
-    out[:, r, :, r] = A
-    out.shape = (m * N, n * N)
+
+def kron_rmat_eye(a):
+    """ Calculates np.kron(a, np.eye(a.shape[1]))
+    """
+
+    n = a.shape[0]
+    out = np.zeros((n, n, n, n), dtype=a.dtype)
+    r = np.arange(n)
+    out[:, r, :, r] = a
+    out.shape = (n * n, n * n)
+
     return out
 
 
-def kron_n_a(N, A):  # Simulates np.kron(np.eye(N), A)
-    m, n = A.shape
-    out = np.zeros((N, m, N, n), dtype=A.dtype)
-    r = np.arange(N)
-    out[r, :, r, :] = A
-    out.shape = (m * N, n * N)
+def kron_eye_rmat(a):
+    """ Calculates np.kron(a, np.eye(a.shape[1]))
+    """
+
+    n = a.shape[0]
+    out = np.zeros((n, n, n, n), dtype=a.dtype)
+    r = np.arange(n)
+    out[r, :, r, :] = a
+    out.shape = (n * n, n * n)
+
     return out
+
+
+# def kron_eye_rmat(b, a):
+#     """ Calculates np.kron(np.eye(b), a)
+#     """
+#
+#     m, n = a.shape
+#     out = np.zeros((b, m, b, n), dtype=a.dtype)
+#     r = np.arange(b)
+#     out[r, :, r, :] = a
+#     out.shape = (m * b, n * b)
+#
+#     return out

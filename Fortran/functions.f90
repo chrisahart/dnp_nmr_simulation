@@ -5,6 +5,27 @@ module functions
 
 contains
 
+    function kron_rmat_eye(A) result(B)
+        ! Calculates kron_real(A, eye(size(A, 1)))
+        ! Independent processes so number of OMP threads can take any value
+
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        integer, intent(in) :: A(:, :)
+        integer count
+        real(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
+        real(wp) :: B(size(A, 1) * 2, size(A, 1) * 2)
+        !real(wp) :: r(size(A, 1)) = [(count, count = 1, size(A, 1), 1)]
+
+        temp = 0
+
+        !temp(:, r, :, r) = a
+        B = reshape(temp, [4, 4])
+
+    end function kron_rmat_eye
+
     function eye(A) result(B)
         ! Creates A x A identit matrix
         ! Independent processes so number of OMP threads can take any value

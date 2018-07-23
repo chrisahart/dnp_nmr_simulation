@@ -37,7 +37,7 @@ contains
         integer :: count1, count2
         integer(wp) :: indices(sizeH)
 
-        !call omp_set_num_threads(1)
+        call omp_set_num_threads(1)
 
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
@@ -116,17 +116,20 @@ contains
         spin_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 spin matrices constructed using Kronecker products
-        spin2_s_z = kron_real(spin_z, identity_size2)
+        !spin2_s_z = kron_real(spin_z, identity_size2)
+        spin2_s_z = kron_real(spin_z, eye(size(spin_z, 1)))
+        !spin2_s_z = kron_rmat_eye(spin_z)
+
         spin2_i_x = kron_real(identity_size2, spin_x)
         spin2_i_z = kron_real(identity_size2, spin_z)
 
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)
 
-        !!$omp parallel do default(private) &
-        !!$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
-        !!$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
-        !!$omp& shared(spin2_i_x, spin2_i_z, spin2_s_z)
+        !$omp parallel do default(private) &
+        !$omp& shared(c0, c1, c2, c3, c4, freq_rotor, time_step, hyperfine_angles, hyperfine_coupling) &
+        !$omp& shared(hamiltonian, microwave_frequency, nuclear_frequency) &
+        !$omp& shared(spin2_i_x, spin2_i_z, spin2_s_z)
         do count = 1, time_num
 
             ! Calculate time dependent hyperfine
@@ -147,7 +150,7 @@ contains
 
 
         end do
-        !!$omp end parallel do
+        !$omp end parallel do
 
         ! Calculate idealised Hamiltonian (must calculate density matrix outside of rotating frame)
         hamiltonian_ideal = electron_frequency * spin2_s_z + nuclear_frequency * spin2_i_z
@@ -239,11 +242,11 @@ contains
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
 
-        !!$omp parallel do default(private) &
-        !!$omp& shared(eig_vector, eig_vector_inv, identity_size4, identity_size16, sizeL, sizeH) &
-        !!$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t1_elec, t2_elec, t2_nuc) &
-        !!$omp& shared(t1_nuc, spin2_s_x, spin2_i_x, boltzmann_elec, boltzmann_nuc) &
-        !!$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
+        !$omp parallel do default(private) &
+        !$omp& shared(eig_vector, eig_vector_inv, identity_size4, identity_size16, sizeL, sizeH) &
+        !$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t1_elec, t2_elec, t2_nuc) &
+        !$omp& shared(t1_nuc, spin2_s_x, spin2_i_x, boltzmann_elec, boltzmann_nuc) &
+        !$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
         do count = 1, time_num
 
             ! Transform microwave Hamiltonian into time dependent basis
@@ -283,7 +286,7 @@ contains
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
 
         end do
-        !!$omp end parallel do
+        !$omp end parallel do
 
     end subroutine liouville_propagator
 
@@ -423,6 +426,7 @@ contains
         end do
 
         ! Calculate T2 relaxation matrix using circular shift of spin matrices
+        relax_values_t2 = 0
         do count = 2, sizeH
             relax_values_t2(count) = &
                 ((abs(spin2_s_z_t(count, count) - spin2_s_z_t(count - 1, count - 1))) ** 2._wp) * (1._wp / t2_elec) + &
