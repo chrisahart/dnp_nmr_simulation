@@ -167,24 +167,14 @@ def hyperfine(hyperfine_angles, time):
     return hyperfine_zz, hyperfine_zx
 
 
-# def kron_rmat_eye(A, N):  # Simulates np.kron(A, np.eye(N))
-# 
-#     m, n = A.shape
-#     out = np.zeros((m, N, n, N), dtype=A.dtype)
-#     r = np.arange(N)
-#     out[:, r, :, r] = A
-#     out.shape = (m * N, n * N)
-#     return out
-
-
 def kron_rmat_eye(a):
     """ Calculates np.kron(a, np.eye(a.shape[1]))
     """
 
     n = a.shape[0]
     out = np.zeros((n, n, n, n), dtype=a.dtype)
-    r = np.arange(n)
-    out[:, r, :, r] = a
+    for i in range(0, n):
+        out[:, i, :, i] = a
     out.shape = (n * n, n * n)
 
     return out
@@ -196,21 +186,8 @@ def kron_eye_rmat(a):
 
     n = a.shape[0]
     out = np.zeros((n, n, n, n), dtype=a.dtype)
-    r = np.arange(n)
-    out[r, :, r, :] = a
+    for i in range(0, n):
+        out[i, :, i, :] = a
     out.shape = (n * n, n * n)
 
     return out
-
-
-# def kron_eye_rmat(b, a):
-#     """ Calculates np.kron(np.eye(b), a)
-#     """
-#
-#     m, n = a.shape
-#     out = np.zeros((b, m, b, n), dtype=a.dtype)
-#     r = np.arange(b)
-#     out[r, :, r, :] = a
-#     out.shape = (m * b, n * b)
-#
-#     return out

@@ -116,12 +116,14 @@ contains
         spin_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 spin matrices constructed using Kronecker products
-        !spin2_s_z = kron_real(spin_z, identity_size2)
-        spin2_s_z = kron_real(spin_z, eye(size(spin_z, 1)))
-        !spin2_s_z = kron_rmat_eye(spin_z)
+        !spin2_s_z = kron_real(spin_z, eye(2))
+        !spin2_i_x = kron_real(eye(2), spin_x)
+        !spin2_i_z = kron_real(eye(2), spin_z)
 
-        spin2_i_x = kron_real(identity_size2, spin_x)
-        spin2_i_z = kron_real(identity_size2, spin_z)
+        ! 4x4 spin matrices constructed using Kronecker products
+        spin2_s_z = kron_rmat_eye(spin_z)
+        spin2_i_x = kron_eye_rmat(spin_x)
+        spin2_i_z = kron_eye_rmat(spin_z)
 
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)

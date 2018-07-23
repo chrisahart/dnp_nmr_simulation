@@ -6,25 +6,48 @@ module functions
 contains
 
     function kron_rmat_eye(A) result(B)
-        ! Calculates kron_real(A, eye(size(A, 1)))
+        ! Calculates np.kron(A, np.eye(a.shape[1]))
         ! Independent processes so number of OMP threads can take any value
 
         use iso_fortran_env
         implicit none
 
         integer, parameter :: wp = selected_real_kind(15, 307)
-        integer, intent(in) :: A(:, :)
-        integer count
+        real(wp), intent(in) :: A(:, :)
         real(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
-        real(wp) :: B(size(A, 1) * 2, size(A, 1) * 2)
-        !real(wp) :: r(size(A, 1)) = [(count, count = 1, size(A, 1), 1)]
+        real(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        integer count
 
         temp = 0
+        do count = 1, size(A, 1)
+            temp(count, :, count, :) = A
+        end do
 
-        !temp(:, r, :, r) = a
         B = reshape(temp, [4, 4])
 
     end function kron_rmat_eye
+
+    function kron_eye_rmat(A) result(B)
+        ! Calculates np.kron(np.eye(a.shape[1]), A)
+        ! Independent processes so number of OMP threads can take any value
+
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        real(wp), intent(in) :: A(:, :)
+        real(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
+        real(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        integer count
+
+        temp = 0
+        do count = 1, size(A, 1)
+            temp(:, count, :, count) = A
+        end do
+
+        B = reshape(temp, [4, 4])
+
+    end function kron_eye_rmat
 
     function eye(A) result(B)
         ! Creates A x A identit matrix
