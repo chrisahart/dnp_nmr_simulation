@@ -50,7 +50,7 @@ program solid_effect_main
     allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num), pol_iz_final(size(microwave_amplitude)))
 
     ! Manually set number of OMP threads
-    call omp_set_num_threads(8)
+    call omp_set_num_threads(1)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()

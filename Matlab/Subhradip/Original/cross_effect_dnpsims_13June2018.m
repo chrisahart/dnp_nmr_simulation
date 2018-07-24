@@ -3,6 +3,11 @@ tic
 clear
 %%%%%% Define spin operators %%%%%%
 spins = [1/2 1/2 1/2];
+spins1=[1/2];
+nsp1 = 1;
+x_mat=sop(spins1,'x');
+y_mat=sop(spins1,'y');
+z_mat=sop(spins1,'z');
 nsp = length(spins);
 S1z=sop(spins,'zee');
 S2z=sop(spins,'eze');
@@ -195,18 +200,24 @@ for ii=1:nsteps
     LD=kron(D,D);%-kron(eye(4),D.');
     LDinv=kron(Dinv,Dinv);%-kron(eye(4),Dinv.');
     Ltot=Lhamilt+1*1i*((Rtot));
-    prop(:,:,ii)=LD*expm(-1i*Ltot*trstep)*LDinv;
+    prop(:,:,ii)=(LD*expm(-1i*Ltot*trstep)*LDinv);
     
-%     t=expm(-1i*Ltot*trstep);
-%     tic
-%     for test=1:1E4
-%         %t=expm(-1i*Ltot*trstep);
-%         %LD=kron(D,D);
-%         %Lhamilt=kron((hamilt),eye(8));
-%         %S1zt=Dinv*S1z*D;
-%         prop(:,:,ii)=LD*t;
-%     end
-%     toc
+    t=expm(-1i*Ltot*trstep);
+    mat1=real(LD);
+    mat2=real(t);
+    mat3=real(LDinv);
+    tic
+    for test=1:1E4
+        %t=expm(-1i*Ltot*trstep);
+        %LD=kron(D,D);
+        %Lhamilt=kron((hamilt),eye(8));
+        %S1zt=Dinv*S1z*D;
+        %prop(:,:,ii)=LD*t;
+        %prop(:,:,ii)=LD*test*LDinv;
+        %temp = x_mat * z_mat;
+        temp = mat1 * mat2 * mat3;
+    end
+    toc
     
 end
 

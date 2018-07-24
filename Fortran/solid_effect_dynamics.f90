@@ -180,7 +180,7 @@ contains
 
         integer :: count, count2
         real(wp), dimension(2, 2) :: spin_x, spin_z
-        complex(wp), dimension(2, 2) :: spin_y
+        complex(wp), dimension(2, 2) :: spin_y, test2, eye_complex
         real(wp) :: p_e, p_n, gnp, gnm, gep, gem, boltzmann_elec, boltzmann_nuc
 
         real(wp), dimension(sizeL, sizeL) :: hamiltonian_liouville, relax_mat
@@ -191,7 +191,7 @@ contains
 
         complex(wp), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
         complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
-        complex(wp), dimension(sizeH, sizeH) :: spin2_s_y, spin2_i_y
+        complex(wp), dimension(sizeH, sizeH) :: spin2_s_y, spin2_i_y, test
 
         ! Pauli matrices
         spin_x = 0.5 * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin_x), order = [2, 1]))
@@ -227,12 +227,22 @@ contains
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
 
+        eye_complex = eye(2)
+
         !$omp parallel do default(private) &
-        !$omp& shared(eig_vector, eig_vector_inv, sizeL, sizeH) &
+        !$omp& shared(eig_vector, eig_vector_inv, sizeL, sizeH, spin_y, test2, eye_complex) &
         !$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t1_elec, t2_elec, t2_nuc) &
         !$omp& shared(t1_nuc, spin2_s_x, spin2_i_x, boltzmann_elec, boltzmann_nuc) &
         !$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
         do count = 1, time_num
+
+!            test2 = matmul(spin_y, eye_complex)
+!            write(6, *) 'matmul test2', test2
+!
+!            test2 = cmatmul_blas(spin_y, eye_complex)
+!            write(6, *) 'cmatmul_blas test2', test2
+!
+!            call sleep(50)
 
             ! Transform microwave Hamiltonian into time dependent basis
             microwave_hamiltonian = matmul(eig_vector_inv(count, :, :), matmul(microwave_hamiltonian_init, &

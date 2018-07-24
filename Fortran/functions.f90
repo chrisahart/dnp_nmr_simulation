@@ -4,6 +4,59 @@ module functions
 
 contains
 
+    function rmatmul_blas(A, B) result(AB)
+        ! Calculates matrix multiplication of real square matrices A and B using BLAS
+
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        real(wp), intent(in) :: A(:, :), B(:, :)
+        real(wp) :: AB(size(A, 1), size(A, 2)), alpha, beta
+        integer :: n
+
+        n = size(A, 1)
+        alpha = 1.0_wp
+        beta = 0.0_wp
+
+        call dgemm("N", "N", n, n, n, alpha, A, n, B, n, beta, AB, n)
+
+    end function rmatmul_blas
+
+    function cmatmul_blas(A, B) result(AB)
+        ! Calculates matrix multiplication of complex square matrices A and B using BLAS
+
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307)
+        complex(wp), parameter :: i = (0, 1._wp)
+        complex(wp), intent(in) :: A(:, :), B(:, :)
+
+        complex(wp) :: AB(size(A, 1), size(A, 2)), AB_complex2(size(A, 1), size(A, 2))
+        real(wp), dimension(size(A, 1), size(A, 2)) :: Ar, Ac, Br, Bc
+        real(wp), dimension(size(A, 1), size(A, 2)) :: ArBr, AcBr, ArBc, AcBc
+        real(wp) :: alpha, beta
+        integer :: n
+
+        n = size(A, 1)
+        alpha = 1.0_wp
+        beta = 0.0_wp
+
+        Ar = real(A)
+        Ac = aimag(A)
+        Br = real(B)
+        Bc = aimag(B)
+
+        call dgemm("N", "N", n, n, n, alpha, Ar, n, Br, n, beta, ArBr, n)
+        call dgemm("N", "N", n, n, n, alpha, Ac, n, Br, n, beta, AcBr, n)
+        call dgemm("N", "N", n, n, n, alpha, Ar, n, Bc, n, beta, ArBc, n)
+        call dgemm("N", "N", n, n, n, alpha, Ac, n, Bc, n, beta, AcBc, n)
+
+        AB = (1 * ArBr ) + (i * AcBr) + (i * ArBc) + (-1 * i * AcBc)
+
+    end function cmatmul_blas
+
     function kron_rmat_eye(mat, val) result(B)
         ! Calculates np.kron(mat, np.eye(val)) of real square matrix mat
         ! Independent processes so number of OMP threads can take any value
