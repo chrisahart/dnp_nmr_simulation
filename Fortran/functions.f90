@@ -4,91 +4,99 @@ module functions
 
 contains
 
-    function kron_rmat_eye(A) result(B)
-        ! Calculates np.kron(A, np.eye(a.shape[1])) for real matrix A
+    function kron_rmat_eye(mat, val) result(B)
+        ! Calculates np.kron(mat, np.eye(val)) of real square matrix mat
         ! Independent processes so number of OMP threads can take any value
 
         use iso_fortran_env
         implicit none
 
         integer, parameter :: wp = selected_real_kind(15, 307)
-        real(wp), intent(in) :: A(:, :)
-        real(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
-        real(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        real(wp), intent(in) :: mat(:, :)
+        integer, intent(in) :: val
+
+        real(wp) :: temp(val, size(mat, 1), val, size(mat, 1))
+        real(wp) :: B(size(mat, 1) * val, size(mat, 1) * val)
         integer count
 
         temp = 0
-        do count = 1, size(A, 1)
-            temp(count, :, count, :) = A
+        do count = 1, val
+            temp(count, :, count, :) = mat
         end do
 
-        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
+        B = reshape(temp, [size(mat, 1) * val, size(mat, 1) * val])
 
     end function kron_rmat_eye
 
-    function kron_cmat_eye(A) result(B)
-        ! Calculates np.kron(A, np.eye(a.shape[1])) for complex matrix A
+    function kron_cmat_eye(mat, val) result(B)
+        ! Calculates np.kron(mat, np.eye(val)) of real square matrix mat
         ! Independent processes so number of OMP threads can take any value
 
         use iso_fortran_env
         implicit none
 
         integer, parameter :: wp = selected_real_kind(15, 307)
-        complex(wp), intent(in) :: A(:, :)
-        complex(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
-        complex(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        complex(wp), intent(in) :: mat(:, :)
+        integer, intent(in) :: val
+
+        complex(wp) :: temp(val, size(mat, 1), val, size(mat, 1))
+        complex(wp) :: B(size(mat, 1) * val, size(mat, 1) * val)
         integer count
 
         temp = 0
-        do count = 1, size(A, 1)
-            temp(count, :, count, :) = A
+        do count = 1, val
+            temp(count, :, count, :) = mat
         end do
 
-        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
+        B = reshape(temp, [size(mat, 1) * val, size(mat, 1) * val])
 
     end function kron_cmat_eye
 
-    function kron_eye_rmat(A) result(B)
-        ! Calculates np.kron(np.eye(a.shape[1]), A)
+    function kron_eye_rmat(val, mat) result(B)
+        ! Calculates np.kron(np.eye(val), mat) of real square matrix mat
         ! Independent processes so number of OMP threads can take any value
 
         use iso_fortran_env
         implicit none
 
         integer, parameter :: wp = selected_real_kind(15, 307)
-        real(wp), intent(in) :: A(:, :)
-        real(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
-        real(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        real(wp), intent(in) :: mat(:, :)
+        integer, intent(in) :: val
+
+        real(wp) :: temp(size(mat, 1), val, size(mat, 1), val)
+        real(wp) :: B(size(mat, 1) * val, size(mat, 1) * val)
         integer count
 
         temp = 0
-        do count = 1, size(A, 1)
-            temp(:, count, :, count) = A
+        do count = 1, val
+            temp(:, count, :, count) = mat
         end do
 
-        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
+        B = reshape(temp, [size(mat, 1) * val, size(mat, 1) * val])
 
     end function kron_eye_rmat
 
-    function kron_eye_cmat(A) result(B)
-        ! Calculates np.kron(np.eye(a.shape[1]), A)
+    function kron_eye_cmat(val, mat) result(B)
+        ! Calculates np.kron(np.eye(val), mat) of real square matrix mat
         ! Independent processes so number of OMP threads can take any value
 
         use iso_fortran_env
         implicit none
 
         integer, parameter :: wp = selected_real_kind(15, 307)
-        complex(wp), intent(in) :: A(:, :)
-        complex(wp) :: temp(size(A, 1), size(A, 1), size(A, 1), size(A, 1))
-        complex(wp) :: B(size(A, 1) * size(A, 1), size(A, 1) * size(A, 1))
+        complex(wp), intent(in) :: mat(:, :)
+        integer, intent(in) :: val
+
+        complex(wp) :: temp(size(mat, 1), val, size(mat, 1), val)
+        complex(wp) :: B(size(mat, 1) * val, size(mat, 1) * val)
         integer count
 
         temp = 0
-        do count = 1, size(A, 1)
-            temp(:, count, :, count) = A
+        do count = 1, val
+            temp(:, count, :, count) = mat
         end do
 
-        B = reshape(temp, [size(A, 1) * size(A, 1), size(A, 1) * size(A, 1)])
+        B = reshape(temp, [size(mat, 1) * val, size(mat, 1) * val])
 
     end function kron_eye_cmat
 
@@ -296,7 +304,7 @@ contains
         complex(wp), dimension(:, :), intent(in) :: A
         complex(wp), dimension(size(A, 1), size(A, 2)) :: B
 
-        integer, parameter :: ideg = 4 ! Pade approximation, 6 is reccomended but 2 appears to be stable
+        integer, parameter :: ideg = 2 ! Pade approximation, 6 is reccomended but 2 appears to be stable
         complex(wp) :: t = 1._wp
         complex(wp), dimension(4 * size(A, 1) * size(A, 2) + ideg + 1) :: wsp
         integer, dimension(size(A, 1)) :: iwsp

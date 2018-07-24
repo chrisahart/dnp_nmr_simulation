@@ -232,20 +232,20 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
 
     # Transform spin matrices into time dependent Liouville space basis
     spin2_i_p_tl = np.kron(spin2_i_p_t, np.transpose(spin2_i_m_t)) - identity_mat + 0.5 * (
-        fn.kron_rmat_eye(spin2_i_z_t) +
-        fn.kron_eye_rmat(np.transpose(spin2_i_z_t)))
+        fn.kron_rmat_eye(spin2_i_z_t, 4) +
+        fn.kron_eye_rmat(4, np.transpose(spin2_i_z_t)))
 
     spin2_i_m_tl = np.kron(spin2_i_m_t, np.transpose(spin2_i_p_t)) - identity_mat - 0.5 * (
-        fn.kron_rmat_eye(spin2_i_z_t) +
-        fn.kron_eye_rmat(np.transpose(spin2_i_z_t)))
+        fn.kron_rmat_eye(spin2_i_z_t, 4) +
+        fn.kron_eye_rmat(4, np.transpose(spin2_i_z_t)))
 
     spin2_s_p_tl = np.kron(spin2_s_p_t, np.transpose(spin2_s_m_t)) - identity_mat + 0.5 * (
-        fn.kron_rmat_eye(spin2_s_z_t) +
-        fn.kron_eye_rmat(np.transpose(spin2_s_z_t)))
+        fn.kron_rmat_eye(spin2_s_z_t, 4) +
+        fn.kron_eye_rmat(4, np.transpose(spin2_s_z_t)))
 
     spin2_s_m_tl = np.kron(spin2_s_m_t, np.transpose(spin2_s_p_t)) - identity_mat - 0.5 * (
-        fn.kron_rmat_eye(spin2_s_z_t) +
-        fn.kron_eye_rmat(np.transpose(spin2_s_z_t)))
+        fn.kron_rmat_eye(spin2_s_z_t, 4) +
+        fn.kron_eye_rmat(4, np.transpose(spin2_s_z_t)))
 
     # Calculate relaxation matrices
     relax_t2_elec = (1 / param.t2_elec) * (np.kron(spin2_s_z_t, np.transpose(spin2_s_z_t)) - 0.5 * identity_mat)

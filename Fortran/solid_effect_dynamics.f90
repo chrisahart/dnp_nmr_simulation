@@ -113,9 +113,9 @@ contains
         spin_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 spin matrices constructed using Kronecker products
-        spin2_s_z = kron_rmat_eye(spin_z)
-        spin2_i_x = kron_eye_rmat(spin_x)
-        spin2_i_z = kron_eye_rmat(spin_z)
+        spin2_s_z = kron_rmat_eye(spin_z, 2)
+        spin2_i_x = kron_eye_rmat(2, spin_x)
+        spin2_i_z = kron_eye_rmat(2, spin_z)
 
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_se, c0, c1, c2, c3, c4)
@@ -199,16 +199,16 @@ contains
         spin_z = 0.5 * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
 
         ! 4x4 matrices for S operator
-        spin2_s_x = kron_rmat_eye(spin_x)
-        spin2_s_y = kron_cmat_eye(spin_y)
-        spin2_s_z = kron_rmat_eye(spin_z)
+        spin2_s_x = kron_rmat_eye(spin_x, 2)
+        spin2_s_y = kron_cmat_eye(spin_y, 2)
+        spin2_s_z = kron_rmat_eye(spin_z, 2)
         spin2_s_p = spin2_s_x + real(i * spin2_s_y)
         spin2_s_m = spin2_s_x - real(i * spin2_s_y)
 
         ! 4x4 matrices for I operator
-        spin2_i_x = kron_eye_rmat(spin_x)
-        spin2_i_y = kron_eye_cmat(spin_y)
-        spin2_i_z = kron_eye_rmat(spin_z)
+        spin2_i_x = kron_eye_rmat(2, spin_x)
+        spin2_i_y = kron_eye_cmat(2, spin_y)
+        spin2_i_z = kron_eye_rmat(2, spin_z)
         spin2_i_p = spin2_i_x + real(i * spin2_i_y)
         spin2_i_m = spin2_i_x - real(i * spin2_i_y)
 
@@ -248,7 +248,8 @@ contains
             total_hamiltonian = energy_mat + microwave_hamiltonian
 
             ! Transform Hilbert space Hamiltonian into Liouville space
-            hamiltonian_liouville = kron_rmat_eye(total_hamiltonian) - kron_eye_rmat(transpose(total_hamiltonian))
+            hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, sizeH) - &
+                    kron_eye_rmat(sizeH, transpose(total_hamiltonian))
 
             ! Calculate Louville space relaxation matrix using origonal theory
             call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), &
@@ -310,16 +311,16 @@ contains
 
         ! Transform spin matrices into time dependent Liouville space basis
         spin2_i_p_tl = kron_real(spin2_i_p_t, transpose(spin2_i_m_t)) - identity_mat + 0.5_wp * (&
-                kron_rmat_eye(spin2_i_z_t) + kron_eye_rmat(transpose(spin2_i_z_t)))
+                kron_rmat_eye(spin2_i_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin2_i_z_t)))
 
         spin2_i_m_tl = kron_real(spin2_i_m_t, transpose(spin2_i_p_t)) - identity_mat - 0.5_wp * (&
-                kron_rmat_eye(spin2_i_z_t) + kron_eye_rmat(transpose(spin2_i_z_t)))
+                kron_rmat_eye(spin2_i_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin2_i_z_t)))
 
         spin2_s_p_tl = kron_real(spin2_s_p_t, transpose(spin2_s_m_t)) - identity_mat + 0.5_wp * (&
-                kron_rmat_eye(spin2_s_z_t) + kron_eye_rmat(transpose(spin2_s_z_t)))
+                kron_rmat_eye(spin2_s_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin2_s_z_t)))
 
         spin2_s_m_tl = kron_real(spin2_s_m_t, transpose(spin2_s_p_t)) - identity_mat - 0.5_wp * (&
-                kron_rmat_eye(spin2_s_z_t) + kron_eye_rmat(transpose(spin2_s_z_t)))
+                kron_rmat_eye(spin2_s_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin2_s_z_t)))
 
         ! Calculate time dependent Liouville space relaxation matrix
         relax_t2_elec = (1._wp / t2_elec) * (kron_real(spin2_s_z_t, transpose(spin2_s_z_t)) - 0.5_wp * identity_mat)
@@ -451,8 +452,8 @@ contains
 
         ! Calculate matrices specific to polarisation calculation
         spin_z = 0.5_wp * (reshape([1._wp, 0._wp,  0._wp, -1._wp], shape(spin_z), order = [2, 1]))
-        spin2_s_z = kron_cmat_eye(spin_z)
-        spin2_i_z = kron_eye_cmat(spin_z)
+        spin2_s_z = kron_cmat_eye(spin_z, 2)
+        spin2_i_z = kron_eye_cmat(2, spin_z)
 
         density_mat_time = density_mat
         propagator_strobe = eye(16)
@@ -508,8 +509,8 @@ contains
 
         ! Calculate matrices specific to polarisation calculation
         spin_z = 0.5_wp * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin_z), order = [2, 1]))
-        spin2_s_z = kron_cmat_eye(spin_z)
-        spin2_i_z = kron_eye_cmat(spin_z)
+        spin2_s_z = kron_cmat_eye(spin_z, 2)
+        spin2_i_z = kron_eye_cmat(2, spin_z)
 
         density_mat_time = density_mat
 

@@ -17,7 +17,7 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
     # Pre-allocate propagator
     propagator = np.zeros((int(param.time_step_num), 4 ** num_spins, 4 ** num_spins), dtype=np.complex)
 
-    # Calculate variables for origonal Liouville space relaxation
+    # Calculate variables for original Liouville space relaxation
     p_e = np.tanh(0.5 * param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature)))
     p_n = np.tanh(0.5 * param.freq_nuclear_1 * (sc.Planck / (sc.Boltzmann * param.temperature)))
     gnp = 0.5 * (1 - p_n) * (1 / (1 * param.t1_nuc))
@@ -29,6 +29,8 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
     boltzmann_elec = param.electron_frequency * (sc.Planck / (sc.Boltzmann * param.temperature))
     boltzmann_nuc = param.freq_nuclear_1 * (sc.Planck / (sc.Boltzmann * param.temperature))
 
+    spin3_s1_z = spin_all[1]
+
     for count in range(0, int(param.time_step_num)):
 
         # Transform microwave Hamiltonian into time dependent basis
@@ -38,9 +40,23 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
         # Calculate total Hamiltonian
         total_hamiltonian = np.diag(energies[count]) + microwave_hamiltonian
 
+        # start = time.time()
+        # for bench in range(0, int(1E6)):
+        #     #test = np.matmul(eigvectors_inv[count], np.matmul(spin3_s1_z, eigvectors[count]))
+        #     # eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
+        #     hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, 2 ** num_spins)
+        # print('kron_rmat_eye', (time.time() - start))
+        #
+        # start = time.time()
+        # for bench in range(0, int(1E6)):
+        #     # test = np.matmul(eigvectors_inv[count], np.matmul(spin3_s1_z, eigvectors[count]))
+        #     # eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
+        #     hamiltonian_liouville = np.kron(total_hamiltonian, np.eye(4))
+        # print('np.kron', (time.time() - start))
+
         # Transform Hilbert space Hamiltonian into Liouville space
-        hamiltonian_liouville = kron_rmat_eye(total_hamiltonian) - \
-                                kron_eye_rmat(np.transpose(total_hamiltonian))
+        hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, 2 ** num_spins) - \
+                                kron_eye_rmat(2 ** num_spins, np.transpose(total_hamiltonian))
 
         # Calculate time dependent Liouville space relaxation matrix
         relax_mat = calculate_relaxation_mat(eigvectors[count], eigvectors_inv[count], gnp, gnm, gep, gem, spin_all)
@@ -71,6 +87,15 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
         propagator[count, :] = np.matmul(eigvectors_inv_liouville,
                                          np.matmul(la.expm(-1j * liouvillian * param.time_step),
                                                    eigvectors_liouville))
+
+        #test = la.expm(-1j * liouvillian * param.time_step)
+        start = time.time()
+        for bench in range(0, int(1E6)):
+            test = np.matmul(eigvectors_inv[count], np.matmul(spin3_s1_z, eigvectors[count]))
+            #propagator[count, :] = np.matmul(eigvectors_inv_liouville, np.matmul(test, eigvectors_liouville))
+            # eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
+            #hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, 2 ** num_spins)
+        print('la.expm', (time.time() - start))
 
     return propagator
 
@@ -167,27 +192,27 @@ def hyperfine(hyperfine_angles, time):
     return hyperfine_zz, hyperfine_zx
 
 
-def kron_rmat_eye(a):
-    """ Calculates np.kron(a, np.eye(a.shape[1]))
+def kron_rmat_eye(mat, val):
+    """ Calculates np.kron(mat, np.eye(val)) of square matrix mat
     """
 
-    n = a.shape[0]
-    out = np.zeros((n, n, n, n), dtype=a.dtype)
-    for i in range(0, n):
-        out[:, i, :, i] = a
-    out.shape = (n * n, n * n)
+    n = mat.shape[0]
+    out = np.zeros((n, val, n, val), dtype=mat.dtype)
+    for i in range(0, val):
+        out[:, i, :, i] = mat
+    out.shape = (n * val, n * val)
 
     return out
 
 
-def kron_eye_rmat(a):
-    """ Calculates np.kron(a, np.eye(a.shape[1]))
+def kron_eye_rmat(val, mat):
+    """ Calculates np.kron(np.eye(val), mat) of square matrix mat
     """
 
-    n = a.shape[0]
-    out = np.zeros((n, n, n, n), dtype=a.dtype)
-    for i in range(0, n):
-        out[i, :, i, :] = a
-    out.shape = (n * n, n * n)
+    n = mat.shape[0]
+    out = np.zeros((val, n, val, n), dtype=mat.dtype)
+    for i in range(0, val):
+        out[i, :, i, :] = mat
+    out.shape = (n * val, n * val)
 
     return out

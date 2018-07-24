@@ -196,6 +196,18 @@ for ii=1:nsteps
     LDinv=kron(Dinv,Dinv);%-kron(eye(4),Dinv.');
     Ltot=Lhamilt+1*1i*((Rtot));
     prop(:,:,ii)=LD*expm(-1i*Ltot*trstep)*LDinv;
+    
+%     t=expm(-1i*Ltot*trstep);
+%     tic
+%     for test=1:1E4
+%         %t=expm(-1i*Ltot*trstep);
+%         %LD=kron(D,D);
+%         %Lhamilt=kron((hamilt),eye(8));
+%         %S1zt=Dinv*S1z*D;
+%         prop(:,:,ii)=LD*t;
+%     end
+%     toc
+    
 end
 
 prop_accu=eye(64);

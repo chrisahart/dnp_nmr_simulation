@@ -257,50 +257,23 @@ def calculate_relaxation_mat(eigvectors, eigvectors_inv, gnp, gnm, gep, gem, spi
         fn.basis_transform(eigvectors, eigvectors_inv, spin3_all)
 
     # Transform spin matrices into time dependent Liouville space basis
-    # spin3_i_p_tl = np.kron(spin3_i_p_t, np.transpose(spin3_i_m_t)) - identity_mat + 0.5 * (
-    #     fn.kron_a_n(spin3_i_z_t, 2 ** 3) + fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
-    #
-    # spin3_i_m_tl = np.kron(spin3_i_m_t, np.transpose(spin3_i_p_t)) - identity_mat - 0.5 * (
-    #     fn.kron_a_n(spin3_i_z_t, 2 ** 3) + fn.kron_n_a(2 ** 3, np.transpose(spin3_i_z_t)))
-    #
-    # spin3_s1_p_tl = np.kron(spin3_s1_p_t, np.transpose(spin3_s1_m_t)) - identity_mat + 0.5 * (
-    #     fn.kron_a_n(spin3_s1_z_t, 2 ** 3) +
-    #     fn.kron_n_a(2 ** 3, np.transpose(spin3_s1_z_t)))
-    #
-    # spin3_s1_m_tl = np.kron(spin3_s1_m_t, np.transpose(spin3_s1_p_t)) - identity_mat - 0.5 * (
-    #     fn.kron_a_n(spin3_s1_z_t, 2 ** 3) +
-    #     fn.kron_n_a(2 ** 3, np.transpose(spin3_s1_z_t)))
-    #
-    # spin3_s2_p_tl = np.kron(spin3_s2_p_t, np.transpose(spin3_s2_m_t)) - identity_mat + 0.5 * (
-    #     fn.kron_a_n(spin3_s2_z_t, 2 ** 3) +
-    #     fn.kron_n_a(2 ** 3, np.transpose(spin3_s2_z_t)))
-    #
-    # spin3_s2_m_tl = np.kron(spin3_s2_m_t, np.transpose(spin3_s2_p_t)) - identity_mat - 0.5 * (
-    #     fn.kron_a_n(spin3_s2_z_t, 2 ** 3) +
-    #     fn.kron_n_a(2 ** 3, np.transpose(spin3_s2_z_t)))
-
-    # Transform spin matrices into time dependent Liouville space basis
     spin3_i_p_tl = np.kron(spin3_i_p_t, np.transpose(spin3_i_m_t)) - identity_mat + 0.5 * (
-            np.kron(spin3_i_z_t, np.eye(8)) + np.kron(np.eye(8), np.transpose(spin3_i_z_t)))
+            fn.kron_rmat_eye(spin3_i_z_t, 8) + fn.kron_eye_rmat(8, np.transpose(spin3_i_z_t)))
 
     spin3_i_m_tl = np.kron(spin3_i_m_t, np.transpose(spin3_i_p_t)) - identity_mat - 0.5 * (
-            np.kron(spin3_i_z_t, np.eye(8)) + np.kron(np.eye(8), np.transpose(spin3_i_z_t)))
+            fn.kron_rmat_eye(spin3_i_z_t, 8) + fn.kron_eye_rmat(8, np.transpose(spin3_i_z_t)))
 
     spin3_s1_p_tl = np.kron(spin3_s1_p_t, np.transpose(spin3_s1_m_t)) - identity_mat + 0.5 * (
-            np.kron(spin3_s1_z_t, np.eye(8)) +
-            np.kron(np.eye(8), np.transpose(spin3_s1_z_t)))
+            fn.kron_rmat_eye(spin3_s1_z_t, 8) + fn.kron_eye_rmat(8, np.transpose(spin3_s1_z_t)))
 
     spin3_s1_m_tl = np.kron(spin3_s1_m_t, np.transpose(spin3_s1_p_t)) - identity_mat - 0.5 * (
-            np.kron(spin3_s1_z_t, np.eye(8)) +
-            np.kron(np.eye(8), np.transpose(spin3_s1_z_t)))
+            fn.kron_rmat_eye(spin3_s1_z_t, 8) + fn.kron_eye_rmat(8, np.transpose(spin3_s1_z_t)))
 
     spin3_s2_p_tl = np.kron(spin3_s2_p_t, np.transpose(spin3_s2_m_t)) - identity_mat + 0.5 * (
-            np.kron(spin3_s2_z_t, np.eye(8)) +
-            np.kron(np.eye(8), np.transpose(spin3_s2_z_t)))
+            fn.kron_rmat_eye(spin3_s2_z_t, 8) + fn.kron_eye_rmat(8, np.transpose(spin3_s2_z_t)))
 
     spin3_s2_m_tl = np.kron(spin3_s2_m_t, np.transpose(spin3_s2_p_t)) - identity_mat - 0.5 * (
-            np.kron(spin3_s2_z_t, np.eye(8)) +
-            np.kron(np.eye(8), np.transpose(spin3_s2_z_t)))
+            fn.kron_rmat_eye(spin3_s2_z_t, 8) + fn.kron_eye_rmat(8, np.transpose(spin3_s2_z_t)))
 
     # Calculate relaxation matrices
     relax_t2_s1 = (2 / param.t2_elec) * (np.kron(spin3_s1_z_t, np.transpose(spin3_s1_z_t)) - 0.5 * identity_mat)
