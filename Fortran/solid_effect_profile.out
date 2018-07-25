@@ -3,26 +3,34 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  ms/call  ms/call  name    
- 45.45      0.10     0.10   180007     0.00     0.00  __functions_MOD_kron_real
- 18.18      0.14     0.04    10000     0.00     0.01  __solid_effect_dynamics_MOD_calculate_relaxation_mat
-  9.09      0.16     0.02        1    20.00   160.00  __solid_effect_dynamics_MOD_liouville_propagator
-  9.09      0.18     0.02                             hypot
-  4.55      0.19     0.01   260000     0.00     0.00  __functions_MOD_trace_complex
-  4.55      0.20     0.01        1    10.00    19.23  __solid_effect_dynamics_MOD_calculate_polarisation_rotor
-  4.55      0.21     0.01                             __sinl_internal
-  4.55      0.22     0.01                             _mcount_private
-  0.00      0.22     0.00    10000     0.00     0.00  __functions_MOD_expm_complex
-  0.00      0.22     0.00    10000     0.00     0.00  __interactions_MOD_anisotropy
-  0.00      0.22     0.00    10000     0.00     0.00  __interactions_MOD_hyperfine
-  0.00      0.22     0.00        9     0.00     0.00  __functions_MOD_kron_complex
-  0.00      0.22     0.00        5     0.00     0.00  __functions_MOD_eye
-  0.00      0.22     0.00        2     0.00    90.00  __solid_effect_dynamics_MOD_main
-  0.00      0.22     0.00        1     0.00     0.00  __functions_MOD_argsort
-  0.00      0.22     0.00        1     0.00     0.00  __functions_MOD_eig_real
-  0.00      0.22     0.00        1     0.00     0.00  __functions_MOD_inverse_real
-  0.00      0.22     0.00        1     0.00     0.00  __interactions_MOD_anisotropy_coefficients
-  0.00      0.22     0.00        1     0.00     0.00  __solid_effect_dynamics_MOD_calculate_hamiltonian
-  0.00      0.22     0.00        1     0.00     0.77  __solid_effect_dynamics_MOD_calculate_polarisation_sub_rotor
+ 28.33      1.49     1.49       40    37.25    38.40  __solid_effect_dynamics_MOD_calculate_polarisation_rotor
+ 22.05      2.65     1.16  7200280     0.00     0.00  __functions_MOD_kron_real
+ 12.93      3.33     0.68       40    17.00    62.50  __solid_effect_dynamics_MOD_liouville_propagator
+ 10.84      3.90     0.57   400000     0.00     0.00  __solid_effect_dynamics_MOD_calculate_relaxation_mat
+  5.70      4.20     0.30                             zgpadm_
+  4.37      4.43     0.23       41     5.61   106.34  __solid_effect_dynamics_MOD_main
+  3.99      4.64     0.21                             hypot
+  3.42      4.82     0.18                             _mcount_private
+  1.33      4.89     0.07   800200     0.00     0.00  __functions_MOD_eye
+  1.33      4.96     0.07                             __fentry__
+  0.95      5.01     0.05 10400000     0.00     0.00  __functions_MOD_trace_complex
+  0.95      5.06     0.05                             __cosl_internal
+  0.76      5.10     0.04       40     1.00     1.00  __functions_MOD_inverse_real
+  0.76      5.14     0.04                             cabs
+  0.57      5.17     0.03       40     0.75     1.00  __solid_effect_dynamics_MOD_calculate_hamiltonian
+  0.38      5.19     0.02   400000     0.00     0.00  __functions_MOD_expm_complex
+  0.38      5.21     0.02                             __sinl_internal
+  0.19      5.22     0.01   400000     0.00     0.00  __interactions_MOD_hyperfine
+  0.19      5.23     0.01       40     0.25     0.25  __functions_MOD_eig_real
+  0.19      5.24     0.01                             __logl_internal
+  0.19      5.25     0.01                             free
+  0.19      5.26     0.01                             memset
+  0.00      5.26     0.00   400000     0.00     0.00  __interactions_MOD_anisotropy
+  0.00      5.26     0.00       80     0.00     0.00  __functions_MOD_kron_cmat_eye
+  0.00      5.26     0.00       80     0.00     0.00  __functions_MOD_kron_complex
+  0.00      5.26     0.00       80     0.00     0.00  __functions_MOD_kron_eye_cmat
+  0.00      5.26     0.00       40     0.00     0.00  __functions_MOD_argsort
+  0.00      5.26     0.00       40     0.00     0.00  __interactions_MOD_anisotropy_coefficients
 
  %         the percentage of the total running time of the
 time       program used by this function.
@@ -60,105 +68,134 @@ notice and this notice are preserved.
 		     Call graph (explanation follows)
 
 
-granularity: each sample hit covers 4 byte(s) for 4.55% of 0.22 seconds
+granularity: each sample hit covers 4 byte(s) for 0.19% of 5.26 seconds
 
 index % time    self  children    called     name
-                0.00    0.09       1/2           MAIN__ [5]
-                0.00    0.09       1/2           main [6]
-[1]     81.8    0.00    0.18       2         __solid_effect_dynamics_MOD_main [1]
-                0.02    0.14       1/1           __solid_effect_dynamics_MOD_liouville_propagator [2]
-                0.01    0.01       1/1           __solid_effect_dynamics_MOD_calculate_polarisation_rotor [8]
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_calculate_polarisation_sub_rotor [12]
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-                0.00    0.00       1/1           __functions_MOD_eig_real [167]
-                0.00    0.00       1/1           __functions_MOD_argsort [166]
-                0.00    0.00       1/1           __functions_MOD_inverse_real [168]
------------------------------------------------
-                0.02    0.14       1/1           __solid_effect_dynamics_MOD_main [1]
-[2]     72.7    0.02    0.14       1         __solid_effect_dynamics_MOD_liouville_propagator [2]
-                0.04    0.08   10000/10000       __solid_effect_dynamics_MOD_calculate_relaxation_mat [3]
-                0.02    0.00   40004/180007      __functions_MOD_kron_real [4]
-                0.00    0.00   10000/10000       __functions_MOD_expm_complex [161]
-                0.00    0.00       4/5           __functions_MOD_eye [165]
-                0.00    0.00       2/9           __functions_MOD_kron_complex [164]
------------------------------------------------
-                0.04    0.08   10000/10000       __solid_effect_dynamics_MOD_liouville_propagator [2]
-[3]     53.5    0.04    0.08   10000         __solid_effect_dynamics_MOD_calculate_relaxation_mat [3]
-                0.08    0.00  140000/180007      __functions_MOD_kron_real [4]
------------------------------------------------
-                0.00    0.00       3/180007      __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-                0.02    0.00   40004/180007      __solid_effect_dynamics_MOD_liouville_propagator [2]
-                0.08    0.00  140000/180007      __solid_effect_dynamics_MOD_calculate_relaxation_mat [3]
-[4]     45.5    0.10    0.00  180007         __functions_MOD_kron_real [4]
+                0.01    0.10       1/41          main [10]
+                0.22    4.03      40/41          MAIN__ [2]
+[1]     82.9    0.23    4.13      41         __solid_effect_dynamics_MOD_main [1]
+                0.68    1.82      40/40          __solid_effect_dynamics_MOD_liouville_propagator [3]
+                1.49    0.05      40/40          __solid_effect_dynamics_MOD_calculate_polarisation_rotor [5]
+                0.03    0.01      40/40          __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.04    0.00      40/40          __functions_MOD_inverse_real [17]
+                0.01    0.00      40/40          __functions_MOD_eig_real [23]
+                0.00    0.00  800000/10400000     __functions_MOD_trace_complex [13]
+                0.00    0.00      40/40          __functions_MOD_argsort [172]
+                0.00    0.00      40/80          __functions_MOD_kron_cmat_eye [169]
+                0.00    0.00      40/80          __functions_MOD_kron_eye_cmat [171]
 -----------------------------------------------
                                                  <spontaneous>
-[5]     40.9    0.00    0.09                 MAIN__ [5]
-                0.00    0.09       1/2           __solid_effect_dynamics_MOD_main [1]
+[2]     80.9    0.00    4.25                 MAIN__ [2]
+                0.22    4.03      40/41          __solid_effect_dynamics_MOD_main [1]
+-----------------------------------------------
+                0.68    1.82      40/40          __solid_effect_dynamics_MOD_main [1]
+[3]     47.5    0.68    1.82      40         __solid_effect_dynamics_MOD_liouville_propagator [3]
+                0.57    0.97  400000/400000      __solid_effect_dynamics_MOD_calculate_relaxation_mat [4]
+                0.26    0.00 1600160/7200280     __functions_MOD_kron_real [6]
+                0.02    0.00  400000/400000      __functions_MOD_expm_complex [18]
+                0.00    0.00     120/800200      __functions_MOD_eye [11]
+                0.00    0.00      80/80          __functions_MOD_kron_complex [170]
+-----------------------------------------------
+                0.57    0.97  400000/400000      __solid_effect_dynamics_MOD_liouville_propagator [3]
+[4]     29.3    0.57    0.97  400000         __solid_effect_dynamics_MOD_calculate_relaxation_mat [4]
+                0.90    0.00 5600000/7200280     __functions_MOD_kron_real [6]
+                0.07    0.00  800000/800200      __functions_MOD_eye [11]
+-----------------------------------------------
+                1.49    0.05      40/40          __solid_effect_dynamics_MOD_main [1]
+[5]     29.2    1.49    0.05      40         __solid_effect_dynamics_MOD_calculate_polarisation_rotor [5]
+                0.05    0.00 9600000/10400000     __functions_MOD_trace_complex [13]
+                0.00    0.00      40/800200      __functions_MOD_eye [11]
+                0.00    0.00      40/80          __functions_MOD_kron_cmat_eye [169]
+                0.00    0.00      40/80          __functions_MOD_kron_eye_cmat [171]
+-----------------------------------------------
+                0.00    0.00     120/7200280     __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.26    0.00 1600160/7200280     __solid_effect_dynamics_MOD_liouville_propagator [3]
+                0.90    0.00 5600000/7200280     __solid_effect_dynamics_MOD_calculate_relaxation_mat [4]
+[6]     22.1    1.16    0.00 7200280         __functions_MOD_kron_real [6]
 -----------------------------------------------
                                                  <spontaneous>
-[6]     40.9    0.00    0.09                 main [6]
-                0.00    0.09       1/2           __solid_effect_dynamics_MOD_main [1]
+[7]      5.7    0.30    0.00                 zgpadm_ [7]
 -----------------------------------------------
                                                  <spontaneous>
-[7]      9.1    0.02    0.00                 hypot [7]
------------------------------------------------
-                0.01    0.01       1/1           __solid_effect_dynamics_MOD_main [1]
-[8]      8.7    0.01    0.01       1         __solid_effect_dynamics_MOD_calculate_polarisation_rotor [8]
-                0.01    0.00  240000/260000      __functions_MOD_trace_complex [9]
-                0.00    0.00       5/9           __functions_MOD_kron_complex [164]
------------------------------------------------
-                0.00    0.00   20000/260000      __solid_effect_dynamics_MOD_calculate_polarisation_sub_rotor [12]
-                0.01    0.00  240000/260000      __solid_effect_dynamics_MOD_calculate_polarisation_rotor [8]
-[9]      4.5    0.01    0.00  260000         __functions_MOD_trace_complex [9]
+[8]      4.0    0.21    0.00                 hypot [8]
 -----------------------------------------------
                                                  <spontaneous>
-[10]     4.5    0.01    0.00                 __sinl_internal [10]
+[9]      3.4    0.18    0.00                 _mcount_private [9]
 -----------------------------------------------
                                                  <spontaneous>
-[11]     4.5    0.01    0.00                 _mcount_private [11]
+[10]     2.0    0.00    0.11                 main [10]
+                0.01    0.10       1/41          __solid_effect_dynamics_MOD_main [1]
 -----------------------------------------------
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_main [1]
-[12]     0.3    0.00    0.00       1         __solid_effect_dynamics_MOD_calculate_polarisation_sub_rotor [12]
-                0.00    0.00   20000/260000      __functions_MOD_trace_complex [9]
-                0.00    0.00       2/9           __functions_MOD_kron_complex [164]
+                0.00    0.00      40/800200      __solid_effect_dynamics_MOD_calculate_polarisation_rotor [5]
+                0.00    0.00      40/800200      __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.00    0.00     120/800200      __solid_effect_dynamics_MOD_liouville_propagator [3]
+                0.07    0.00  800000/800200      __solid_effect_dynamics_MOD_calculate_relaxation_mat [4]
+[11]     1.3    0.07    0.00  800200         __functions_MOD_eye [11]
 -----------------------------------------------
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_main [1]
-[13]     0.0    0.00    0.00       1         __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-                0.00    0.00       3/180007      __functions_MOD_kron_real [4]
-                0.00    0.00   10000/10000       __interactions_MOD_hyperfine [163]
-                0.00    0.00   10000/10000       __interactions_MOD_anisotropy [162]
-                0.00    0.00       1/5           __functions_MOD_eye [165]
-                0.00    0.00       1/1           __interactions_MOD_anisotropy_coefficients [169]
+                                                 <spontaneous>
+[12]     1.3    0.07    0.00                 __fentry__ [12]
 -----------------------------------------------
-                0.00    0.00   10000/10000       __solid_effect_dynamics_MOD_liouville_propagator [2]
-[161]    0.0    0.00    0.00   10000         __functions_MOD_expm_complex [161]
+                0.00    0.00  800000/10400000     __solid_effect_dynamics_MOD_main [1]
+                0.05    0.00 9600000/10400000     __solid_effect_dynamics_MOD_calculate_polarisation_rotor [5]
+[13]     1.0    0.05    0.00 10400000         __functions_MOD_trace_complex [13]
 -----------------------------------------------
-                0.00    0.00   10000/10000       __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-[162]    0.0    0.00    0.00   10000         __interactions_MOD_anisotropy [162]
+                                                 <spontaneous>
+[14]     1.0    0.05    0.00                 __cosl_internal [14]
 -----------------------------------------------
-                0.00    0.00   10000/10000       __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-[163]    0.0    0.00    0.00   10000         __interactions_MOD_hyperfine [163]
+                0.03    0.01      40/40          __solid_effect_dynamics_MOD_main [1]
+[15]     0.8    0.03    0.01      40         __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+                0.01    0.00  400000/400000      __interactions_MOD_hyperfine [22]
+                0.00    0.00     120/7200280     __functions_MOD_kron_real [6]
+                0.00    0.00      40/800200      __functions_MOD_eye [11]
+                0.00    0.00  400000/400000      __interactions_MOD_anisotropy [168]
+                0.00    0.00      40/40          __interactions_MOD_anisotropy_coefficients [173]
 -----------------------------------------------
-                0.00    0.00       2/9           __solid_effect_dynamics_MOD_calculate_polarisation_sub_rotor [12]
-                0.00    0.00       2/9           __solid_effect_dynamics_MOD_liouville_propagator [2]
-                0.00    0.00       5/9           __solid_effect_dynamics_MOD_calculate_polarisation_rotor [8]
-[164]    0.0    0.00    0.00       9         __functions_MOD_kron_complex [164]
+                                                 <spontaneous>
+[16]     0.8    0.04    0.00                 cabs [16]
 -----------------------------------------------
-                0.00    0.00       1/5           __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-                0.00    0.00       4/5           __solid_effect_dynamics_MOD_liouville_propagator [2]
-[165]    0.0    0.00    0.00       5         __functions_MOD_eye [165]
+                0.04    0.00      40/40          __solid_effect_dynamics_MOD_main [1]
+[17]     0.8    0.04    0.00      40         __functions_MOD_inverse_real [17]
 -----------------------------------------------
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_main [1]
-[166]    0.0    0.00    0.00       1         __functions_MOD_argsort [166]
+                0.02    0.00  400000/400000      __solid_effect_dynamics_MOD_liouville_propagator [3]
+[18]     0.4    0.02    0.00  400000         __functions_MOD_expm_complex [18]
 -----------------------------------------------
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_main [1]
-[167]    0.0    0.00    0.00       1         __functions_MOD_eig_real [167]
+                                                 <spontaneous>
+[19]     0.4    0.02    0.00                 __sinl_internal [19]
 -----------------------------------------------
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_main [1]
-[168]    0.0    0.00    0.00       1         __functions_MOD_inverse_real [168]
+                                                 <spontaneous>
+[20]     0.2    0.01    0.00                 free [20]
 -----------------------------------------------
-                0.00    0.00       1/1           __solid_effect_dynamics_MOD_calculate_hamiltonian [13]
-[169]    0.0    0.00    0.00       1         __interactions_MOD_anisotropy_coefficients [169]
+                                                 <spontaneous>
+[21]     0.2    0.01    0.00                 memset [21]
+-----------------------------------------------
+                0.01    0.00  400000/400000      __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+[22]     0.2    0.01    0.00  400000         __interactions_MOD_hyperfine [22]
+-----------------------------------------------
+                0.01    0.00      40/40          __solid_effect_dynamics_MOD_main [1]
+[23]     0.2    0.01    0.00      40         __functions_MOD_eig_real [23]
+-----------------------------------------------
+                                                 <spontaneous>
+[24]     0.2    0.01    0.00                 __logl_internal [24]
+-----------------------------------------------
+                0.00    0.00  400000/400000      __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+[168]    0.0    0.00    0.00  400000         __interactions_MOD_anisotropy [168]
+-----------------------------------------------
+                0.00    0.00      40/80          __solid_effect_dynamics_MOD_calculate_polarisation_rotor [5]
+                0.00    0.00      40/80          __solid_effect_dynamics_MOD_main [1]
+[169]    0.0    0.00    0.00      80         __functions_MOD_kron_cmat_eye [169]
+-----------------------------------------------
+                0.00    0.00      80/80          __solid_effect_dynamics_MOD_liouville_propagator [3]
+[170]    0.0    0.00    0.00      80         __functions_MOD_kron_complex [170]
+-----------------------------------------------
+                0.00    0.00      40/80          __solid_effect_dynamics_MOD_calculate_polarisation_rotor [5]
+                0.00    0.00      40/80          __solid_effect_dynamics_MOD_main [1]
+[171]    0.0    0.00    0.00      80         __functions_MOD_kron_eye_cmat [171]
+-----------------------------------------------
+                0.00    0.00      40/40          __solid_effect_dynamics_MOD_main [1]
+[172]    0.0    0.00    0.00      40         __functions_MOD_argsort [172]
+-----------------------------------------------
+                0.00    0.00      40/40          __solid_effect_dynamics_MOD_calculate_hamiltonian [15]
+[173]    0.0    0.00    0.00      40         __interactions_MOD_anisotropy_coefficients [173]
 -----------------------------------------------
 
  This table describes the call tree of the program, and was sorted by
@@ -251,10 +288,13 @@ notice and this notice are preserved.
 
 Index by function name
 
- [166] __functions_MOD_argsort [9] __functions_MOD_trace_complex [12] __solid_effect_dynamics_MOD_calculate_polarisation_sub_rotor
- [167] __functions_MOD_eig_real [162] __interactions_MOD_anisotropy [3] __solid_effect_dynamics_MOD_calculate_relaxation_mat
- [161] __functions_MOD_expm_complex [169] __interactions_MOD_anisotropy_coefficients [2] __solid_effect_dynamics_MOD_liouville_propagator
- [165] __functions_MOD_eye   [163] __interactions_MOD_hyperfine [1] __solid_effect_dynamics_MOD_main
- [168] __functions_MOD_inverse_real [10] __sinl_internal  [11] _mcount_private
- [164] __functions_MOD_kron_complex [13] __solid_effect_dynamics_MOD_calculate_hamiltonian [7] hypot
-   [4] __functions_MOD_kron_real [8] __solid_effect_dynamics_MOD_calculate_polarisation_rotor
+  [14] __cosl_internal         [6] __functions_MOD_kron_real [3] __solid_effect_dynamics_MOD_liouville_propagator
+  [12] __fentry__             [13] __functions_MOD_trace_complex [1] __solid_effect_dynamics_MOD_main
+ [172] __functions_MOD_argsort [168] __interactions_MOD_anisotropy [9] _mcount_private
+  [23] __functions_MOD_eig_real [173] __interactions_MOD_anisotropy_coefficients [16] cabs
+  [18] __functions_MOD_expm_complex [22] __interactions_MOD_hyperfine [20] free
+  [11] __functions_MOD_eye    [24] __logl_internal         [8] hypot
+  [17] __functions_MOD_inverse_real [19] __sinl_internal  [21] memset
+ [169] __functions_MOD_kron_cmat_eye [15] __solid_effect_dynamics_MOD_calculate_hamiltonian [7] zgpadm_
+ [170] __functions_MOD_kron_complex [5] __solid_effect_dynamics_MOD_calculate_polarisation_rotor
+ [171] __functions_MOD_kron_eye_cmat [4] __solid_effect_dynamics_MOD_calculate_relaxation_mat

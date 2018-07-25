@@ -36,6 +36,9 @@ contains
         real(wp), dimension(time_num, sizeH, sizeH) :: hamiltonian
         integer :: count1, count2
         integer(wp) :: indices(sizeH)
+        real(wp) wtime
+
+        wtime = omp_get_wtime()
 
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
@@ -58,18 +61,26 @@ contains
         ! Calculate inverse eigenvectors
         eig_vector_inv = inverse_real(eig_vector)
 
+        write(6, *) 'hamiltonian:', sngl(omp_get_wtime () - wtime)
+
         ! Calculate Liouville space propagator with relaxation
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
                 t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, sizeH, sizeL, eig_vector, eig_vector_inv, energies, &
                 propagator)
 
+        write(6, *) 'liouville_propagator:', sngl(omp_get_wtime () - wtime)
+
         ! Propagate density matrix stroboscopically, calculating polarisations
         call calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, sizeH, sizeL, &
                 pol_i_z, pol_s1_z, pol_s2_z)
 
+        write(6, *) 'calculate_polarisation_rotor:', sngl(omp_get_wtime () - wtime)
+
         ! Propagate density matrix for single rotor period, calculating polarisations
         call calculate_polarisation_sub_rotor(time_num, density_mat, propagator, sizeH, sizeL, &
                 pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot)
+
+        write(6, *) 'calculate_polarisation_sub_rotor:', sngl(omp_get_wtime () - wtime)
 
     end subroutine main
 
@@ -99,22 +110,25 @@ contains
         integer :: count
         real(wp) :: c0_1, c1_1, c2_1, c3_1, c4_1, c0_2, c1_2, c2_2, c3_2, c4_2
         real(wp) :: hyperfine_zx, hyperfine_zz, ganisotropy_1, ganisotropy_2
-        real(wp), dimension(2, 2) :: spin1_x, spin1_z
+        real(wp), dimension(2, 2) :: spin1_x, spin1_z, identity_size2
 
         real(wp), dimension(sizeH, sizeH) :: spin3_s1_z, spin3_s2_z, hyperfine_total, dipolar
         real(wp), dimension(sizeH, sizeH) :: spin3_i_x, spin3_i_z
         real(wp), dimension(sizeH, sizeH) :: hamiltonian_ideal, boltzmann_factors_mat
         real(wp), dimension(sizeH) :: boltzmann_factors
 
+        ! Identity matrix
+        identity_size2 = eye(2)
+
         ! Pauli matrices
         spin1_x = 0.5_wp * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin1_x), order = [2, 1]))
         spin1_z = 0.5_wp * (reshape([ 1._wp, 0._wp, 0._wp, -1._wp], shape(spin1_z), order = [2, 1]))
 
         ! 4x4 spin matrices constructed using Kronecker products
-        spin3_s1_z = kron_rmat_eye(kron_rmat_eye(spin1_z, 2), 2)
-        spin3_s2_z = kron_eye_rmat(2, kron_rmat_eye(spin1_z, 2))
-        spin3_i_x = kron_eye_rmat(2, kron_eye_rmat(2, spin1_x))
-        spin3_i_z = kron_eye_rmat(2, kron_eye_rmat(2, spin1_z))
+        spin3_s1_z = kron_real(kron_real(spin1_z, identity_size2), identity_size2)
+        spin3_s2_z = kron_real(kron_real(identity_size2, spin1_z), identity_size2)
+        spin3_i_x = kron_real(kron_real(identity_size2, identity_size2), spin1_x)
+        spin3_i_z = kron_real(kron_real(identity_size2, identity_size2), spin1_z)
 
         ! Calculate time independent electron g-anisotropy coefficients
         call anisotropy_coefficients(electron_frequency, gtensor, orientation_ce_1, c0_1, c1_1, c2_1, c3_1, c4_1)
@@ -130,8 +144,8 @@ contains
             ! Calculate time dependent hyperfine
             call hyperfine(hyperfine_coupling, hyperfine_angles, freq_rotor, (count - 1) * time_step, &
                     hyperfine_zz, hyperfine_zx)
-            hyperfine_total = 2._wp * hyperfine_zx * rmatmul_blas(spin3_i_x, spin3_s1_z) + &
-                              2._wp * hyperfine_zz * rmatmul_blas(spin3_i_z, spin3_s1_z)
+            hyperfine_total = 2._wp * hyperfine_zx * matmul(spin3_i_x, spin3_s1_z) + &
+                              2._wp * hyperfine_zz * matmul(spin3_i_z, spin3_s1_z)
 
             ! Calculate time dependent electron g-anisotropy
             call anisotropy(c0_1, c1_1, c2_1, c3_1, c4_1, freq_rotor, electron_frequency, (count - 1) * time_step, &
@@ -186,23 +200,25 @@ contains
         complex(wp), intent(out) :: propagator(time_num, sizeL, sizeL)
 
         integer :: count, count2
-        real(wp), dimension(2, 2) :: spin1_x, spin1_z, test
-        complex(wp), dimension(2, 2) :: spin1_y
+        real(wp), dimension(2, 2) :: spin1_x, spin1_z, identity_size2
+        complex(wp), dimension(2, 2) :: identity_size2_complex, spin1_y
         real(wp) :: p_e, p_n, gnp, gnm, gep, gem, boltzmann_elec, boltzmann_nuc
 
-        real(wp), dimension(sizeL, sizeL) :: hamiltonian_liouville, relax_mat, mat1, mat2, mat3, mat4, mat5
+        real(wp), dimension(sizeL, sizeL) :: identity_size64, hamiltonian_liouville, relax_mat
         real(wp), dimension(sizeH, sizeH) :: spin3_s1_x, spin3_s2_x, spin3_s1_z, spin3_s2_z, total_hamiltonian
         real(wp), dimension(sizeH, sizeH) :: spin3_s1_p, spin3_s2_p, spin3_s1_m, spin3_s2_m, spin3_i_p, spin3_i_m
         real(wp), dimension(sizeH, sizeH) :: microwave_hamiltonian_init, microwave_hamiltonian, energy_mat
-        real(wp), dimension(sizeH, sizeH) :: spin3_i_x, spin3_i_z, temp8
+        real(wp), dimension(sizeH, sizeH) :: spin3_i_x, spin3_i_z, identity_size8
 
         complex(wp), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
         complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
         complex(wp), dimension(sizeH, sizeH) :: spin3_s1_y, spin3_s2_y, spin3_i_y
 
-        real(wp) :: wtime
-        real(wp) :: alpha, beta
-        integer :: n
+        ! Identity matrix
+        identity_size2 = eye(2)
+        identity_size2_complex = eye(2)
+        identity_size8 = eye(8)
+        identity_size64 = eye(64)
 
         ! Pauli matrices
         spin1_x = 0.5 * (reshape([0._wp, 1._wp, 1._wp, 0._wp], shape(spin1_x), order = [2, 1]))
@@ -210,23 +226,23 @@ contains
         spin1_z = 0.5 * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin1_z), order = [2, 1]))
 
         ! 4x4 matrices for S1 operator
-        spin3_s1_x = kron_rmat_eye(kron_rmat_eye(spin1_x, 2), 2)
-        spin3_s1_y = kron_cmat_eye(kron_cmat_eye(spin1_y, 2), 2)
-        spin3_s1_z = kron_rmat_eye(kron_rmat_eye(spin1_z, 2), 2)
+        spin3_s1_x = kron_real(kron_real(spin1_x, identity_size2), identity_size2)
+        spin3_s1_y = kron_complex(kron_complex(spin1_y, identity_size2_complex), identity_size2_complex)
+        spin3_s1_z = kron_real(kron_real(spin1_z, identity_size2), identity_size2)
         spin3_s1_p = spin3_s1_x + real(i * spin3_s1_y)
         spin3_s1_m = spin3_s1_x - real(i * spin3_s1_y)
 
         ! 4x4 matrices for S2 operator
-        spin3_s2_x = kron_eye_rmat(2, kron_rmat_eye(spin1_x, 2))
-        spin3_s2_y = kron_eye_cmat(2, kron_cmat_eye(spin1_y, 2))
-        spin3_s2_z = kron_eye_rmat(2, kron_rmat_eye(spin1_z, 2))
+        spin3_s2_x = kron_real(kron_real(identity_size2, spin1_x), identity_size2)
+        spin3_s2_y = kron_complex(kron_complex(identity_size2_complex, spin1_y), identity_size2_complex)
+        spin3_s2_z = kron_real(kron_real(identity_size2, spin1_z), identity_size2)
         spin3_s2_p = spin3_s2_x + real(i * spin3_s2_y)
         spin3_s2_m = spin3_s2_x - real(i * spin3_s2_y)
 
         ! 4x4 matrices for I operator
-        spin3_i_x = kron_eye_rmat(2, kron_eye_rmat(2, spin1_x))
-        spin3_i_y = kron_eye_cmat(2, kron_eye_cmat(2, spin1_y))
-        spin3_i_z = kron_eye_rmat(2, kron_eye_rmat(2, spin1_z))
+        spin3_i_x = kron_real(kron_real(identity_size2, identity_size2), spin1_x)
+        spin3_i_y = kron_complex(kron_complex(identity_size2_complex, identity_size2_complex), spin1_y)
+        spin3_i_z = kron_real(kron_real(identity_size2, identity_size2), spin1_z)
         spin3_i_p = spin3_i_x + real(i * spin3_i_y)
         spin3_i_m = spin3_i_x - real(i * spin3_i_y)
 
@@ -245,17 +261,17 @@ contains
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * (spin3_s1_x + spin3_s2_x)
 
-        !!$omp parallel do default(private) &
-        !!$omp& shared(eig_vector, eig_vector_inv, sizeL, sizeH) &
-        !!$omp& shared(t1_nuc, t1_elec, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc) &
-        !!$omp& shared(spin3_s1_z, spin3_s1_x, spin3_s1_p, spin3_s1_m, spin3_s2_z, spin3_s2_p, spin3_s2_m, spin3_i_z) &
-        !!$omp& shared(spin3_s2_x, spin3_i_p, spin3_i_m, spin3_i_x) &
-        !!$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
+        !$omp parallel do default(private) &
+        !$omp& shared(eig_vector, eig_vector_inv, identity_size8, identity_size64, sizeL, sizeH) &
+        !$omp& shared(t1_nuc, t1_elec, t2_elec, t2_nuc, boltzmann_elec, boltzmann_nuc) &
+        !$omp& shared(spin3_s1_z, spin3_s1_x, spin3_s1_p, spin3_s1_m, spin3_s2_z, spin3_s2_p, spin3_s2_m, spin3_i_z) &
+        !$omp& shared(spin3_s2_x, spin3_i_p, spin3_i_m, spin3_i_x) &
+        !$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
         do count = 1, time_num
 
             ! Transform microwave Hamiltonian into time dependent basis
-            microwave_hamiltonian = rmatmul_blas(eig_vector_inv(count, :, :), &
-                                    rmatmul_blas(microwave_hamiltonian_init, eig_vector(count, :, :)))
+            microwave_hamiltonian = matmul(eig_vector_inv(count, :, :), matmul(microwave_hamiltonian_init, &
+                                            eig_vector(count, :, :)))
 
             ! Calculate total Hamiltonian
             energy_mat = 0._wp
@@ -266,27 +282,13 @@ contains
             ! Calculate total Hamiltonian
             total_hamiltonian = energy_mat + microwave_hamiltonian
 
-!            wtime = omp_get_wtime()
-!            do count2 = 1, int(1E6)
-!                hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, sizeH)
-!            end do
-!            wtime = omp_get_wtime () - wtime
-!            write(6, *) 'kron_rmat_eye time:', sngl(wtime)
-!
-!            wtime = omp_get_wtime()
-!            do count2 = 1, int(1E6)
-!                 hamiltonian_liouville = kron_real(total_hamiltonian, eye(8))
-!            end do
-!            wtime = omp_get_wtime () - wtime
-!            write(6, *) 'kron_real time:', sngl(wtime)
-
             ! Transform Hilbert space Hamiltonian into Liouville space
-            hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, sizeH) - &
-                                    kron_eye_rmat(sizeH, transpose(total_hamiltonian))
+            hamiltonian_liouville = kron_real(total_hamiltonian, identity_size8) - &
+                    kron_real(identity_size8, transpose(total_hamiltonian))
 
             ! Calculate Louville space relaxation matrix using origonal theory
-            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), &
-                    sizeL, sizeH, spin3_s1_z, spin3_s1_p, spin3_s1_m, spin3_s2_z, spin3_s2_p, &
+            call calculate_relaxation_mat(eig_vector(count, :, :), eig_vector_inv(count, :, :), identity_size8, &
+                    identity_size64, sizeL, sizeH, spin3_s1_z, spin3_s1_p, spin3_s1_m, spin3_s2_z, spin3_s2_p, &
                     spin3_s2_m, spin3_i_z, spin3_i_p, spin3_i_m, t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
 
             ! Calculate Louville space relaxation matrix using Mance theory
@@ -303,122 +305,12 @@ contains
             mat_exp = expm_complex(-i * liouvillian * time_step)
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
 
-!            call testing()
-!            n = 64
-!            alpha = 1.0_wp
-!            beta = 0.0_wp
-
-!            mat1 = real(eigvectors_inv_liouville)
-!            mat2 = real(mat_exp)
-!            mat3 = real(eigvectors_liouville)
-            ! mat4 also
-
-            call omp_set_num_threads(8)
-            wtime = omp_get_wtime()
-            !$omp parallel do default(shared)
-            do count2 = 1, int(1E4)
-                !mat5 = matmul(mat1, matmul(mat2, mat3))
-                !test = matmul(spin1_x, spin1_z)
-                !spin3_s1_x = matmul(eig_vector_inv(count, :, :), matmul(spin3_s1_z, eig_vector(count, :, :)))
-                propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
-            end do
-            !$omp end parallel do
-            wtime = omp_get_wtime () - wtime
-            write(6, *) 'matmul', sngl(wtime)
-!            write(6, *) 'test', test
-
-!            call omp_set_num_threads(8)
-!            wtime = omp_get_wtime()
-!            !$omp parallel do default(private)
-!            do count2 = 1, int(1E4)
-!                !test = rmatmul_blas(spin1_x, spin1_z)
-!                !call dgemm("N", "N", n, n, n, alpha, spin1_x, n, spin1_z, n, beta, test, n)
-!                !write(6, *) 'test', spin1_z
-!                mat5 = rmatmul_blas(mat1, rmatmul_blas(mat2, mat3))
-!!                call dgemm("N", "N", n, n, n, alpha, mat2, n, mat3, n, beta, mat4, n)
-!!                call dgemm("N", "N", n, n, n, alpha, mat1, n, mat4, n, beta, mat5, n)
-!!                spin3_s1_x = rmatmul_blas(eig_vector_inv(count, :, :), &
-!!                        rmatmul_blas(spin3_s1_z, eig_vector(count, :, :)))
-!!                call dgemm("N", "N", n, n, n, alpha, spin3_s1_z, n, eig_vector(count, :, :), n, beta, temp8, n)
-!!                call dgemm("N", "N", n, n, n, alpha, eig_vector_inv(count, :, :), n, temp8, n, beta, spin3_s1_x, n)
-!            end do
-!            !$omp end parallel do
-!            wtime = omp_get_wtime () - wtime
-!            write(6, *) 'rmatmul_blas', sngl(wtime)
-!            write(6, *) 'test', test
-
         end do
-        !!$omp end parallel do
+        !$omp end parallel do
 
     end subroutine liouville_propagator
 
-    subroutine testing
-
-        use iso_fortran_env
-        use omp_lib
-        implicit none
-
-        integer, parameter :: WP = REAL64
-        complex(kind=8), parameter :: i = (0, 1)
-        real(kind=8), parameter :: PI = 4.D0 * DATAN(1.D0), Planck = 6.62607004E-34, Boltzmann = 1.38064852E-23
-
-        integer :: count
-        complex(kind=8), dimension(8, 8) :: test_16
-        complex(kind=8), dimension(8, 8) :: spin3_i_x, spin3_i_y, spin3_i_z, test_8, matrix
-        complex(kind=8), dimension(8, 8) :: spin3_s_x, spin3_s_y, spin3_s_z
-        complex(kind=8), dimension(4, 4) :: spin2_s_x, spin2_s_y, spin2_s_z, identity_size4, test, test_4
-        complex(kind=8), dimension(2, 2) :: spin_x, spin_y, spin_z, identity_size2, test_2
-        complex(kind=8) :: exponent
-        double precision wtime
-
-        integer(kind=8)::n
-        real(kind=8), dimension(2, 2):: a, b, c, spin_xr, spin_zr, test3
-        real(kind=8) :: alpha, beta
-
-        ! Identity matrix
-        identity_size2 = transpose(reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, 1.0_WP/), shape(identity_size2)))
-
-        ! Pauli matrices
-        spin_x = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
-        spin_y = 0.5 * i * (reshape((/ 0.0_WP, -1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_y), order = (/2, 1/)))
-        spin_z = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
-
-        spin_xr = 0.5 * (reshape((/ 0.0_WP, 1.0_WP, 1.0_WP, 0.0_WP/), shape(spin_x), order = (/2, 1/)))
-        spin_zr = 0.5 * (reshape((/ 1.0_WP, 0.0_WP, 0.0_WP, -1.0_WP/), shape(spin_z), order = (/2, 1/)))
-
-        b = real(spin_x) !real(spin_x)
-        a = real(spin_z) !real(spin_z)
-        c=0.0D0
-
-        alpha = 1.0_WP
-        beta = 0.0_WP
-        n = size(a, 1)
-
-        wtime = omp_get_wtime()
-
-        !call omp_set_num_threads(8)
-        !!$omp parallel do default(private) &
-        !!$omp& shared(spin_x, identity_size2)
-        do count = 1, int(1E7)
-!            test_16 = kron(spin3_i_x, spin3_i_y)
-            test3 = matmul(spin_xr, spin_zr)
-!            test_2 = matmul(spin_x, spin_z)
-
-!            call dgemm("N","N",n,n,n,alpha,a,n,b,n,beta,c,n)
-            !C := alpha*op( A )*op( B ) + beta*C
-
-!            exponent = 1
-!            matrix = -1E4 * i * spin3_i_x
-!            test_8 = expm(exponent, matrix)
-        end do
-        !!$omp end parallel do
-        wtime = omp_get_wtime ( ) - wtime
-        write(6,*) sngl(wtime)
-
-    end subroutine testing
-
-
-    subroutine calculate_relaxation_mat(eig_vector, eig_vector_inv, sizeL, sizeH, &
+    subroutine calculate_relaxation_mat(eig_vector, eig_vector_inv, identity_size8, identity_size64, sizeL, sizeH, &
             spin3_s1_z, spin3_s1_p, spin3_s1_m, spin3_s2_z, spin3_s2_p, spin3_s2_m, spin3_i_z, spin3_i_p, spin3_i_m, &
             t2_elec, t2_nuc, gnp, gnm, gep, gem, relax_mat)
 
@@ -432,7 +324,8 @@ contains
         integer, intent(in) :: sizeH, sizeL
         real(wp), dimension(:, :), intent(in) :: eig_vector, eig_vector_inv
         real(wp), dimension(:, :), intent(in) :: spin3_s1_z, spin3_s1_p, spin3_s1_m, spin3_s2_z, spin3_s2_p, spin3_s2_m
-        real(wp), dimension(:, :), intent(in) :: spin3_i_z, spin3_i_p, spin3_i_m
+        real(wp), dimension(:, :), intent(in) :: spin3_i_z, spin3_i_p, spin3_i_m, identity_size8
+        real(wp), dimension(:, :), intent(in) :: identity_size64
         real(wp), intent(in) :: t2_nuc, t2_elec
         real(wp), intent(in) :: gnp, gnm, gep, gem
 
@@ -440,11 +333,8 @@ contains
 
         real(wp), dimension(sizeL, sizeL) :: spin3_i_p_tl, spin3_i_m_tl, spin3_s1_p_tl, spin3_s1_m_tl, spin3_s2_p_tl
         real(wp), dimension(sizeL, sizeL) :: spin3_s2_m_tl, relax_t2_s1, relax_t2_s2, relax_t2_i1, relax_t1
-        real(wp), dimension(sizeL, sizeL) :: identity_mat
         real(wp), dimension(sizeH, sizeH) :: spin3_s1_z_t, spin3_s1_p_t, spin3_s1_m_t, spin3_i_z_t, spin3_i_p_t
         real(wp), dimension(sizeH, sizeH) :: spin3_i_m_t, spin3_s2_z_t, spin3_s2_p_t, spin3_s2_m_t
-
-        identity_mat = 0.5_wp * eye(sizeL)
 
         ! Transform spin matrices into time dependent Hilbert space basis
         spin3_s1_z_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_s1_z, eig_vector))
@@ -458,26 +348,26 @@ contains
         spin3_i_m_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_i_m, eig_vector))
 
         ! Transform spin matrices into time dependent Liouville space basis
-        spin3_i_p_tl = kron_real(spin3_i_p_t, transpose(spin3_i_m_t)) - identity_mat + 0.5_wp * (&
-                    kron_rmat_eye(spin3_i_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin3_i_z_t)))
-        spin3_i_m_tl = kron_real(spin3_i_m_t, transpose(spin3_i_p_t)) - identity_mat - 0.5_wp * (&
-                    kron_rmat_eye(spin3_i_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin3_i_z_t)))
-        spin3_s1_p_tl = kron_real(spin3_s1_p_t, transpose(spin3_s1_m_t)) - identity_mat + 0.5_wp * (&
-                    kron_rmat_eye(spin3_s1_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin3_s1_z_t)))
-        spin3_s1_m_tl = kron_real(spin3_s1_m_t, transpose(spin3_s1_p_t)) - identity_mat - 0.5_wp * (&
-                    kron_rmat_eye(spin3_s1_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin3_s1_z_t)))
-        spin3_s2_p_tl = kron_real(spin3_s2_p_t, transpose(spin3_s2_m_t)) - identity_mat + 0.5_wp * (&
-                    kron_rmat_eye(spin3_s2_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin3_s2_z_t)))
-        spin3_s2_m_tl = kron_real(spin3_s2_m_t, transpose(spin3_s2_p_t)) - identity_mat - 0.5_wp * (&
-                     kron_rmat_eye(spin3_s2_z_t, sizeH) + kron_eye_rmat(sizeH, transpose(spin3_s2_z_t)))
+        spin3_i_p_tl = kron_real(spin3_i_p_t, transpose(spin3_i_m_t)) - 0.5_wp * identity_size64 + 0.5_wp * (&
+                    kron_real(spin3_i_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_i_z_t)))
+        spin3_i_m_tl = kron_real(spin3_i_m_t, transpose(spin3_i_p_t)) - 0.5_wp * identity_size64 - 0.5_wp * (&
+                kron_real(spin3_i_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_i_z_t)))
+        spin3_s1_p_tl = kron_real(spin3_s1_p_t, transpose(spin3_s1_m_t)) - 0.5_wp * identity_size64 + 0.5_wp * (&
+                kron_real(spin3_s1_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s1_z_t)))
+        spin3_s1_m_tl = kron_real(spin3_s1_m_t, transpose(spin3_s1_p_t)) - 0.5_wp * identity_size64 - 0.5_wp * (&
+                kron_real(spin3_s1_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s1_z_t)))
+        spin3_s2_p_tl = kron_real(spin3_s2_p_t, transpose(spin3_s2_m_t)) - 0.5_wp * identity_size64 + 0.5_wp * (&
+                kron_real(spin3_s2_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s2_z_t)))
+        spin3_s2_m_tl = kron_real(spin3_s2_m_t, transpose(spin3_s2_p_t)) - 0.5_wp * identity_size64 - 0.5_wp * (&
+                kron_real(spin3_s2_z_t, identity_size8) + kron_real(identity_size8, transpose(spin3_s2_z_t)))
 
         ! Calculate time dependent Liouville space relaxation matrix
         relax_t2_s1 = (2._wp / t2_elec) * (kron_real(spin3_s1_z_t, transpose(spin3_s1_z_t)) - &
-                        0.5_wp * identity_mat)
+                        0.5_wp * 0.5_wp * identity_size64)
         relax_t2_s2 = (2._wp / t2_elec) * (kron_real(spin3_s2_z_t, transpose(spin3_s2_z_t)) - &
-                        0.5_wp * identity_mat)
+                        0.5_wp * 0.5_wp * identity_size64)
         relax_t2_i1 = (2._wp / t2_nuc) * (kron_real(spin3_i_z_t, transpose(spin3_i_z_t)) - &
-                        0.5_wp * identity_mat)
+                        0.5_wp * 0.5_wp * identity_size64)
         relax_t1 = gep * spin3_s1_p_tl + gem * spin3_s1_m_tl + gep * spin3_s2_p_tl + gem * spin3_s2_m_tl + &
                    gnp * spin3_i_p_tl + gnm * spin3_i_m_tl
         relax_mat = relax_t2_s1 + relax_t2_s2 + relax_t2_i1 + relax_t1
@@ -509,12 +399,12 @@ contains
         integer :: count, count2, count3, count4
 
         ! Transform spin matrices into time dependent Hilbert space basis
-        spin3_s1_x_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_s1_x, eig_vector))
-        spin3_s1_z_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_s1_z, eig_vector))
-        spin3_s2_x_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_s2_x, eig_vector))
-        spin3_s2_z_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_s2_z, eig_vector))
-        spin3_i_x_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_i_x, eig_vector))
-        spin3_i_z_t = rmatmul_blas(eig_vector_inv, rmatmul_blas(spin3_i_z, eig_vector))
+        spin3_s1_x_t = matmul(eig_vector_inv, matmul(spin3_s1_x, eig_vector))
+        spin3_s1_z_t = matmul(eig_vector_inv, matmul(spin3_s1_z, eig_vector))
+        spin3_s2_x_t = matmul(eig_vector_inv, matmul(spin3_s2_x, eig_vector))
+        spin3_s2_z_t = matmul(eig_vector_inv, matmul(spin3_s2_z, eig_vector))
+        spin3_i_x_t = matmul(eig_vector_inv, matmul(spin3_i_x, eig_vector))
+        spin3_i_z_t = matmul(eig_vector_inv, matmul(spin3_i_z, eig_vector))
 
         ! Calculate T1 relaxation matrix using Boltzmann factors
         do count = 1, sizeH
@@ -607,20 +497,24 @@ contains
         real(wp), dimension(time_num_prop), intent(out) :: pol_i_z, pol_s1_z, pol_s2_z
 
         integer :: count
-        complex(wp), dimension(2, 2) :: spin1_z
+        complex(wp), dimension(2, 2) :: spin1_z, identity_size2
 
         complex(wp), dimension(sizeL, 1) :: density_mat_liouville, temp
-        complex(wp), dimension(sizeL, sizeL) :: propagator_strobe
+        complex(wp), dimension(sizeL, sizeL) :: identity_size64, propagator_strobe
         complex(wp), dimension(sizeH, sizeH) :: spin3_s1_z, spin3_s2_z, spin3_i_z, density_mat_time
 
         ! Calculate matrices specific to polarisation calculation
+        identity_size2 = eye(2)
+        identity_size64 = eye(64)
+
+        ! Calculate matrices specific to polarisation calculation
         spin1_z = 0.5_wp * (reshape([1._wp, 0._wp,  0._wp, -1._wp], shape(spin1_z), order = [2, 1]))
-        spin3_s1_z = kron_cmat_eye(kron_cmat_eye(spin1_z, 2), 2)
-        spin3_s2_z = kron_eye_cmat(2, kron_cmat_eye(spin1_z, 2))
-        spin3_i_z = kron_eye_cmat(2, kron_eye_cmat(2, spin1_z))
+        spin3_s1_z = kron_complex(kron_complex(spin1_z, identity_size2), identity_size2)
+        spin3_s2_z = kron_complex(kron_complex(identity_size2, spin1_z), identity_size2)
+        spin3_i_z = kron_complex(kron_complex(identity_size2, identity_size2), spin1_z)
 
         density_mat_time = density_mat
-        propagator_strobe = eye(64)
+        propagator_strobe = identity_size64
 
         ! Calculate stroboscopic propagator (product of all operators within rotor period)
         do count = 1, time_num
@@ -667,16 +561,17 @@ contains
         real(wp), dimension(time_num), intent(out) :: pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot
 
         integer :: count
-        complex(wp), dimension(2, 2) :: spin1_z
+        complex(wp), dimension(2, 2) :: spin1_z, identity_size2
 
         complex(wp), dimension(sizeL, 1) :: density_mat_liouville, temp
         complex(wp), dimension(sizeH, sizeH) :: spin3_s1_z, spin3_s2_z, spin3_i_z, density_mat_time
 
         ! Calculate matrices specific to polarisation calculation
-        spin1_z = 0.5_wp * (reshape([1._wp, 0._wp,  0._wp, -1._wp], shape(spin1_z), order = [2, 1]))
-        spin3_s1_z = kron_cmat_eye(kron_cmat_eye(spin1_z, 2), 2)
-        spin3_s2_z = kron_eye_cmat(2, kron_cmat_eye(spin1_z, 2))
-        spin3_i_z = kron_eye_cmat(2, kron_eye_cmat(2, spin1_z))
+        identity_size2 = transpose(reshape([1._wp, 0._wp, 0._wp, 1._wp], shape(identity_size2)))
+        spin1_z = 0.5_wp * (reshape([1._wp, 0._wp, 0._wp, -1._wp], shape(spin1_z), order = [2, 1]))
+        spin3_s1_z = kron_complex(kron_complex(spin1_z, identity_size2), identity_size2)
+        spin3_s2_z = kron_complex(kron_complex(identity_size2, spin1_z), identity_size2)
+        spin3_i_z = kron_complex(kron_complex(identity_size2, identity_size2), spin1_z)
 
         density_mat_time = density_mat
 

@@ -20,7 +20,7 @@ t1_elec = 0.3E-3                                                    # Electron s
 t1_nuc = 10                                                         # Nuclear spin-lattice relaxation T1 (s)
 t2_elec = 1e-6                                                      # T2 electron
 t2_nuc = 1e-3                                                       # T2 nucleus
-microwave_amplitude = np.array([0.85]) * 1E6                        # Microwave field amplitude np.arange(1, 10, 5)
+microwave_amplitude = np.ones(2) * 0.85 * 1E6 #np.array([0.85]) * 1E6                        # Microwave field amplitude np.arange(1, 10, 5)
 #microwave_amplitude = np.arange(1, 200, 5) * 1E6
 #microwave_amplitude = np.array([75]) * 1E6
 

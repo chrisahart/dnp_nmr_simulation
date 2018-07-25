@@ -1,6 +1,6 @@
 :: Temporary makefile
 
-gfortran -pg -o solid_effect expokit.o mataid.o functions.f90 interactions.f90 solid_effect_dynamics.f90 solid_effect_main.f90 -lgomp -llapack -lblas
+gfortran -g -pg -o solid_effect expokit.o mataid.o functions.f90 interactions.f90 solid_effect_dynamics.f90 solid_effect_main.f90 -O3 -lgomp -llapack -lblas
 
 solid_effect.exe
 

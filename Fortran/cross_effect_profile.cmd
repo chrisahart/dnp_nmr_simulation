@@ -1,6 +1,6 @@
 :: Temporary makefile
 
-gfortran -pg -o cross_effect expokit.o mataid.o functions.f90 interactions.f90 cross_effect_dynamics.f90 cross_effect_main.f90 -lgomp -llapack -lblas
+gfortran -g -pg -fno-omit-frame-pointer -o cross_effect expokit2.o mataid2.o functions.f90 interactions.f90 cross_effect_dynamics.f90 cross_effect_main.f90 -O3 -lgomp -llapack -lblas
 
 cross_effect.exe
 
