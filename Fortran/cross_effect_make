@@ -3,12 +3,12 @@ FFLAGS	= -O3 -fopenmp
 LIBS    = -llapack -lblas -lgomp
 
 # Windows 10 compatible Expokit object files
-EXPOKIT   = expokit.o
-MATAID    = mataid.o
+# EXPOKIT   = expokit.o
+# MATAID    = mataid.o
 
 # Ubuntu compatible Expokit object files
-# EXPOKIT   = expokit_lin.o
-# MATAID    = mataid_lin.o
+EXPOKIT   = expokit_lin.o
+MATAID    = mataid_lin.o
 
 OBJS      =  $(EXPOKIT) $(MATAID) functions.o interactions.o cross_effect_dynamics.o cross_effect_main.o
 
