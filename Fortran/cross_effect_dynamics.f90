@@ -36,9 +36,8 @@ contains
         real(wp), dimension(time_num, sizeH, sizeH) :: hamiltonian
         integer :: count1, count2
         integer(wp) :: indices(sizeH)
-        real(wp) wtime
 
-        wtime = omp_get_wtime()
+        !call omp_set_num_threads(1)
 
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &
@@ -205,8 +204,6 @@ contains
         complex(wp), dimension(sizeL, sizeL) :: eigvectors_liouville, eigvectors_inv_liouville
         complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
         complex(wp), dimension(sizeH, sizeH) :: spin3_s1_y, spin3_s2_y, spin3_i_y
-
-        real(wp) wtime
 
         ! Identity matrix
         identity_size2 = eye(2)

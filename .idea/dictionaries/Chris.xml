@@ -5,8 +5,11 @@
       <w>enthought</w>
       <w>envs</w>
       <w>expm</w>
+      <w>expokit</w>
       <w>fcompiler</w>
       <w>fopenmp</w>
+      <w>gfortran</w>
+      <w>kockenburger</w>
       <w>kron</w>
       <w>lgomp</w>
       <w>liouville</w>

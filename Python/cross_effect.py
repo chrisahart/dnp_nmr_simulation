@@ -33,27 +33,27 @@ def main():
         print('{}{:d}{}{:d}{}{:.2f}{}'.format('Finished loop ', (count + 1), ' of ', param.microwave_amplitude.size,
                                               ', total elapsed time ', (time.time() - start), ' s.'))
 
-    # # # Dynamically assign and create output directory
-    # directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
-    #
-    # # Save data and copy parameters file
-    # np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_elec1.csv'), pol_elec1, fmt='%.8f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_elec2.csv'), pol_elec2, fmt='%.8f', newline='\n')
-    #
-    # # High precision required for sub rotor dynamics (negligible change in file size)
-    # np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_s1_z_rot.csv'), pol_s1_z_rot, fmt='%.12f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/pol_s2_z_rot.csv'), pol_s2_z_rot, fmt='%.12f', newline='\n')
-    # np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
-    #
-    # # Create a copy of parameters file
-    # copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
-    #
-    # # Call plotting function
-    # cross_effect_plotting.plot_all(directory)
+    # # Dynamically assign and create output directory
+    directory = '{}{:.2f}'.format('out/cross_effect/mw_', param.microwave_amplitude[-1] / 1E6)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # Save data and copy parameters file
+    np.savetxt('{}{}'.format(directory, '/pol_nuc.csv'), pol_nuc, fmt='%.8f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_elec1.csv'), pol_elec1, fmt='%.8f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_elec2.csv'), pol_elec2, fmt='%.8f', newline='\n')
+
+    # High precision required for sub rotor dynamics (negligible change in file size)
+    np.savetxt('{}{}'.format(directory, '/pol_i_z_rot.csv'), pol_i_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_s1_z_rot.csv'), pol_s1_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/pol_s2_z_rot.csv'), pol_s2_z_rot, fmt='%.12f', newline='\n')
+    np.savetxt('{}{}'.format(directory, '/energies.csv'), energies, fmt='%.0f', newline='\n')
+
+    # Create a copy of parameters file
+    copyfile("parameters.py", '{}{}'.format(directory, '/parameters.py'))
+
+    # Call plotting function
+    cross_effect_plotting.plot_all(directory)
 
 
 def dynamics(microwave_amplitude):
@@ -87,8 +87,7 @@ def dynamics(microwave_amplitude):
     density_mat = fn.density_mat_thermal(hamiltonian_ideal)
 
     # Construct intrinsic Hilbert space Hamiltonian
-    hamiltonian = calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z,
-                                        spin3_s1_m, spin3_s1_p, spin3_s2_m, spin3_s2_p)
+    hamiltonian = calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z)
 
     # Calculate thermal density matrix and intrinsic Hilbert space Hamiltonian using F2PY
     # hamiltonian, density_mat = fortran.cross_effect_dynamics.calculate_hamiltonian(
@@ -149,8 +148,7 @@ def dynamics(microwave_amplitude):
     return pol_i_z, pol_s1_z, pol_s2_z, pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot, energies
 
 
-def calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z,
-                          spin3_s1_m, spin3_s1_p, spin3_s2_m, spin3_s2_p):
+def calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z):
     """ Calculate Hamiltonian of e-n system.
     """
 
@@ -171,17 +169,6 @@ def calculate_hamiltonian(spin3_s1_z, spin3_s2_z, spin3_i_x, spin3_i_z,
         # Calculate time dependent electron g-anisotropy for electron 1 and 2
         ganisotropy_1 = fn.anisotropy(c0_1, c1_1, c2_1, c3_1, c4_1, count * param.time_step)
         ganisotropy_2 = fn.anisotropy(c0_2, c1_2, c2_2, c3_2, c4_2, count * param.time_step)
-
-        # Calculate time dependent dipolar between electron 1 and 2
-        # S20 = 2 * np.matmul(spin3_s1_z, spin3_s2_z) - \
-        #          0.5 * (np.matmul(spin3_s1_p, spin3_s2_m) + np.matmul(spin3_s1_m, spin3_s2_p))
-        # b_ee = 0
-        # g_ee = 0
-        # test = 23e6 * (+0.5 * ((np.sin(b_ee)) ** 2) * np.cos(2 * 2 * np.pi * param.freq_rotor *
-        #                                                     count * param.time_step_num + g_ee) -
-        #                np.sqrt(2) * np.sin(b_ee) * np.cos(b_ee) * np.cos(2 * np.pi * param.freq_rotor *
-        #                                                                count * param.time_step_num + g_ee))
-        # dipolar = 0  # test * S20
 
         # Calculate time dependent hamiltonian
         hamiltonian[count, :] = (ganisotropy_1 - param.microwave_frequency) * spin3_s1_z + \

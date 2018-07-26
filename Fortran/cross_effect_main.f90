@@ -21,30 +21,29 @@ program cross_effect_main
     integer :: time_num, time_num_prop, num_periods, count
 
     ! Literature parameters
-    !real(wp) :: microwave_amplitude(40) = [(count, count = 1, 200, 5)] * 1E6          ! Microwave amplitude array
-    real(wp) :: microwave_amplitude(1) = [0.85E6_wp]                             ! Microwave amplitude
-    !real(wp) :: microwave_amplitude(5) = [0.85E6_wp, 0.85E6_wp, 0.85E6_wp, 0.85E6_wp, 0.85E6_wp]
+    !real(wp) :: microwave_amplitude(40) = [(count, count = 1, 200, 5)] * 1E6  ! Microwave amplitude array
+    real(wp) :: microwave_amplitude(1) = [0.85E6_wp]                           ! Microwave amplitude
     b_field = 9.4_wp                                                           ! Magnetic field
     temperature = 100_wp                                                       ! Temperature
-    nuclear_frequency = -400.9E6_wp                                               ! Nuclear frequency 1
-    electron_frequency = 28.025E9_wp * b_field                                    ! Electron frequency
-    microwave_frequency = 264E9_wp                                                ! Microwave frequency
-    freq_rotor = 3E3_wp                                                           ! Rotor frequency
+    nuclear_frequency = -400.9E6_wp                                            ! Nuclear frequency 1
+    electron_frequency = 28.025E9_wp * b_field                                 ! Electron frequency
+    microwave_frequency = 264E9_wp                                             ! Microwave frequency
+    freq_rotor = 3E3_wp                                                        ! Rotor frequency
     orientation_se = [253.6_wp, 105.1_wp, 123.8_wp] * rad                      ! G anisotropy angles for electron 1 (SE)
     orientation_ce_1 = [253.6_wp, 105.1_wp, 123.8_wp] * rad                    ! G anisotropy angles for electron 1 (CE)
     orientation_ce_2 = orientation_ce_1 + [102._wp, 104._wp, 124._wp] * rad    ! G anisotropy angles for electron 2 (CE)
-    gtensor = [(2.00614_wp / 2._wp), (2.00194_wp / 2._wp), (2.00988_wp / 2._wp)]        ! G tensor principal values
-    hyperfine_coupling = 3E6_wp                                                   ! Hyperfine coupling amplitude
+    gtensor = [(2.00614_wp/2._wp), (2.00194_wp/2._wp), (2.00988_wp/2._wp)]     ! G tensor principal values
+    hyperfine_coupling = 3E6_wp                                                ! Hyperfine coupling amplitude
     hyperfine_angles = [0._wp, 0._wp, 0._wp]                                   ! Hyperfine angles for e1-n
-    t1_elec = 0.3E-3_wp                                                           ! Electron spin-lattice relaxation T1 (s)
-    t1_nuc = 10._wp                                                            ! Nuclear spin-lattice relaxation T1 (s)
-    t2_elec = 1E-6_wp                                                             ! T2 electron
-    t2_nuc = 1E-3_wp                                                              ! T2 nucleus
+    t1_elec = 0.3E-3_wp                                                        ! Electron T1 relaxation(s)
+    t1_nuc = 10._wp                                                            ! Nuclear T1 relaxation(s)
+    t2_elec = 1E-6_wp                                                          ! Electron T2 relaxation(s)
+    t2_nuc = 1E-3_wp                                                           ! Nuclear T2 relaxation(s)
 
     ! System variables
     time_num = 1E4                                                             ! Number of timesteps within rotor period
     time_step = (1._wp / freq_rotor) / time_num                                ! Value of timestep within rotor period
-    num_periods = 40                                                           ! Number of rotor periods
+    num_periods = 40                                                           ! Time to propagate system (s)
     time_num_prop = num_periods * int(freq_rotor)                              ! Number of timesteps to propagate system
 
     ! Allocate output variables based on input parameters
@@ -53,7 +52,7 @@ program cross_effect_main
     allocate (pol_iz_final(size(microwave_amplitude)))
 
     ! Manually set number of OMP threads
-    call omp_set_num_threads(8)
+    !call omp_set_num_threads(8)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()

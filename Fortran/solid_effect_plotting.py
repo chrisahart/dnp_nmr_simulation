@@ -85,13 +85,10 @@ def plot_all(directory):
 
         # Plot electron polarisation
         subfig2_x1.plot(time_array, pol_elec_time / pol_elec_time[0], 'b')
-        #subfig2_x1.plot(time_array, pol_elec_time, 'b')
-        #subfig2_x1.set_ylim(0, 1)
         subfig2_x1.set_ylabel('Elec. pol. / thermal')
 
         # Plot nuclear polarisation
         subfig2_x2.plot(time_array, enhancement_nuc_time / enhancement_nuc_time[0], 'r')
-        #subfig2_x2.plot(time_array, enhancement_nuc_time, 'r')
         subfig2_x2.set_ylim(ymin=0)
         subfig2_x2.set_ylabel('Nuc. pol. / thermal')
 
