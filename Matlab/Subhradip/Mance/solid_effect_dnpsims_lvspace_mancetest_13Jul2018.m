@@ -262,6 +262,20 @@ relmatt2=diag(relmatt2_temp);
     LDinv=kron(Dinv,Dinv);%-kron(eye(4),Dinv.');
     Ltot=Lhamilt+1*1i*((Rtot));
     prop(:,:,ii)=LD*expm(-1i*Ltot*trstep)*LDinv;
+    
+        
+    tic
+    for test=1:1E4
+        t=expm(-1i*Ltot*trstep);
+        %LD=kron(D,D);
+        %Lhamilt=kron((hamilt),eye(8));
+        %S1zt=Dinv*S1z*D;
+        %prop(:,:,ii)=LD*t;
+        %prop(:,:,ii)=LD*test*LDinv;
+        %temp = x_mat * z_mat;
+        %temp = mat1 * mat2 * mat3;
+    end
+    toc
 end
 
 

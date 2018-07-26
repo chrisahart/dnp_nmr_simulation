@@ -94,15 +94,16 @@ def liouville_propagator(num_spins, energies, eigvectors, eigvectors_inv,
         # temp1 = np.real(eigvectors_inv_liouville)
         # temp2 = np.real(exp_mat)
         # temp3 = np.real(eigvectors_liouville)
-        # start = time.time()
-        # for bench in range(0, int(1E4)):
-        #     #test = np.matmul(spin1_x, spin1_z)
-        #     #test = np.matmul(eigvectors_inv[count], np.matmul(spin3_s1_z, eigvectors[count]))
-        #     #propagator[count, :] = np.matmul(eigvectors_inv_liouville, np.matmul(test, eigvectors_liouville))
-        #     test = np.matmul(temp1, np.matmul(temp2, temp3))
-        #     # eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
-        #     #hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, 2 ** num_spins)
-        # print('la.expm', (time.time() - start))
+        start = time.time()
+        for bench in range(0, int(1E4)):
+            exp_test = la.expm(-1j * liouvillian * param.time_step)
+            #test = np.matmul(spin1_x, spin1_z)
+            #test = np.matmul(eigvectors_inv[count], np.matmul(spin3_s1_z, eigvectors[count]))
+            #propagator[count, :] = np.matmul(eigvectors_inv_liouville, np.matmul(test, eigvectors_liouville))
+            #test = np.matmul(temp1, np.matmul(temp2, temp3))
+            # eigvectors_liouville = np.kron(eigvectors[count], eigvectors[count])
+            #hamiltonian_liouville = kron_rmat_eye(total_hamiltonian, 2 ** num_spins)
+        print('la.expm', (time.time() - start))
 
     return propagator
 

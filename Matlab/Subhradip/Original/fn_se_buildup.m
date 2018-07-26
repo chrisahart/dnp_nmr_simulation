@@ -162,7 +162,20 @@ for ii=1:10000
                               %%%%of spin dynamics and chemical exchange; Konstantin Ivanov
     Ltot=Lhamilt+1*1i*((Rtot));
     prop(:,:,ii)=LD*expm(-1i*Ltot*trstep)*LDinv;
-end
+    
+%     tic
+%     for test=1:1E4
+%         t=expm(-1i*Ltot*trstep);
+%         %LD=kron(D,D);
+%         %Lhamilt=kron((hamilt),eye(8));
+%         %S1zt=Dinv*S1z*D;
+%         %prop(:,:,ii)=LD*t;
+%         %prop(:,:,ii)=LD*test*LDinv;
+%         %temp = x_mat * z_mat;
+%         %temp = mat1 * mat2 * mat3;
+%     end
+%     toc
+% end
 
 
 prop_accu=eye(16);

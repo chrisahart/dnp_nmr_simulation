@@ -361,10 +361,11 @@ contains
         complex(wp) :: t = 1._wp
         complex(wp), dimension(4 * size(A, 1) * size(A, 2) + ideg + 1) :: wsp
         integer, dimension(size(A, 1)) :: iwsp
-        integer :: iexp, ns, iflag
+        integer :: iexp, ns, iflag, n
+        n = size(A, 1)
 
-        call ZGPADM(ideg, size(A, 1), t, A, size(A, 1), wsp, size(wsp, 1), iwsp, iexp, ns, iflag)
-        B = reshape(wsp(iexp : iexp + size(A, 1) * size(A, 1) - 1), [size(A, 1), size(A, 2)])
+        call ZGPADM(ideg, n, t, A, n, wsp, size(wsp, 1), iwsp, iexp, ns, iflag)
+        B = reshape(wsp(iexp : iexp + n * n - 1), [n, n])
 
     end function expm_complex
 

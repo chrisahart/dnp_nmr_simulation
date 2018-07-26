@@ -194,6 +194,8 @@ contains
         complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
         complex(wp), dimension(sizeH, sizeH) :: spin2_s_y, spin2_i_y, test
 
+        real(wp) wtime
+
         ! Pauli matrices
         identity2 = eye(2)
         identity2_complex = eye(2)
@@ -231,11 +233,11 @@ contains
         ! Calculate initial microwave Hamiltonian
         microwave_hamiltonian_init = microwave_amplitude * spin2_s_x
 
-        !$omp parallel do default(private) &
-        !$omp& shared(eig_vector, eig_vector_inv, sizeL, sizeH, spin_y, test2, identity_mat) &
-        !$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t1_elec, t2_elec, t2_nuc) &
-        !$omp& shared(t1_nuc, spin2_s_x, spin2_i_x, boltzmann_elec, boltzmann_nuc) &
-        !$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
+        !!$omp parallel do default(private) &
+        !!$omp& shared(eig_vector, eig_vector_inv, sizeL, sizeH, spin_y, test2, identity_mat) &
+        !!$omp& shared(spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t1_elec, t2_elec, t2_nuc) &
+        !!$omp& shared(t1_nuc, spin2_s_x, spin2_i_x, boltzmann_elec, boltzmann_nuc) &
+        !!$omp& shared(gnp, gnm, gep, gem, microwave_hamiltonian_init, energies, propagator, time_step)
         do count = 1, time_num
 
             ! Transform microwave Hamiltonian into time dependent basis
@@ -274,10 +276,61 @@ contains
             mat_exp = expm_complex(-i * liouvillian * time_step)
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
 
+            call testing()
+
+!            call omp_set_num_threads(1)
+!            wtime = omp_get_wtime()
+!            !$omp parallel do default(shared)
+!            do count2 = 1, int(1E4)
+!                mat_exp = expm_complex(-i * liouvillian * time_step)
+!                !mat5 = matmul(mat1, matmul(mat2, mat3))
+!                !test = matmul(spin1_x, spin1_z)
+!                !spin3_s1_x = matmul(eig_vector_inv(count, :, :), matmul(spin3_s1_z, eig_vector(count, :, :)))
+!                !propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
+!            end do
+!            !$omp end parallel do
+!            wtime = omp_get_wtime () - wtime
+!            write(6, *) 'expm_complex', sngl(wtime)
+!!            write(6, *) 'test', test
+
         end do
-        !$omp end parallel do
+        !!$omp end parallel do
 
     end subroutine liouville_propagator
+
+    subroutine expokit_test()
+
+        use omp_lib
+        use iso_fortran_env
+        implicit none
+
+        integer, parameter :: wp = selected_real_kind(15, 307), size=80
+        complex(wp), parameter :: i = (0, 1._wp)
+        integer :: count, a, b
+        real(wp) :: wtime
+        complex(wp) :: mat_exp(size, size),  mat(size, size), val
+
+        val = 1E-8_wp
+        mat = 0._wp
+
+        do a = 1, size
+            do b = 1, size
+                mat(a, b) = a * b
+            end do
+        end do
+
+        call omp_set_num_threads(8)
+        wtime = omp_get_wtime()
+        !$omp parallel do default(private) &
+        !$omp& shared(mat, val)
+        do count = 1, int(1E4)
+            mat_exp = expm_complex(-i * mat * val)
+        end do
+        !$omp end parallel do
+        wtime = omp_get_wtime () - wtime
+        write(6, *) 'expm_complex', sngl(wtime)
+
+    end subroutine expokit_test
 
     subroutine calculate_relaxation_mat(eig_vector, eig_vector_inv, sizeL, sizeH, &
             spin2_s_z, spin2_s_p, spin2_s_m, spin2_i_z, spin2_i_p, spin2_i_m, t2_elec, t2_nuc, &

@@ -214,6 +214,8 @@ contains
         complex(wp), dimension(sizeL, sizeL) :: liouvillian, mat_exp
         complex(wp), dimension(sizeH, sizeH) :: spin3_s1_y, spin3_s2_y, spin3_i_y
 
+        real(wp) wtime
+
         ! Identity matrix
         identity_size2 = eye(2)
         identity_size2_complex = eye(2)
@@ -304,6 +306,21 @@ contains
             liouvillian = hamiltonian_liouville + i * relax_mat
             mat_exp = expm_complex(-i * liouvillian * time_step)
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
+
+            call omp_set_num_threads(8)
+            wtime = omp_get_wtime()
+            !$omp parallel do default(shared)
+            do count2 = 1, int(1E4)
+                mat_exp = expm_complex(-i * liouvillian * time_step)
+                !mat5 = matmul(mat1, matmul(mat2, mat3))
+                !test = matmul(spin1_x, spin1_z)
+                !spin3_s1_x = matmul(eig_vector_inv(count, :, :), matmul(spin3_s1_z, eig_vector(count, :, :)))
+                !propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
+            end do
+            !$omp end parallel do
+            wtime = omp_get_wtime () - wtime
+            write(6, *) 'expm_complex', sngl(wtime)
+!            write(6, *) 'test', test
 
         end do
         !$omp end parallel do
