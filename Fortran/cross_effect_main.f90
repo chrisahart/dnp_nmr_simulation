@@ -53,7 +53,7 @@ program cross_effect_main
     allocate (pol_iz_final(size(microwave_amplitude)))
 
     ! Manually set number of OMP threads
-    call omp_set_num_threads(1)
+    call omp_set_num_threads(8)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()

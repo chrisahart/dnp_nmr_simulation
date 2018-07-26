@@ -20,8 +20,8 @@ program solid_effect_main
     integer :: time_num, time_num_prop, num_periods, count
 
     ! Literature parameters
-    !real(wp) :: microwave_amplitude(40) = [(count, count = 1, 200, 5)] * 1E6          ! Microwave amplitude array
-    real(wp) :: microwave_amplitude(1) = [0.85E6_wp]                             ! Microwave amplitude
+    real(wp) :: microwave_amplitude(40) = [(count, count = 1, 200, 5)] * 1E6          ! Microwave amplitude array
+    !real(wp) :: microwave_amplitude(1) = [0.85E6_wp]                             ! Microwave amplitude
     b_field = 9.4_wp                                                           ! Magnetic field
     temperature = 100_wp                                                       ! Temperature
     nuclear_frequency = -400.9E6_wp                                               ! Nuclear frequency 1

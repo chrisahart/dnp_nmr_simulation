@@ -1,0 +1,34 @@
+FC	= gfortran
+FFLAGS	= -O3 -fopenmp
+LIBS    = -llapack -lblas -lgomp
+
+# Windows 10 compatible Expokit object files
+EXPOKIT   = expokit.o
+MATAID    = mataid.o
+
+# Ubuntu compatible Expokit object files
+# EXPOKIT   = expokit_lin.o
+# MATAID    = mataid_lin.o
+
+OBJS      =  $(EXPOKIT) $(MATAID) functions.o interactions.o cross_effect_dynamics.o cross_effect_main.o
+
+cross_effect: ${OBJS}
+	${FC} -o cross_effect ${OBJS} ${LIBS} ${FFLAGS}
+
+functions.o:	 functions.f90
+	${FC} functions.f90 ${FFLAGS} -c
+
+interactions.mod:  interactions.o interactions.f90
+	${FC} interactions.f90 ${FFLAGS} -c
+
+interactions.o:	 interactions.f90
+	${FC} interactions.f90 ${FFLAGS} -c	
+
+cross_effect_dynamics.o: cross_effect_dynamics.f90
+	${FC} cross_effect_dynamics.f90 ${FFLAGS} -c
+
+cross_effect_main.o: cross_effect_main.f90
+	${FC} cross_effect_main.f90 ${FFLAGS} -c
+ 
+clean:
+	rm functions.o functions.mod interactions.o interactions.mod cross_effect_dynamics.o cross_effect_dynamics.mod cross_effect_main.o

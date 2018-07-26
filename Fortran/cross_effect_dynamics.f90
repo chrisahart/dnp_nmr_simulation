@@ -61,26 +61,18 @@ contains
         ! Calculate inverse eigenvectors
         eig_vector_inv = inverse_real(eig_vector)
 
-        write(6, *) 'hamiltonian:', sngl(omp_get_wtime () - wtime)
-
         ! Calculate Liouville space propagator with relaxation
         call liouville_propagator(time_num, time_step, electron_frequency, nuclear_frequency, microwave_amplitude, &
                 t1_nuc, t1_elec, t2_nuc, t2_elec, temperature, sizeH, sizeL, eig_vector, eig_vector_inv, energies, &
                 propagator)
 
-        write(6, *) 'liouville_propagator:', sngl(omp_get_wtime () - wtime)
-
         ! Propagate density matrix stroboscopically, calculating polarisations
         call calculate_polarisation_rotor(time_num, time_num_prop, density_mat, propagator, sizeH, sizeL, &
                 pol_i_z, pol_s1_z, pol_s2_z)
 
-        write(6, *) 'calculate_polarisation_rotor:', sngl(omp_get_wtime () - wtime)
-
         ! Propagate density matrix for single rotor period, calculating polarisations
         call calculate_polarisation_sub_rotor(time_num, density_mat, propagator, sizeH, sizeL, &
                 pol_i_z_rot, pol_s1_z_rot, pol_s2_z_rot)
-
-        write(6, *) 'calculate_polarisation_sub_rotor:', sngl(omp_get_wtime () - wtime)
 
     end subroutine main
 
@@ -306,21 +298,6 @@ contains
             liouvillian = hamiltonian_liouville + i * relax_mat
             mat_exp = expm_complex(-i * liouvillian * time_step)
             propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
-
-            call omp_set_num_threads(8)
-            wtime = omp_get_wtime()
-            !$omp parallel do default(shared)
-            do count2 = 1, int(1E4)
-                mat_exp = expm_complex(-i * liouvillian * time_step)
-                !mat5 = matmul(mat1, matmul(mat2, mat3))
-                !test = matmul(spin1_x, spin1_z)
-                !spin3_s1_x = matmul(eig_vector_inv(count, :, :), matmul(spin3_s1_z, eig_vector(count, :, :)))
-                !propagator(count, :, :) = matmul(eigvectors_inv_liouville, matmul(mat_exp, eigvectors_liouville))
-            end do
-            !$omp end parallel do
-            wtime = omp_get_wtime () - wtime
-            write(6, *) 'expm_complex', sngl(wtime)
-!            write(6, *) 'test', test
 
         end do
         !$omp end parallel do
