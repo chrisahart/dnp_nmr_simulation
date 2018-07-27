@@ -37,7 +37,7 @@ contains
         integer :: count1, count2
         integer(wp) :: indices(sizeH)
 
-        !call omp_set_num_threads(1)
+        call omp_set_num_threads(1)
 
         ! Construct intrinsic Hilbert space Hamiltonian
         call calculate_hamiltonian(time_num, time_step, freq_rotor, gtensor, temperature, hyperfine_coupling, &

@@ -50,15 +50,15 @@ program solid_effect_main
     allocate (pol_i_z_rot(time_num), pol_s_z_rot(time_num), pol_iz_final(size(microwave_amplitude)))
 
     ! Manually set number of OMP threads
-    !call omp_set_num_threads(8)
+    call omp_set_num_threads(4)
 
     ! Start timer (using OpenMP to work across multiple cores)
     wtime = omp_get_wtime()
 
-    !$omp parallel do default(private) &
-    !$omp& shared(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, orientation_se) &
-    !$omp& shared(electron_frequency, microwave_frequency, nuclear_frequency, microwave_amplitude, t1_nuc, t1_elec) &
-    !$omp& shared(t2_nuc, t2_elec, temperature, time_num_prop, pol_iz_final)
+    !!$omp parallel do default(private) &
+    !!$omp& shared(time_num, time_step, freq_rotor, gtensor, hyperfine_coupling, hyperfine_angles, orientation_se) &
+    !!$omp& shared(electron_frequency, microwave_frequency, nuclear_frequency, microwave_amplitude, t1_nuc, t1_elec) &
+    !!$omp& shared(t2_nuc, t2_elec, temperature, time_num_prop, pol_iz_final)
     do count = 1, size(microwave_amplitude)
 
         ! Call main() to calculate SE dynamics
@@ -71,7 +71,7 @@ program solid_effect_main
         write(6, *) 'Finished loop', count, 'of',  size(microwave_amplitude), '.'
 
     end do
-    !$omp end parallel do
+    !!$omp end parallel do
 
     wtime = omp_get_wtime () - wtime
     write(6, *) 'Total elapsed time:', sngl(wtime)
